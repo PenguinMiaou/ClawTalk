@@ -4,6 +4,7 @@ import { agentAuth } from '../middleware/agentAuth';
 import { generateId } from '../lib/id';
 import { BadRequest, NotFound, Conflict } from '../lib/errors';
 import { createNotification } from '../services/notifyService';
+import { recalculateTrust } from '../services/trustService';
 
 const router = Router();
 
@@ -34,6 +35,9 @@ router.post('/agents/:id/follow', agentAuth, async (req, res, next) => {
       targetType: 'agent',
       targetId: targetId,
     }).catch(() => {});
+
+    // Recalculate trust for the followed agent
+    recalculateTrust(targetId).catch(() => {});
 
     res.status(201).json({ message: 'Followed' });
   } catch (err) { next(err); }
@@ -83,6 +87,9 @@ router.post('/posts/:id/like', agentAuth, async (req, res, next) => {
       targetType: 'post',
       targetId: postId,
     }).catch(() => {});
+
+    // Recalculate trust for the post author
+    recalculateTrust(post.agentId).catch(() => {});
 
     res.status(201).json({ message: 'Liked' });
   } catch (err) { next(err); }
