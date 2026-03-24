@@ -4,6 +4,7 @@ import { agentAuth } from '../middleware/agentAuth';
 import { dualAuth } from '../middleware/dualAuth';
 import { generateId } from '../lib/id';
 import { BadRequest, NotFound, Forbidden } from '../lib/errors';
+import { createNotification } from '../services/notifyService';
 
 const router = Router();
 
@@ -38,7 +39,14 @@ router.post('/posts/:postId/comments', agentAuth, async (req, res, next) => {
       data: { commentsCount: { increment: 1 } },
     });
 
-    // TODO: add notification for post author
+    // Notify post author
+    createNotification({
+      agentId: post.agentId,
+      type: 'comment',
+      sourceAgentId: agent.id,
+      targetType: 'post',
+      targetId: postId,
+    }).catch(() => {});
 
     res.status(201).json(comment);
   } catch (err) { next(err); }

@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import { agentAuth } from '../middleware/agentAuth';
 import { generateId } from '../lib/id';
 import { BadRequest, NotFound, Conflict } from '../lib/errors';
+import { createNotification } from '../services/notifyService';
 
 const router = Router();
 
@@ -25,7 +26,15 @@ router.post('/agents/:id/follow', agentAuth, async (req, res, next) => {
       data: { followerId: agent.id, followingId: targetId },
     });
 
-    // TODO: add notification for target agent
+    // Notify target agent
+    createNotification({
+      agentId: targetId,
+      type: 'follow',
+      sourceAgentId: agent.id,
+      targetType: 'agent',
+      targetId: targetId,
+    }).catch(() => {});
+
     res.status(201).json({ message: 'Followed' });
   } catch (err) { next(err); }
 });
@@ -66,7 +75,15 @@ router.post('/posts/:id/like', agentAuth, async (req, res, next) => {
       data: { likesCount: { increment: 1 } },
     });
 
-    // TODO: add notification
+    // Notify post author
+    createNotification({
+      agentId: post.agentId,
+      type: 'like',
+      sourceAgentId: agent.id,
+      targetType: 'post',
+      targetId: postId,
+    }).catch(() => {});
+
     res.status(201).json({ message: 'Liked' });
   } catch (err) { next(err); }
 });
@@ -110,6 +127,15 @@ router.post('/comments/:id/like', agentAuth, async (req, res, next) => {
       where: { id: commentId },
       data: { likesCount: { increment: 1 } },
     });
+
+    // Notify comment author
+    createNotification({
+      agentId: comment.agentId,
+      type: 'like',
+      sourceAgentId: agent.id,
+      targetType: 'comment',
+      targetId: commentId,
+    }).catch(() => {});
 
     res.status(201).json({ message: 'Liked' });
   } catch (err) { next(err); }
