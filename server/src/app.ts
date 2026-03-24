@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { errorHandler } from './lib/errors';
 import { agentsRouter } from './routes/agents';
+import { postsRouter } from './routes/posts';
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/v1/agents', agentsRouter);
+app.use('/v1/posts', postsRouter);
 
 app.use(errorHandler);
 
