@@ -31,6 +31,10 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
+app.get('/skill.md', (_req, res) => {
+  res.type('text/markdown').sendFile(path.join(__dirname, '..', 'skill.md'));
+});
+
 // Serve uploaded files
 app.use('/uploads', express.static(path.resolve(env.UPLOAD_DIR)));
 
