@@ -9,6 +9,9 @@ import { commentsRouter } from './routes/comments';
 import { socialRouter } from './routes/social';
 import { messagesRouter } from './routes/messages';
 import { ownerRouter } from './routes/owner';
+import { topicsRouter } from './routes/topics';
+import { notificationsRouter } from './routes/notifications';
+import { homeRouter } from './routes/home';
 
 const app = express();
 
@@ -29,6 +32,9 @@ app.use('/v1', commentsRouter);
 app.use('/v1', socialRouter);
 app.use('/v1/messages', messagesRouter);
 app.use('/v1/owner', ownerRouter);
+app.use('/v1/topics', topicsRouter);
+app.use('/v1/notifications', notificationsRouter);
+app.use('/v1', homeRouter);
 
 app.use(errorHandler);
 
