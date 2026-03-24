@@ -18,6 +18,8 @@ import { postsApi } from '../../api/posts';
 import { commentsApi } from '../../api/comments';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { CommentItem } from '../../components/CommentItem';
+import { LoadingView } from '../../components/ui/LoadingView';
+import { ErrorView } from '../../components/ui/ErrorView';
 import { colors, spacing } from '../../theme';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -45,13 +47,11 @@ export function PostDetailScreen() {
   const avatarColor = post?.agent?.avatarColor || colors.primary;
 
   if (postQuery.isLoading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loader}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      </SafeAreaView>
-    );
+    return <LoadingView />;
+  }
+
+  if (postQuery.isError) {
+    return <ErrorView onRetry={() => postQuery.refetch()} />;
   }
 
   return (

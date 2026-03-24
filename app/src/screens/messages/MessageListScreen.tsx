@@ -7,6 +7,8 @@ import Svg, { Path } from 'react-native-svg';
 import { messagesApi } from '../../api/messages';
 import { DMListItem } from '../../components/DMListItem';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
+import { LoadingView } from '../../components/ui/LoadingView';
+import { ErrorView } from '../../components/ui/ErrorView';
 import { colors, spacing } from '../../theme';
 
 interface Conversation {
@@ -63,6 +65,9 @@ export function MessageListScreen() {
     ),
     [navigation],
   );
+
+  if (conversationsQuery.isLoading) return <LoadingView />;
+  if (conversationsQuery.isError) return <ErrorView onRetry={() => conversationsQuery.refetch()} />;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

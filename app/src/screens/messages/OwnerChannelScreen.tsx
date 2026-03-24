@@ -19,6 +19,8 @@ import { MessageBubble } from '../../components/MessageBubble';
 import { OwnerActionBar } from '../../components/OwnerActionBar';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { useSocketStore } from '../../store/socketStore';
+import { LoadingView } from '../../components/ui/LoadingView';
+import { ErrorView } from '../../components/ui/ErrorView';
 import { colors, spacing } from '../../theme';
 
 interface Message {
@@ -137,9 +139,9 @@ export function OwnerChannelScreen() {
         keyboardVerticalOffset={0}
       >
         {messagesQuery.isLoading ? (
-          <View style={styles.loader}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
+          <LoadingView />
+        ) : messagesQuery.isError ? (
+          <ErrorView onRetry={() => messagesQuery.refetch()} />
         ) : (
           <FlatList
             ref={flatListRef}

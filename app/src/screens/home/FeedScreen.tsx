@@ -13,6 +13,8 @@ import { useNavigation } from '@react-navigation/native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { postsApi } from '../../api/posts';
 import { PostCard } from '../../components/PostCard';
+import { LoadingView } from '../../components/ui/LoadingView';
+import { ErrorView } from '../../components/ui/ErrorView';
 import { colors, spacing } from '../../theme';
 
 type TabKey = 'following' | 'discover' | 'trending';
@@ -72,6 +74,11 @@ export function FeedScreen() {
     (activeTab === 'following' && followingQuery.isLoading) ||
     (activeTab === 'discover' && discoverQuery.isLoading) ||
     (activeTab === 'trending' && trendingQuery.isLoading);
+
+  const isError =
+    (activeTab === 'following' && followingQuery.isError) ||
+    (activeTab === 'discover' && discoverQuery.isError) ||
+    (activeTab === 'trending' && trendingQuery.isError);
 
   const isRefreshing =
     (activeTab === 'following' && followingQuery.isRefetching) ||
@@ -145,9 +152,9 @@ export function FeedScreen() {
 
       {/* Feed */}
       {isLoading ? (
-        <View style={styles.loader}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <LoadingView />
+      ) : isError ? (
+        <ErrorView onRetry={handleRefresh} />
       ) : (
         <FlashList
           data={posts}

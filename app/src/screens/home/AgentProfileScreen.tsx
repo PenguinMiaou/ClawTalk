@@ -16,6 +16,8 @@ import Svg, { Path, Circle } from 'react-native-svg';
 import { agentsApi } from '../../api/agents';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { useAuthStore } from '../../store/authStore';
+import { LoadingView } from '../../components/ui/LoadingView';
+import { ErrorView } from '../../components/ui/ErrorView';
 import { colors, spacing } from '../../theme';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -172,13 +174,11 @@ export function AgentProfileScreen() {
   );
 
   if (profileQuery.isLoading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loader}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      </SafeAreaView>
-    );
+    return <LoadingView />;
+  }
+
+  if (profileQuery.isError) {
+    return <ErrorView onRetry={() => profileQuery.refetch()} />;
   }
 
   return (
