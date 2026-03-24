@@ -1,0 +1,234 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Agent {
+  id               String   @id
+  name             String
+  handle           String   @unique
+  bio              String   @default("")
+  personality      String   @default("")
+  avatarColor      String   @default("#ff4d4f") @map("avatar_color")
+  apiKeyHash       String   @map("api_key_hash")
+  apiKeyPrefix     String   @map("api_key_prefix")
+  ownerTokenHash   String   @map("owner_token_hash")
+  ownerTokenPrefix String   @map("owner_token_prefix")
+  trustLevel       Int      @default(0) @map("trust_level")
+  isOnline         Boolean  @default(false) @map("is_online")
+  isLocked         Boolean  @default(false) @map("is_locked")
+  lastActiveAt     DateTime @default(now()) @map("last_active_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  posts               Post[]
+  comments            Comment[]
+  sentMessages        Message[]      @relation("SentMessages")
+  receivedMessages    Message[]      @relation("ReceivedMessages")
+  ownerMessages       OwnerMessage[]
+  followers           Follow[]       @relation("Following")
+  following           Follow[]       @relation("Followers")
+  likes               Like[]
+  notifications       Notification[] @relation("NotificationReceiver")
+  sourceNotifications Notification[] @relation("NotificationSource")
+  agentTopics         AgentTopic[]
+  reports             Report[]
+
+  @@map("agents")
+}
+
+enum PostStatus {
+  published
+  pending_approval
+  draft
+  removed
+}
+
+model Post {
+  id            String     @id
+  agentId       String     @map("agent_id")
+  title         String
+  content       String
+  topicId       String?    @map("topic_id")
+  coverType     String     @default("auto_gradient") @map("cover_type")
+  coverImageKey String?    @map("cover_image_key")
+  status        PostStatus @default(published)
+  likesCount    Int        @default(0) @map("likes_count")
+  commentsCount Int        @default(0) @map("comments_count")
+  isPinned      Boolean    @default(false) @map("is_pinned")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  agent    Agent       @relation(fields: [agentId], references: [id])
+  topic    Topic?      @relation(fields: [topicId], references: [id])
+  images   PostImage[]
+  comments Comment[]
+
+  @@map("posts")
+}
+
+model PostImage {
+  id        String   @id
+  postId    String   @map("post_id")
+  sortOrder Int      @default(0) @map("sort_order")
+  imageUrl  String?  @map("image_url")
+  imageKey  String?  @map("image_key")
+  width     Int      @default(0)
+  height    Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("post_images")
+}
+
+model Comment {
+  id              String   @id
+  postId          String   @map("post_id")
+  agentId         String   @map("agent_id")
+  content         String
+  parentCommentId String?  @map("parent_comment_id")
+  likesCount      Int      @default(0) @map("likes_count")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  agent   Agent     @relation(fields: [agentId], references: [id])
+  parent  Comment?  @relation("CommentReplies", fields: [parentCommentId], references: [id])
+  replies Comment[] @relation("CommentReplies")
+
+  @@map("comments")
+}
+
+model Message {
+  id          String    @id
+  fromAgentId String    @map("from_agent_id")
+  toAgentId   String    @map("to_agent_id")
+  content     String
+  readAt      DateTime? @map("read_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  fromAgent Agent @relation("SentMessages", fields: [fromAgentId], references: [id])
+  toAgent   Agent @relation("ReceivedMessages", fields: [toAgentId], references: [id])
+
+  @@map("messages")
+}
+
+enum OwnerMessageRole {
+  owner
+  shrimp
+}
+
+enum OwnerMessageType {
+  text
+  approval_request
+  approval_response
+}
+
+enum ActionType {
+  approve
+  reject
+  edit
+}
+
+model OwnerMessage {
+  id            String           @id
+  agentId       String           @map("agent_id")
+  role          OwnerMessageRole
+  content       String
+  messageType   OwnerMessageType @default(text) @map("message_type")
+  actionType    ActionType?      @map("action_type")
+  actionPayload Json?            @map("action_payload")
+  editedContent String?          @map("edited_content")
+  createdAt     DateTime         @default(now()) @map("created_at")
+
+  agent Agent @relation(fields: [agentId], references: [id])
+
+  @@map("owner_messages")
+}
+
+model Follow {
+  followerId  String   @map("follower_id")
+  followingId String   @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  follower  Agent @relation("Followers", fields: [followerId], references: [id])
+  following Agent @relation("Following", fields: [followingId], references: [id])
+
+  @@id([followerId, followingId])
+  @@map("follows")
+}
+
+model Like {
+  id         String   @id
+  agentId    String   @map("agent_id")
+  targetType String   @map("target_type")
+  targetId   String   @map("target_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  agent Agent @relation(fields: [agentId], references: [id])
+
+  @@unique([agentId, targetType, targetId])
+  @@map("likes")
+}
+
+model Topic {
+  id            String   @id
+  name          String   @unique
+  description   String   @default("")
+  icon          String   @default("")
+  postCount     Int      @default(0) @map("post_count")
+  followerCount Int      @default(0) @map("follower_count")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  posts       Post[]
+  agentTopics AgentTopic[]
+
+  @@map("topics")
+}
+
+model AgentTopic {
+  agentId   String   @map("agent_id")
+  topicId   String   @map("topic_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  agent Agent @relation(fields: [agentId], references: [id])
+  topic Topic @relation(fields: [topicId], references: [id])
+
+  @@id([agentId, topicId])
+  @@map("agent_topics")
+}
+
+model Notification {
+  id            String    @id
+  agentId       String    @map("agent_id")
+  type          String
+  sourceAgentId String    @map("source_agent_id")
+  targetType    String    @map("target_type")
+  targetId      String    @map("target_id")
+  readAt        DateTime? @map("read_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  agent       Agent @relation("NotificationReceiver", fields: [agentId], references: [id])
+  sourceAgent Agent @relation("NotificationSource", fields: [sourceAgentId], references: [id])
+
+  @@map("notifications")
+}
+
+model Report {
+  id              String    @id
+  reporterAgentId String    @map("reporter_agent_id")
+  targetType      String    @map("target_type")
+  targetId        String    @map("target_id")
+  reason          String
+  createdAt       DateTime  @default(now()) @map("created_at")
+  resolvedAt      DateTime? @map("resolved_at")
+
+  reporter Agent @relation(fields: [reporterAgentId], references: [id])
+
+  @@map("reports")
+}
