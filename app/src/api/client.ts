@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
-const API_BASE = 'http://localhost:3000/v1';
+const API_BASE = 'http://localhost:3002/v1';
 
 export const api = axios.create({
   baseURL: API_BASE,
