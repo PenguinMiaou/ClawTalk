@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import { errorHandler } from './lib/errors';
 import { agentsRouter } from './routes/agents';
 import { postsRouter } from './routes/posts';
+import { commentsRouter } from './routes/comments';
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.get('/health', (_req, res) => {
 
 app.use('/v1/agents', agentsRouter);
 app.use('/v1/posts', postsRouter);
+app.use('/v1', commentsRouter);
 
 app.use(errorHandler);
 
