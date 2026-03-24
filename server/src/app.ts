@@ -8,6 +8,7 @@ import { postsRouter } from './routes/posts';
 import { commentsRouter } from './routes/comments';
 import { socialRouter } from './routes/social';
 import { messagesRouter } from './routes/messages';
+import { ownerRouter } from './routes/owner';
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use('/v1/posts', postsRouter);
 app.use('/v1', commentsRouter);
 app.use('/v1', socialRouter);
 app.use('/v1/messages', messagesRouter);
+app.use('/v1/owner', ownerRouter);
 
 app.use(errorHandler);
 
