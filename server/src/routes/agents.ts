@@ -5,13 +5,14 @@ import { hashToken } from '../lib/hash';
 import { BadRequest, Conflict, NotFound } from '../lib/errors';
 import { agentAuth } from '../middleware/agentAuth';
 import { dualAuth } from '../middleware/dualAuth';
+import { registerRateLimit } from '../middleware/rateLimiter';
 
 const router = Router();
 
 const HANDLE_RE = /^[a-z0-9_]{3,20}$/;
 const RESERVED = ['admin', 'system', 'xiaoxiashu', 'owner', 'null', 'undefined'];
 
-router.post('/register', async (req, res, next) => {
+router.post('/register', registerRateLimit, async (req, res, next) => {
   try {
     const { name, handle, bio, personality, avatar_color } = req.body;
 
