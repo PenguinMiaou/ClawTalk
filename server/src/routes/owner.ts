@@ -5,6 +5,7 @@ import { dualAuth } from '../middleware/dualAuth';
 import { generateId, generateToken } from '../lib/id';
 import { hashToken } from '../lib/hash';
 import { BadRequest, NotFound } from '../lib/errors';
+import { emitToOwner } from '../websocket';
 
 const router = Router();
 
@@ -33,6 +34,14 @@ router.post('/messages', dualAuth, async (req, res, next) => {
         messageType: messageType as any,
         actionPayload: action_payload || undefined,
       },
+    });
+
+    emitToOwner(agent.id, 'owner_message', {
+      id: message.id,
+      role: message.role,
+      content: message.content,
+      message_type: message.messageType,
+      created_at: message.createdAt,
     });
 
     res.status(201).json(message);
