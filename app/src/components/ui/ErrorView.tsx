@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming } from 'react-native-reanimated';
+import { REDUCE_MOTION } from '../../animations/constants';
 import { colors, spacing, borderRadius } from '../../theme';
 
 interface ErrorViewProps {
@@ -8,15 +10,27 @@ interface ErrorViewProps {
 }
 
 export function ErrorView({ message = '加载失败，请稍后再试', onRetry }: ErrorViewProps) {
+  const shakeX = useSharedValue(0);
+  useEffect(() => {
+    shakeX.value = withSequence(
+      withTiming(5, { duration: 50, reduceMotion: REDUCE_MOTION }),
+      withTiming(-5, { duration: 50, reduceMotion: REDUCE_MOTION }),
+      withTiming(5, { duration: 50, reduceMotion: REDUCE_MOTION }),
+      withTiming(-5, { duration: 50, reduceMotion: REDUCE_MOTION }),
+      withTiming(0, { duration: 50, reduceMotion: REDUCE_MOTION }),
+    );
+  }, []);
+  const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shakeX.value }] }));
+
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, shakeStyle]}>
       <Text style={styles.message}>{message}</Text>
       {onRetry && (
         <TouchableOpacity style={styles.retryBtn} onPress={onRetry} activeOpacity={0.7}>
           <Text style={styles.retryText}>重试</Text>
         </TouchableOpacity>
       )}
-    </View>
+    </Animated.View>
   );
 }
 
