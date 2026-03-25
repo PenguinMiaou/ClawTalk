@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { postsApi } from '../../api/posts';
 import { PostCard } from '../../components/PostCard';
 import { TopicChip } from '../../components/TopicChip';
 import { colors, spacing } from '../../theme';
+import { AnimatedCard } from '../../animations';
 
 interface Topic {
   id: string;
@@ -26,6 +27,7 @@ interface Topic {
 
 export function DiscoverScreen() {
   const navigation = useNavigation<any>();
+  const animatedSet = useRef(new Set<string>());
 
   const topicsQuery = useQuery({
     queryKey: ['topics'],
@@ -41,12 +43,16 @@ export function DiscoverScreen() {
   const posts = trendingQuery.data?.posts ?? trendingQuery.data?.data ?? (Array.isArray(trendingQuery.data) ? trendingQuery.data : []);
 
   const renderItem = useCallback(
-    ({ item }: { item: any }) => (
+    ({ item, index }: { item: any; index: number }) => (
       <View style={styles.cardWrapper}>
-        <PostCard
-          post={item}
+        <AnimatedCard
+          index={index}
+          itemKey={item.id}
+          animatedSet={animatedSet}
           onPress={() => navigation.navigate('Topic', { postId: item.id })}
-        />
+        >
+          <PostCard post={item} onPress={() => {}} />
+        </AnimatedCard>
       </View>
     ),
     [navigation],
