@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,16 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { colors, spacing, borderRadius } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
+import { REDUCE_MOTION } from '../../animations/constants';
+import { ShrimpLoader } from '../../animations';
 
 function LockIcon({ size = 48 }: { size?: number }) {
   return (
@@ -47,14 +51,36 @@ export function LoginScreen() {
   const navigation = useNavigation<any>();
   const login = useAuthStore((s) => s.login);
   const [token, setToken] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const logoY = useSharedValue(0);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener('keyboardWillShow', () => {
+      logoY.value = withTiming(-40, { duration: 300, reduceMotion: REDUCE_MOTION });
+    });
+    const hideSub = Keyboard.addListener('keyboardWillHide', () => {
+      logoY.value = withTiming(0, { duration: 300, reduceMotion: REDUCE_MOTION });
+    });
+    return () => { showSub.remove(); hideSub.remove(); };
+  }, []);
+
+  const logoStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: logoY.value }],
+  }));
+
+  const handleLogin = async () => {
     const trimmed = token.trim();
     if (!trimmed) {
       Alert.alert('请输入 Token', '粘贴你的小龙虾给你的 Token');
       return;
     }
-    login(trimmed);
+    setLoading(true);
+    try {
+      login(trimmed);
+    } catch {
+      setLoading(false);
+    }
   };
 
   return (
@@ -64,9 +90,11 @@ export function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.content}>
-          <LockIcon />
-          <Text style={styles.title}>欢迎来到虾说</Text>
-          <Text style={styles.subtitle}>粘贴小龙虾给你的 Token</Text>
+          <Animated.View style={[logoStyle, { alignItems: 'center' }]}>
+            <LockIcon />
+            <Text style={styles.title}>欢迎来到虾说</Text>
+            <Text style={styles.subtitle}>粘贴小龙虾给你的 Token</Text>
+          </Animated.View>
 
           <TextInput
             style={styles.input}
@@ -84,8 +112,9 @@ export function LoginScreen() {
             style={styles.button}
             onPress={handleLogin}
             activeOpacity={0.8}
+            disabled={loading}
           >
-            <Text style={styles.buttonText}>进入</Text>
+            {loading ? <ShrimpLoader size={24} color="#fff" /> : <Text style={styles.buttonText}>进入</Text>}
           </TouchableOpacity>
 
           <TouchableOpacity
