@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,24 +13,38 @@ import { FlashList } from '@shopify/flash-list';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import Svg, { Path, Circle } from 'react-native-svg';
+import Animated, { useSharedValue, useAnimatedScrollHandler, useAnimatedStyle, interpolate } from 'react-native-reanimated';
 import { agentsApi } from '../../api/agents';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { useAuthStore } from '../../store/authStore';
 import { LoadingView } from '../../components/ui/LoadingView';
 import { ErrorView } from '../../components/ui/ErrorView';
 import { colors, spacing } from '../../theme';
+import { AnimatedTabBar, AnimatedCard, useCountUp, AnimatedCountText } from '../../animations';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const GRID_GAP = 4;
 const GRID_ITEM_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - GRID_GAP) / 2;
 
 const PROFILE_TABS = ['笔记', '回复', '收藏', '赞过'];
+const PROFILE_TAB_CONFIG = PROFILE_TABS.map((label, i) => ({ key: String(i), label }));
+
+const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
 
 export function AgentProfileScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { agentId } = route.params as { agentId: string };
   const [activeTab, setActiveTab] = useState(0);
+  const animatedSet = useRef(new Set<string>());
+
+  const scrollY = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => { scrollY.value = event.contentOffset.y; },
+  });
+  const coverStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: interpolate(scrollY.value, [0, 200], [0, -100]) }],
+  }));
 
   const profileQuery = useQuery({
     queryKey: ['agent', agentId],
@@ -52,32 +66,40 @@ export function AgentProfileScreen() {
   // For MVP, we store no agentId in auth store, so this is a placeholder
   const isOwnAgent = false; // Will be wired when owner agent ID is available
 
+  const postsCountText = useCountUp(profile?.postsCount ?? 0);
+  const followersText = useCountUp(profile?.followersCount ?? 0);
+  const followingText = useCountUp(profile?.followingCount ?? 0);
+  const likesText = useCountUp(profile?.likesCount ?? 0);
+
   const renderPostGrid = useCallback(
-    ({ item }: { item: any }) => {
+    ({ item, index }: { item: any; index: number }) => {
       const hasImage = item.images && item.images.length > 0;
       return (
-        <TouchableOpacity
-          style={styles.gridItem}
-          activeOpacity={0.85}
+        <AnimatedCard
+          index={index}
+          itemKey={item.id}
+          animatedSet={animatedSet}
           onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
         >
-          {hasImage ? (
-            <Image source={{ uri: item.images[0] }} style={styles.gridImage} resizeMode="cover" />
-          ) : (
-            <View style={[styles.gridPlaceholder, { backgroundColor: avatarColor }]}>
-              <Text style={styles.gridPlaceholderText} numberOfLines={4}>
-                {item.content || item.title || ''}
-              </Text>
-            </View>
-          )}
-          <View style={styles.gridInfo}>
-            <Text style={styles.gridTitle} numberOfLines={1}>{item.title}</Text>
-            <View style={styles.gridStats}>
-              <Text style={styles.gridStatText}>♡ {item.likesCount ?? 0}</Text>
-              <Text style={styles.gridStatText}>💬 {item.commentsCount ?? 0}</Text>
+          <View style={styles.gridItem}>
+            {hasImage ? (
+              <Image source={{ uri: item.images[0] }} style={styles.gridImage} resizeMode="cover" />
+            ) : (
+              <View style={[styles.gridPlaceholder, { backgroundColor: avatarColor }]}>
+                <Text style={styles.gridPlaceholderText} numberOfLines={4}>
+                  {item.content || item.title || ''}
+                </Text>
+              </View>
+            )}
+            <View style={styles.gridInfo}>
+              <Text style={styles.gridTitle} numberOfLines={1}>{item.title}</Text>
+              <View style={styles.gridStats}>
+                <Text style={styles.gridStatText}>♡ {item.likesCount ?? 0}</Text>
+                <Text style={styles.gridStatText}>💬 {item.commentsCount ?? 0}</Text>
+              </View>
             </View>
           </View>
-        </TouchableOpacity>
+        </AnimatedCard>
       );
     },
     [avatarColor, navigation],
@@ -86,90 +108,82 @@ export function AgentProfileScreen() {
   const ListHeader = () => (
     <View>
       {/* Profile header */}
-      <View style={styles.profileSection}>
-        {/* Top bar */}
-        <View style={styles.topBar}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-              <Path
-                d="M15 18l-6-6 6-6"
-                stroke={colors.text}
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </Svg>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.moreBtn}>
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-              <Circle cx={5} cy={12} r={1.5} fill={colors.text} />
-              <Circle cx={12} cy={12} r={1.5} fill={colors.text} />
-              <Circle cx={19} cy={12} r={1.5} fill={colors.text} />
-            </Svg>
-          </TouchableOpacity>
+      <Animated.View style={coverStyle}>
+        <View style={styles.profileSection}>
+          {/* Top bar */}
+          <View style={styles.topBar}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+              <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M15 18l-6-6 6-6"
+                  stroke={colors.text}
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </Svg>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.moreBtn}>
+              <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+                <Circle cx={5} cy={12} r={1.5} fill={colors.text} />
+                <Circle cx={12} cy={12} r={1.5} fill={colors.text} />
+                <Circle cx={19} cy={12} r={1.5} fill={colors.text} />
+              </Svg>
+            </TouchableOpacity>
+          </View>
+
+          {/* Profile row */}
+          <View style={styles.profileRow}>
+            <View style={styles.avatarWrapper}>
+              <ShrimpAvatar color={avatarColor} size={64} />
+            </View>
+            <View style={styles.profileInfo}>
+              <Text style={styles.profileName}>{profile?.name || '加载中...'}</Text>
+              <Text style={styles.profileHandle}>@{profile?.handle || '...'}</Text>
+            </View>
+          </View>
+
+          {/* Bio */}
+          {profile?.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
+
+          {/* Stats row */}
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <AnimatedCountText text={postsCountText} style={{ fontSize: 17, fontWeight: '700', color: colors.text }} />
+              <Text style={styles.statLabel}>笔记</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <AnimatedCountText text={followersText} style={{ fontSize: 17, fontWeight: '700', color: colors.text }} />
+              <Text style={styles.statLabel}>粉丝</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <AnimatedCountText text={followingText} style={{ fontSize: 17, fontWeight: '700', color: colors.text }} />
+              <Text style={styles.statLabel}>关注</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <AnimatedCountText text={likesText} style={{ fontSize: 17, fontWeight: '700', color: colors.text }} />
+              <Text style={styles.statLabel}>获赞</Text>
+            </View>
+          </View>
+
+          {/* Owner channel button */}
+          {isOwnAgent && (
+            <TouchableOpacity style={styles.ownerBtn} activeOpacity={0.7}>
+              <Text style={styles.ownerBtnText}>进入主人通道</Text>
+            </TouchableOpacity>
+          )}
         </View>
-
-        {/* Profile row */}
-        <View style={styles.profileRow}>
-          <View style={styles.avatarWrapper}>
-            <ShrimpAvatar color={avatarColor} size={64} />
-          </View>
-          <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{profile?.name || '加载中...'}</Text>
-            <Text style={styles.profileHandle}>@{profile?.handle || '...'}</Text>
-          </View>
-        </View>
-
-        {/* Bio */}
-        {profile?.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
-
-        {/* Stats row */}
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{profile?.postsCount ?? 0}</Text>
-            <Text style={styles.statLabel}>笔记</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{profile?.followersCount ?? 0}</Text>
-            <Text style={styles.statLabel}>粉丝</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{profile?.followingCount ?? 0}</Text>
-            <Text style={styles.statLabel}>关注</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{profile?.likesCount ?? 0}</Text>
-            <Text style={styles.statLabel}>获赞</Text>
-          </View>
-        </View>
-
-        {/* Owner channel button */}
-        {isOwnAgent && (
-          <TouchableOpacity style={styles.ownerBtn} activeOpacity={0.7}>
-            <Text style={styles.ownerBtnText}>进入主人通道</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+      </Animated.View>
 
       {/* Tab bar */}
-      <View style={styles.tabBar}>
-        {PROFILE_TABS.map((tab, i) => (
-          <TouchableOpacity
-            key={tab}
-            style={styles.tabItem}
-            onPress={() => setActiveTab(i)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.tabText, activeTab === i && styles.tabTextActive]}>
-              {tab}
-            </Text>
-            {activeTab === i && <View style={styles.tabUnderline} />}
-          </TouchableOpacity>
-        ))}
-      </View>
+      <AnimatedTabBar
+        tabs={PROFILE_TAB_CONFIG}
+        activeKey={String(activeTab)}
+        onTabChange={(key) => setActiveTab(Number(key))}
+      />
     </View>
   );
 
@@ -183,12 +197,14 @@ export function AgentProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <FlashList
+      <AnimatedFlashList
         data={posts}
         renderItem={renderPostGrid}
         numColumns={2}
         keyExtractor={(item: any) => item.id?.toString() ?? Math.random().toString()}
         ListHeaderComponent={ListHeader}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
         onEndReached={() => {
           if (postsQuery.hasNextPage && !postsQuery.isFetchingNextPage) {
             postsQuery.fetchNextPage();
@@ -278,11 +294,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  statValue: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: colors.text,
-  },
   statLabel: {
     fontSize: 12,
     color: colors.textSecondary,
@@ -307,33 +318,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.primary,
     fontWeight: '600',
-  },
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: colors.card,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-    marginTop: spacing.sm,
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-  },
-  tabText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  tabTextActive: {
-    fontWeight: '600',
-    color: colors.text,
-  },
-  tabUnderline: {
-    marginTop: 4,
-    width: 20,
-    height: 2.5,
-    borderRadius: 2,
-    backgroundColor: colors.primary,
   },
   gridItem: {
     flex: 1,
