@@ -12,13 +12,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import Svg, { Path } from 'react-native-svg';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS, FadeInDown } from 'react-native-reanimated';
 import { searchApi } from '../../api/search';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { colors, spacing } from '../../theme';
+import { AnimatedTabBar } from '../../animations';
 
 type SearchTab = 'posts' | 'agents' | 'topics';
 
-const TABS: { key: SearchTab; label: string }[] = [
+const TABS: { key: string; label: string }[] = [
   { key: 'posts', label: '笔记' },
   { key: 'agents', label: '小龙虾' },
   { key: 'topics', label: '话题' },
@@ -30,6 +32,16 @@ export function SearchScreen() {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [activeTab, setActiveTab] = useState<SearchTab>('posts');
   const inputRef = useRef<TextInput>(null);
+
+  const contentOpacity = useSharedValue(1);
+  const contentStyle = useAnimatedStyle(() => ({ opacity: contentOpacity.value }));
+
+  const handleTabChange = (key: string) => {
+    contentOpacity.value = withTiming(0, { duration: 100 }, () => {
+      runOnJS(setActiveTab)(key as SearchTab);
+      contentOpacity.value = withTiming(1, { duration: 100 });
+    });
+  };
 
   // Debounce
   useEffect(() => {
@@ -54,48 +66,54 @@ export function SearchScreen() {
     searchQuery.data?.results ?? searchQuery.data?.data ?? (Array.isArray(searchQuery.data) ? searchQuery.data : []);
 
   const renderPostItem = useCallback(
-    ({ item }: { item: any }) => (
-      <TouchableOpacity
-        style={styles.resultItem}
-        activeOpacity={0.7}
-        onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
-      >
-        <Text style={styles.resultTitle} numberOfLines={2}>{item.title}</Text>
-        <Text style={styles.resultPreview} numberOfLines={1}>{item.content}</Text>
-      </TouchableOpacity>
+    ({ item, index }: { item: any; index: number }) => (
+      <Animated.View entering={FadeInDown.delay(Math.min(index * 50, 300)).duration(300)}>
+        <TouchableOpacity
+          style={styles.resultItem}
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
+        >
+          <Text style={styles.resultTitle} numberOfLines={2}>{item.title}</Text>
+          <Text style={styles.resultPreview} numberOfLines={1}>{item.content}</Text>
+        </TouchableOpacity>
+      </Animated.View>
     ),
     [navigation],
   );
 
   const renderAgentItem = useCallback(
-    ({ item }: { item: any }) => (
-      <TouchableOpacity
-        style={styles.agentItem}
-        activeOpacity={0.7}
-        onPress={() => navigation.navigate('AgentProfile', { agentId: item.id })}
-      >
-        <ShrimpAvatar color={item.avatarColor || colors.primary} size={40} />
-        <View style={styles.agentInfo}>
-          <Text style={styles.agentName}>{item.name}</Text>
-          <Text style={styles.agentHandle}>@{item.handle}</Text>
-        </View>
-      </TouchableOpacity>
+    ({ item, index }: { item: any; index: number }) => (
+      <Animated.View entering={FadeInDown.delay(Math.min(index * 50, 300)).duration(300)}>
+        <TouchableOpacity
+          style={styles.agentItem}
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('AgentProfile', { agentId: item.id })}
+        >
+          <ShrimpAvatar color={item.avatarColor || colors.primary} size={40} />
+          <View style={styles.agentInfo}>
+            <Text style={styles.agentName}>{item.name}</Text>
+            <Text style={styles.agentHandle}>@{item.handle}</Text>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
     ),
     [navigation],
   );
 
   const renderTopicItem = useCallback(
-    ({ item }: { item: any }) => (
-      <TouchableOpacity
-        style={styles.resultItem}
-        activeOpacity={0.7}
-        onPress={() =>
-          navigation.navigate('Topic', { topicId: item.id, topicName: item.name })
-        }
-      >
-        <Text style={styles.resultTitle}>#{item.name}</Text>
-        <Text style={styles.resultPreview}>{item.postCount ?? 0}篇笔记</Text>
-      </TouchableOpacity>
+    ({ item, index }: { item: any; index: number }) => (
+      <Animated.View entering={FadeInDown.delay(Math.min(index * 50, 300)).duration(300)}>
+        <TouchableOpacity
+          style={styles.resultItem}
+          activeOpacity={0.7}
+          onPress={() =>
+            navigation.navigate('Topic', { topicId: item.id, topicName: item.name })
+          }
+        >
+          <Text style={styles.resultTitle}>#{item.name}</Text>
+          <Text style={styles.resultPreview}>{item.postCount ?? 0}篇笔记</Text>
+        </TouchableOpacity>
+      </Animated.View>
     ),
     [navigation],
   );
@@ -129,21 +147,11 @@ export function SearchScreen() {
       </View>
 
       {/* Tab selector */}
-      <View style={styles.tabBar}>
-        {TABS.map((tab) => (
-          <TouchableOpacity
-            key={tab.key}
-            style={styles.tabItem}
-            onPress={() => setActiveTab(tab.key)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.tabText, activeTab === tab.key && styles.tabTextActive]}>
-              {tab.label}
-            </Text>
-            {activeTab === tab.key && <View style={styles.tabUnderline} />}
-          </TouchableOpacity>
-        ))}
-      </View>
+      <AnimatedTabBar
+        tabs={TABS}
+        activeKey={activeTab}
+        onTabChange={handleTabChange}
+      />
 
       {/* Results */}
       {searchQuery.isLoading ? (
@@ -155,17 +163,19 @@ export function SearchScreen() {
           <Text style={styles.emptyText}>输入关键词搜索</Text>
         </View>
       ) : (
-        <FlatList
-          data={results}
-          renderItem={renderItem}
-          keyExtractor={(item: any) => item.id?.toString() ?? Math.random().toString()}
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <Text style={styles.emptyText}>没有找到相关结果</Text>
-            </View>
-          }
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-        />
+        <Animated.View style={[{ flex: 1 }, contentStyle]}>
+          <FlatList
+            data={results}
+            renderItem={renderItem}
+            keyExtractor={(item: any) => item.id?.toString() ?? Math.random().toString()}
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <Text style={styles.emptyText}>没有找到相关结果</Text>
+              </View>
+            }
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+          />
+        </Animated.View>
       )}
     </SafeAreaView>
   );
@@ -197,32 +207,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     fontSize: 15,
     color: colors.text,
-  },
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: colors.card,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-  },
-  tabText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  tabTextActive: {
-    fontWeight: '600',
-    color: colors.text,
-  },
-  tabUnderline: {
-    marginTop: 4,
-    width: 20,
-    height: 2.5,
-    borderRadius: 2,
-    backgroundColor: colors.primary,
   },
   loader: {
     flex: 1,
