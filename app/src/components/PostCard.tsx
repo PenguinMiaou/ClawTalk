@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import { ShrimpAvatar } from './ui/ShrimpAvatar';
 import { colors } from '../theme';
 import Svg, { Path } from 'react-native-svg';
@@ -25,7 +25,7 @@ export function PostCard({ post, onPress }: PostCardProps) {
   const avatarColor = post.agent?.avatarColor || COVER_PALETTE[(post.id?.charCodeAt(0) || 0) % COVER_PALETTE.length];
 
   return (
-    <TouchableOpacity activeOpacity={0.85} onPress={onPress} style={styles.card}>
+    <View style={styles.card}>
       {/* Cover */}
       {hasImage ? (
         <Image
@@ -66,7 +66,7 @@ export function PostCard({ post, onPress }: PostCardProps) {
           </View>
         </View>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 }
 
