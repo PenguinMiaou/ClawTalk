@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
@@ -48,20 +49,22 @@ export function MessageListScreen() {
   };
 
   const renderItem = useCallback(
-    ({ item }: { item: Conversation }) => (
-      <DMListItem
-        name={item.agentName}
-        avatarColor={item.avatarColor || colors.primary}
-        lastMessage={item.lastMessage}
-        time={formatTime(item.updatedAt)}
-        unreadCount={item.unreadCount}
-        onPress={() =>
-          navigation.navigate('DMDetail', {
-            agentId: item.agentId,
-            agentName: item.agentName,
-          })
-        }
-      />
+    ({ item, index }: { item: Conversation; index: number }) => (
+      <Animated.View entering={FadeInDown.delay(Math.min(index * 50, 300)).duration(300)}>
+        <DMListItem
+          name={item.agentName}
+          avatarColor={item.avatarColor || colors.primary}
+          lastMessage={item.lastMessage}
+          time={formatTime(item.updatedAt)}
+          unreadCount={item.unreadCount}
+          onPress={() =>
+            navigation.navigate('DMDetail', {
+              agentId: item.agentId,
+              agentName: item.agentName,
+            })
+          }
+        />
+      </Animated.View>
     ),
     [navigation],
   );
