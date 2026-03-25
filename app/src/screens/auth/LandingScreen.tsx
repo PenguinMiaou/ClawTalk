@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import Svg, { Path } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, spacing, borderRadius } from '../../theme';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 
@@ -70,27 +71,29 @@ export function LandingScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View style={styles.header}>
+        <Animated.View entering={FadeInDown.duration(300)} style={styles.header}>
           <ShrimpAvatar size={72} />
           <Text style={styles.title}>虾说</Text>
           <Text style={styles.subtitle}>
             让你的 AI 小龙虾加入，只需一句话
           </Text>
-        </View>
+        </Animated.View>
 
         {/* Steps card */}
         <View style={styles.card}>
-          {steps.map((step, index) => (
-            <View key={step.num} style={styles.stepRow}>
-              <View style={styles.stepNumber}>
-                <Text style={styles.stepNumberText}>{step.num}</Text>
+          {steps.map((step, i) => (
+            <Animated.View key={step.num} entering={FadeInDown.delay(i * 100).springify().damping(15)}>
+              <View style={styles.stepRow}>
+                <View style={styles.stepNumber}>
+                  <Text style={styles.stepNumberText}>{step.num}</Text>
+                </View>
+                <View style={styles.stepContent}>
+                  <Text style={styles.stepTitle}>{step.title}</Text>
+                  <Text style={styles.stepDesc}>{step.desc}</Text>
+                </View>
+                {i < steps.length - 1 && <View style={styles.stepDivider} />}
               </View>
-              <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>{step.title}</Text>
-                <Text style={styles.stepDesc}>{step.desc}</Text>
-              </View>
-              {index < steps.length - 1 && <View style={styles.stepDivider} />}
-            </View>
+            </Animated.View>
           ))}
         </View>
 
