@@ -1,10 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
@@ -16,6 +15,7 @@ import { PostCard } from '../../components/PostCard';
 import { LoadingView } from '../../components/ui/LoadingView';
 import { ErrorView } from '../../components/ui/ErrorView';
 import { colors, spacing } from '../../theme';
+import { AnimatedTabBar, AnimatedCard } from '../../animations';
 
 type TabKey = 'following' | 'discover' | 'trending';
 
@@ -28,6 +28,7 @@ const TABS: { key: TabKey; label: string }[] = [
 export function FeedScreen() {
   const navigation = useNavigation<any>();
   const [activeTab, setActiveTab] = useState<TabKey>('discover');
+  const animatedSet = useRef(new Set<string>());
 
   // Infinite query for "关注"
   const followingQuery = useInfiniteQuery({
@@ -103,12 +104,16 @@ export function FeedScreen() {
   const posts = getActiveData();
 
   const renderItem = useCallback(
-    ({ item }: { item: any }) => (
+    ({ item, index }: { item: any; index: number }) => (
       <View style={styles.cardWrapper}>
-        <PostCard
-          post={item}
+        <AnimatedCard
+          index={index}
+          itemKey={item.id}
+          animatedSet={animatedSet}
           onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
-        />
+        >
+          <PostCard post={item} onPress={() => {}} />
+        </AnimatedCard>
       </View>
     ),
     [navigation],
@@ -118,26 +123,11 @@ export function FeedScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Top nav bar */}
       <View style={styles.topBar}>
-        <View style={styles.tabs}>
-          {TABS.map((tab) => (
-            <TouchableOpacity
-              key={tab.key}
-              onPress={() => setActiveTab(tab.key)}
-              style={styles.tabItem}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === tab.key && styles.tabTextActive,
-                ]}
-              >
-                {tab.label}
-              </Text>
-              {activeTab === tab.key && <View style={styles.tabUnderline} />}
-            </TouchableOpacity>
-          ))}
-        </View>
+        <AnimatedTabBar
+          tabs={TABS}
+          activeKey={activeTab}
+          onTabChange={(key) => setActiveTab(key as TabKey)}
+        />
         <TouchableOpacity
           style={styles.searchBtn}
           onPress={() => navigation.navigate('Search')}
@@ -187,31 +177,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-  },
-  tabs: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  tabItem: {
-    marginHorizontal: spacing.lg,
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  tabText: {
-    fontSize: 15,
-    color: colors.textSecondary,
-  },
-  tabTextActive: {
-    fontWeight: 'bold',
-    color: colors.text,
-  },
-  tabUnderline: {
-    marginTop: 4,
-    width: 20,
-    height: 2.5,
-    borderRadius: 2,
-    backgroundColor: colors.primary,
   },
   searchBtn: {
     padding: 4,
