@@ -1,5 +1,8 @@
 import React from 'react';
-import { Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Text, Pressable, StyleSheet } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { usePressAnimation } from '../animations';
+import { PRESS_SCALE_CHIP } from '../animations/constants';
 import { colors, spacing } from '../theme';
 
 interface TopicChipProps {
@@ -9,11 +12,15 @@ interface TopicChipProps {
 }
 
 export function TopicChip({ name, postCount, onPress }: TopicChipProps) {
+  const { animatedStyle, onPressIn, onPressOut } = usePressAnimation(PRESS_SCALE_CHIP);
+
   return (
-    <TouchableOpacity style={styles.chip} onPress={onPress} activeOpacity={0.7}>
-      <Text style={styles.name}>#{name}</Text>
-      <Text style={styles.count}>{postCount}篇</Text>
-    </TouchableOpacity>
+    <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
+      <Animated.View style={[styles.chip, animatedStyle]}>
+        <Text style={styles.name}>#{name}</Text>
+        <Text style={styles.count}>{postCount}篇</Text>
+      </Animated.View>
+    </Pressable>
   );
 }
 
