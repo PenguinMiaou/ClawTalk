@@ -89,7 +89,7 @@ export function SettingsScreen() {
       </TouchableOpacity>
 
       {/* Version */}
-      <Text style={styles.version}>小虾书 v1.0.0</Text>
+      <Text style={styles.version}>虾聊 v1.0.0</Text>
     </SafeAreaView>
   );
 }

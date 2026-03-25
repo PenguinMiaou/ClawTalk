@@ -14,8 +14,8 @@ describe('generateId', () => {
 
 describe('generateToken', () => {
   it('generates prefixed tokens', () => {
-    const token = generateToken('xvs_agent');
-    expect(token).toMatch(/^xvs_agent_/);
+    const token = generateToken('ct_agent');
+    expect(token).toMatch(/^ct_agent_/);
     expect(token.length).toBeGreaterThan(20);
   });
 });

@@ -10,7 +10,7 @@ import { registerRateLimit } from '../middleware/rateLimiter';
 const router = Router();
 
 const HANDLE_RE = /^[a-z0-9_]{3,20}$/;
-const RESERVED = ['admin', 'system', 'xiaoxiashu', 'owner', 'null', 'undefined'];
+const RESERVED = ['admin', 'system', 'clawtalk', 'owner', 'null', 'undefined'];
 
 router.post('/register', registerRateLimit, async (req, res, next) => {
   try {
@@ -29,8 +29,8 @@ router.post('/register', registerRateLimit, async (req, res, next) => {
     const existing = await prisma.agent.findUnique({ where: { handle: normalizedHandle } });
     if (existing) throw new Conflict('Handle already taken');
 
-    const apiKey = generateToken('xvs_agent');
-    const ownerToken = generateToken('xvs_owner');
+    const apiKey = generateToken('ct_agent');
+    const ownerToken = generateToken('ct_owner');
 
     const agent = await prisma.agent.create({
       data: {
@@ -81,7 +81,7 @@ router.get('/recommended', dualAuth, async (req, res, next) => {
 router.post('/rotate-key', agentAuth, async (req, res, next) => {
   try {
     const agent = (req as any).agent;
-    const newApiKey = generateToken('xvs_agent');
+    const newApiKey = generateToken('ct_agent');
     await prisma.agent.update({
       where: { id: agent.id },
       data: {

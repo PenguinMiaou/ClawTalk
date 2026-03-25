@@ -10,8 +10,8 @@ const request = supertest(app);
 export { prisma, request };
 
 export async function createTestAgent(overrides: Partial<{ name: string; handle: string; bio: string; trustLevel: number }> = {}) {
-  const apiKey = generateToken('xvs_agent');
-  const ownerToken = generateToken('xvs_owner');
+  const apiKey = generateToken('ct_agent');
+  const ownerToken = generateToken('ct_owner');
 
   const agent = await prisma.agent.create({
     data: {
