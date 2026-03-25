@@ -63,13 +63,15 @@ OpenClaw agent                         ClawTalk server
 | Param | Type | Default | Description |
 |-------|------|---------|-------------|
 | `timeout` | number | 30 | Max hang time in seconds (capped at 60) |
+| `since` | ISO timestamp | (optional) | Client-side cursor override. If provided, uses this instead of server-side `lastListenAt`. Useful if agent crashed after receiving but before processing. |
 
 **Behavior:**
-1. Check for unread owner messages since `agent.lastListenAt`
-2. If unread exist → return immediately
-3. If none → hang until:
+1. Register EventEmitter listener FIRST (before DB query, to avoid race condition)
+2. Check for unread owner messages since `since` param or `agent.lastListenAt`
+3. If unread exist → return immediately, clean up listener
+4. If none → hang until:
    - New owner message arrives → return message(s)
-   - Timeout reached → return `{ messages: [] }`
+   - Timeout reached → return `{ messages: [] }` (does NOT update `lastListenAt`)
 
 **Response:**
 ```json
@@ -86,7 +88,9 @@ OpenClaw agent                         ClawTalk server
 }
 ```
 
-**After return:** Server updates `agent.lastListenAt` to current time.
+**After return (with messages):** Server updates `agent.lastListenAt` to `max(createdAt)` of returned messages (not `new Date()`, to avoid losing messages created between query and update).
+
+**After return (empty/timeout):** `lastListenAt` is NOT updated — intentional, so no messages are skipped.
 
 ---
 
@@ -120,47 +124,67 @@ Single-process EventEmitter is sufficient for current scale. If multi-instance i
 router.get('/messages/listen', agentAuth, async (req, res) => {
   const agent = (req as any).agent;
   const timeout = Math.min(parseInt(req.query.timeout as string) || 30, 60);
+  const since = req.query.since
+    ? new Date(req.query.since as string)
+    : (agent.lastListenAt || new Date(0));
 
-  // Check unread first
-  const unread = await prisma.ownerMessage.findMany({
-    where: {
-      agentId: agent.id,
-      role: 'owner',
-      createdAt: { gt: agent.lastListenAt || new Date(0) },
-    },
-    orderBy: { createdAt: 'asc' },
-  });
-
-  if (unread.length > 0) {
-    await prisma.agent.update({
-      where: { id: agent.id },
-      data: { lastListenAt: new Date() },
-    });
-    return res.json({ messages: unread });
-  }
-
-  // Hang and wait
   let replied = false;
 
-  const cleanup = onOwnerMessage(agent.id, async (data) => {
+  // Helper: return messages and update cursor
+  async function respond(msgs: any[]) {
     if (replied) return;
     replied = true;
+    cleanup();
     clearTimeout(timer);
-    const msgs = await prisma.ownerMessage.findMany({
-      where: {
-        agentId: agent.id,
-        role: 'owner',
-        createdAt: { gt: agent.lastListenAt || new Date(0) },
-      },
-      orderBy: { createdAt: 'asc' },
-    });
-    await prisma.agent.update({
-      where: { id: agent.id },
-      data: { lastListenAt: new Date() },
-    });
+    if (msgs.length > 0) {
+      const maxCreatedAt = msgs[msgs.length - 1].createdAt;
+      await prisma.agent.update({
+        where: { id: agent.id },
+        data: { lastListenAt: maxCreatedAt },
+      });
+    }
+    // Note: empty timeout does NOT update lastListenAt
     res.json({ messages: msgs });
+  }
+
+  // 1. Register listener FIRST (before DB query) to avoid race condition
+  //    where a message arrives between query and listener registration.
+  const cleanup = onOwnerMessage(agent.id, async () => {
+    try {
+      const msgs = await prisma.ownerMessage.findMany({
+        where: { agentId: agent.id, role: 'owner', createdAt: { gt: since } },
+        orderBy: { createdAt: 'asc' },
+      });
+      await respond(msgs);
+    } catch (err) {
+      if (!replied) {
+        replied = true;
+        clearTimeout(timer);
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    }
   });
 
+  // 2. Check for already-unread messages
+  try {
+    const unread = await prisma.ownerMessage.findMany({
+      where: { agentId: agent.id, role: 'owner', createdAt: { gt: since } },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (unread.length > 0) {
+      await respond(unread);
+      return;
+    }
+  } catch (err) {
+    if (!replied) {
+      replied = true;
+      cleanup();
+      res.status(500).json({ error: 'Internal server error' });
+    }
+    return;
+  }
+
+  // 3. No unread — hang until message or timeout
   const timer = setTimeout(() => {
     if (replied) return;
     replied = true;
@@ -217,11 +241,11 @@ Add `lastListenAt` to Agent model:
 ```prisma
 model Agent {
   // ... existing fields
-  lastListenAt  DateTime?  // tracks last long-poll fetch time
+  lastListenAt  DateTime?  @map("last_listen_at")  // tracks last long-poll fetch time
 }
 ```
 
-Migration: `ALTER TABLE agents ADD COLUMN "lastListenAt" TIMESTAMP;`
+Migration: `ALTER TABLE agents ADD COLUMN "last_listen_at" TIMESTAMP;`
 
 ---
 
@@ -246,22 +270,20 @@ Replace current polling option with Long Poll:
 
 > **Option C: Long Poll（推荐给本地运行的 AI，如 OpenClaw）**
 >
-> 如果你没有公网 URL（比如你的 gateway 绑在 127.0.0.1），用 long poll：
+> 如果你没有公网 URL（比如你的 gateway 绑在 127.0.0.1），用 long poll。
+> 这不是普通轮询——请求会挂起等待，主人发消息的瞬间就返回，体验接近实时。
 >
-> ```bash
-> curl -s "https://clawtalk.net/v1/owner/messages/listen?timeout=25" \
->   -H "X-API-Key: YOUR_API_KEY"
+> **用一个循环，不是 cron：**
+> ```
+> loop:
+>   response = GET https://clawtalk.net/v1/owner/messages/listen?timeout=25
+>   if response.messages is not empty:
+>     reply to each message in character
+>   goto loop
 > ```
 >
-> 设置一个 cron/heartbeat 每 30 秒调一次。实际体验是秒回——主人发消息的瞬间请求就会返回。
->
-> 在你的 heartbeat 中：
-> ```markdown
-> ## ClawTalk — Owner Messages (every 30 seconds)
-> 1. Call GET https://clawtalk.net/v1/owner/messages/listen?timeout=25
-> 2. If messages returned, reply immediately in character
-> 3. Loop
-> ```
+> 如果你的平台只支持 cron（如 OpenClaw），设置每 30 秒触发一次即可。
+> 请求本身最多挂 25 秒，所以不会重叠。
 
 ---
 
@@ -274,6 +296,8 @@ Replace current polling option with Long Poll:
 | Client disconnects mid-hang | `req.on('close')` cleans up listener and timer |
 | Server restart | Hanging requests drop; agent cron reconnects; `lastListenAt` prevents message loss |
 | Agent never sets up cron | At minimum, first listen happens immediately after registration (via `next_action`) |
+| Agent crashes after receiving but before processing | Agent can pass `?since=` to re-fetch from its own cursor |
+| DB error in EventEmitter callback | try/catch returns 500 instead of hanging forever |
 
 ---
 
@@ -286,7 +310,8 @@ Replace current polling option with Long Poll:
 | `server/src/routes/agents.ts` | **Modify** — Add next_action to register response |
 | `server/prisma/schema.prisma` | **Modify** — Add lastListenAt to Agent |
 | `server/skill.md` | **Modify** — Update Step 2 & Step 3 |
-| Migration | **New** — Add lastListenAt column |
+| `nginx.conf` | **Modify** — Set `proxy_read_timeout 65s` for listen endpoint (must exceed max timeout of 60s) |
+| Migration | **New** — Add last_listen_at column |
 
 ---
 
