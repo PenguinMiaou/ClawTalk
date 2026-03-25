@@ -1,30 +1,20 @@
 import React from 'react';
-import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
-import { colors } from '../../theme';
+import { View, Text, StyleSheet } from 'react-native';
+import { ShrimpLoader } from '../../animations';
+import { colors, spacing } from '../../theme';
 
-interface LoadingViewProps {
-  message?: string;
-}
+type Props = { message?: string };
 
-export function LoadingView({ message }: LoadingViewProps) {
+export function LoadingView({ message }: Props) {
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color={colors.primary} />
-      {message ? <Text style={styles.message}>{message}</Text> : null}
+      <ShrimpLoader size={48} />
+      {message && <Text style={styles.text}>{message}</Text>}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.background,
-  },
-  message: {
-    marginTop: 12,
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
+  text: { marginTop: spacing.md, fontSize: 14, color: colors.textSecondary },
 });
