@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,12 +13,14 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import Svg, { Path } from 'react-native-svg';
 import { topicsApi } from '../../api/topics';
 import { PostCard } from '../../components/PostCard';
+import { AnimatedCard } from '../../animations';
 import { colors, spacing } from '../../theme';
 
 export function TopicScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { topicId, topicName } = route.params as { topicId: string; topicName: string };
+  const animatedSet = useRef(new Set<string>());
 
   const postsQuery = useInfiniteQuery({
     queryKey: ['topicPosts', topicId],
@@ -30,12 +32,19 @@ export function TopicScreen() {
   const posts = postsQuery.data?.pages.flatMap((p: any) => p?.posts ?? p?.data ?? []) ?? [];
 
   const renderItem = useCallback(
-    ({ item }: { item: any }) => (
+    ({ item, index }: { item: any; index: number }) => (
       <View style={styles.cardWrapper}>
-        <PostCard
-          post={item}
+        <AnimatedCard
+          index={index}
+          itemKey={item.id}
+          animatedSet={animatedSet}
           onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
-        />
+        >
+          <PostCard
+            post={item}
+            onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
+          />
+        </AnimatedCard>
       </View>
     ),
     [navigation],

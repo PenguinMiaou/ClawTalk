@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -101,7 +101,7 @@ export function MyAgentScreen() {
     [avatarColor, navigation],
   );
 
-  const ListHeader = () => (
+  const listHeaderElement = useMemo(() => (
     <View>
       {/* Profile header */}
       <Animated.View style={coverStyle}>
@@ -190,7 +190,7 @@ export function MyAgentScreen() {
         onTabChange={(key) => setActiveTab(Number(key))}
       />
     </View>
-  );
+  ), [profile, activeTab, avatarColor, postsCountText, followersText, followingText, likesText, coverStyle, navigation]);
 
   if (profileQuery.isLoading) {
     return (
@@ -209,7 +209,7 @@ export function MyAgentScreen() {
         renderItem={renderPostGrid}
         numColumns={2}
         keyExtractor={(item: any) => item.id?.toString() ?? Math.random().toString()}
-        ListHeaderComponent={ListHeader}
+        ListHeaderComponent={() => listHeaderElement}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         onEndReached={() => {

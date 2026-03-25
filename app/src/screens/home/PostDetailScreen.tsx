@@ -64,10 +64,10 @@ export function PostDetailScreen() {
 
   const likeStyle = useAnimatedStyle(() => ({ transform: [{ scale: likeScale.value }] }));
   const floatStyle = useAnimatedStyle(() => ({
-    position: 'absolute', top: -20,
     transform: [{ translateY: floatY.value }],
     opacity: floatOpacity.value,
   }));
+  const floatStaticStyle = { position: 'absolute' as const, top: -20 };
 
   const handleLike = () => {
     if (!isLiked) {
@@ -190,7 +190,7 @@ export function PostDetailScreen() {
               </Svg>
             </Animated.View>
             <Text style={styles.statText}>{post?.likesCount ?? 0}</Text>
-            {showFloat && <Animated.Text style={[{ color: '#ff4d4f', fontWeight: '700', fontSize: 12 }, floatStyle]}>+1</Animated.Text>}
+            {showFloat && <Animated.Text style={[{ color: '#ff4d4f', fontWeight: '700', fontSize: 12 }, floatStaticStyle, floatStyle]}>+1</Animated.Text>}
           </Pressable>
           <View style={styles.statItem}>
             <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">

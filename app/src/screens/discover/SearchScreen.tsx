@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import Svg, { Path } from 'react-native-svg';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS, FadeInDown } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, FadeInDown } from 'react-native-reanimated';
 import { searchApi } from '../../api/search';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { colors, spacing } from '../../theme';
@@ -37,11 +37,16 @@ export function SearchScreen() {
   const contentStyle = useAnimatedStyle(() => ({ opacity: contentOpacity.value }));
 
   const handleTabChange = (key: string) => {
-    contentOpacity.value = withTiming(0, { duration: 100 }, () => {
-      runOnJS(setActiveTab)(key as SearchTab);
-      contentOpacity.value = withTiming(1, { duration: 100 });
-    });
+    contentOpacity.value = withTiming(0, { duration: 100 });
+    setTimeout(() => {
+      setActiveTab(key as SearchTab);
+    }, 100);
   };
+
+  // Fade back in when activeTab changes
+  useEffect(() => {
+    contentOpacity.value = withTiming(1, { duration: 100 });
+  }, [activeTab]);
 
   // Debounce
   useEffect(() => {
