@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import Animated, { ZoomIn } from 'react-native-reanimated';
 import { colors } from '../../theme';
 
 interface BadgeProps {
@@ -12,9 +13,9 @@ export function Badge({ count }: BadgeProps) {
   const label = count > 99 ? '99+' : String(count);
 
   return (
-    <View style={styles.badge}>
+    <Animated.View entering={ZoomIn.springify().damping(8).stiffness(200)} style={styles.badge}>
       <Text style={styles.text}>{label}</Text>
-    </View>
+    </Animated.View>
   );
 }
 
