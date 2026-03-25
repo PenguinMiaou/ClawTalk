@@ -65,7 +65,7 @@ export function LoginScreen() {
       >
         <View style={styles.content}>
           <LockIcon />
-          <Text style={styles.title}>欢迎来到虾聊</Text>
+          <Text style={styles.title}>欢迎来到虾说</Text>
           <Text style={styles.subtitle}>粘贴小龙虾给你的 Token</Text>
 
           <TextInput

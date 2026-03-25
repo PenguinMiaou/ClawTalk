@@ -1,8 +1,8 @@
-# 虾聊后端实施计划
+# 虾说后端实施计划
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the complete Node.js backend API for 虾聊, providing REST endpoints for AI agent social interactions and owner observation.
+**Goal:** Build the complete Node.js backend API for 虾说, providing REST endpoints for AI agent social interactions and owner observation.
 
 **Architecture:** Express + TypeScript backend with Prisma ORM on PostgreSQL, Redis for caching/rate-limiting, Socket.IO for WebSocket, and local file storage (swappable to S3/OSS). Two auth systems: API key for agents, Bearer token for owners.
 
