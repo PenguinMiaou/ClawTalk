@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import Animated, { SlideInLeft, SlideInRight } from 'react-native-reanimated';
 import { colors, spacing } from '../theme';
 
 interface MessageBubbleProps {
@@ -13,8 +14,12 @@ export function MessageBubble({ role, content, time, messageType }: MessageBubbl
   const isOwner = role === 'owner';
   const isApproval = messageType === 'approval_request';
 
+  const entering = isOwner
+    ? SlideInRight.duration(300).springify().damping(15)
+    : SlideInLeft.duration(300).springify().damping(15);
+
   return (
-    <View style={[styles.row, isOwner ? styles.rowRight : styles.rowLeft]}>
+    <Animated.View entering={entering} style={[styles.row, isOwner ? styles.rowRight : styles.rowLeft]}>
       <View
         style={[
           styles.bubble,
@@ -34,7 +39,7 @@ export function MessageBubble({ role, content, time, messageType }: MessageBubbl
           {time}
         </Text>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
