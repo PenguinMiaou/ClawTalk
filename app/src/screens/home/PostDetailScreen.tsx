@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   Image,
   FlatList,
   TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   StyleSheet,
   Dimensions,
@@ -14,6 +15,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import Svg, { Path } from 'react-native-svg';
+import Animated, {
+  useSharedValue, useAnimatedScrollHandler, useAnimatedStyle,
+  interpolate, withSequence, withSpring, withTiming, runOnJS, SharedValue,
+} from 'react-native-reanimated';
 import { postsApi } from '../../api/posts';
 import { commentsApi } from '../../api/comments';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
@@ -21,14 +26,64 @@ import { CommentItem } from '../../components/CommentItem';
 import { LoadingView } from '../../components/ui/LoadingView';
 import { ErrorView } from '../../components/ui/ErrorView';
 import { colors, spacing } from '../../theme';
+import { SPRING_LIKE, REDUCE_MOTION } from '../../animations/constants';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+
+function AnimatedDot({ index, scrollX, pageWidth }: { index: number; scrollX: SharedValue<number>; pageWidth: number }) {
+  const style = useAnimatedStyle(() => {
+    const input = [(index - 1) * pageWidth, index * pageWidth, (index + 1) * pageWidth];
+    return {
+      width: interpolate(scrollX.value, input, [6, 10, 6], 'clamp'),
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: '#ff4d4f',
+      opacity: interpolate(scrollX.value, input, [0.3, 1, 0.3], 'clamp'),
+      marginHorizontal: 3,
+    };
+  });
+  return <Animated.View style={style} />;
+}
 
 export function PostDetailScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { postId } = route.params as { postId: string };
   const [commentPage, setCommentPage] = React.useState(1);
+
+  const scrollX = useSharedValue(0);
+  const imageScrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => { scrollX.value = event.contentOffset.x; },
+  });
+
+  const likeScale = useSharedValue(1);
+  const [isLiked, setIsLiked] = useState(false);
+  const [showFloat, setShowFloat] = useState(false);
+  const floatY = useSharedValue(0);
+  const floatOpacity = useSharedValue(0);
+
+  const likeStyle = useAnimatedStyle(() => ({ transform: [{ scale: likeScale.value }] }));
+  const floatStyle = useAnimatedStyle(() => ({
+    position: 'absolute', top: -20,
+    transform: [{ translateY: floatY.value }],
+    opacity: floatOpacity.value,
+  }));
+
+  const handleLike = () => {
+    if (!isLiked) {
+      setIsLiked(true);
+      likeScale.value = withSequence(withSpring(1.3, SPRING_LIKE), withSpring(1, SPRING_LIKE));
+      setShowFloat(true);
+      floatY.value = 0; floatOpacity.value = 1;
+      floatY.value = withTiming(-30, { duration: 500, reduceMotion: REDUCE_MOTION });
+      floatOpacity.value = withTiming(0, { duration: 500, reduceMotion: REDUCE_MOTION }, () => {
+        runOnJS(setShowFloat)(false);
+      });
+    } else {
+      setIsLiked(false);
+      likeScale.value = withSequence(withSpring(0.8, SPRING_LIKE), withSpring(1, SPRING_LIKE));
+    }
+  };
 
   const postQuery = useQuery({
     queryKey: ['post', postId],
@@ -95,8 +150,10 @@ export function PostDetailScreen() {
 
         {/* Images */}
         {post?.images && post.images.length > 0 && (
-          <ScrollView
+          <Animated.ScrollView
             horizontal
+            onScroll={imageScrollHandler}
+            scrollEventThrottle={16}
             showsHorizontalScrollIndicator={false}
             style={styles.imageScroll}
             contentContainerStyle={styles.imageScrollContent}
@@ -109,22 +166,32 @@ export function PostDetailScreen() {
                 resizeMode="cover"
               />
             ))}
-          </ScrollView>
+          </Animated.ScrollView>
+        )}
+        {post?.images && post.images.length > 1 && (
+          <View style={{ flexDirection: 'row', justifyContent: 'center', paddingVertical: 8 }}>
+            {post.images.map((_: any, i: number) => (
+              <AnimatedDot key={i} index={i} scrollX={scrollX} pageWidth={SCREEN_WIDTH * 0.75} />
+            ))}
+          </View>
         )}
 
         {/* Stats row */}
         <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-              <Path
-                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                stroke={colors.textSecondary}
-                strokeWidth={1.5}
-                fill="none"
-              />
-            </Svg>
+          <Pressable onPress={handleLike} style={styles.statItem}>
+            <Animated.View style={likeStyle}>
+              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                  stroke={isLiked ? '#ff4d4f' : colors.textSecondary}
+                  strokeWidth={1.5}
+                  fill={isLiked ? '#ff4d4f' : 'none'}
+                />
+              </Svg>
+            </Animated.View>
             <Text style={styles.statText}>{post?.likesCount ?? 0}</Text>
-          </View>
+            {showFloat && <Animated.Text style={[{ color: '#ff4d4f', fontWeight: '700', fontSize: 12 }, floatStyle]}>+1</Animated.Text>}
+          </Pressable>
           <View style={styles.statItem}>
             <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
               <Path
