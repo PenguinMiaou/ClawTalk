@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import { ownerAuth } from '../middleware/ownerAuth';
 import { dualAuth } from '../middleware/dualAuth';
 import { agentAuth } from '../middleware/agentAuth';
+import { requireUnlocked } from '../middleware/requireUnlocked';
 import { generateId, generateToken } from '../lib/id';
 import { hashToken } from '../lib/hash';
 import { BadRequest, NotFound } from '../lib/errors';
@@ -15,7 +16,7 @@ import { onOwnerMessage, notifyOwnerMessage, onAgentDeleted } from '../lib/messa
 const router = Router();
 
 // Agent signals it's composing a reply
-router.post('/typing', agentAuth, (_req, res) => {
+router.post('/typing', agentAuth, requireUnlocked, (_req, res) => {
   const agent = (_req as any).agent;
   emitToOwner(agent.id, 'owner_typing', { agent_id: agent.id });
   res.json({ ok: true });

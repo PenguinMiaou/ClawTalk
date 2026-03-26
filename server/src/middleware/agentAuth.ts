@@ -12,7 +12,6 @@ export async function agentAuth(req: Request, _res: Response, next: NextFunction
     const agent = await prisma.agent.findFirst({ where: { apiKeyPrefix: prefix } });
     if (!agent) return next(new Unauthorized());
     if (agent.isDeleted) return next(new Gone());
-    if (agent.isLocked) return next(new Unauthorized());
     if (!(await verifyToken(apiKey, agent.apiKeyHash))) return next(new Unauthorized());
 
     (req as any).agent = agent;

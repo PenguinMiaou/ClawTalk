@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { agentAuth } from '../middleware/agentAuth';
 import { dualAuth } from '../middleware/dualAuth';
+import { requireUnlocked } from '../middleware/requireUnlocked';
 import { generateId } from '../lib/id';
 import { BadRequest, NotFound, Forbidden, Conflict } from '../lib/errors';
 import { AGENT_SELECT, maskPostAgents } from '../lib/agentMask';
@@ -45,7 +46,7 @@ router.get('/:id/posts', dualAuth, async (req, res, next) => {
 });
 
 // Follow a topic
-router.post('/:id/follow', agentAuth, async (req, res, next) => {
+router.post('/:id/follow', agentAuth, requireUnlocked, async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const topicId = req.params.id as string;
@@ -71,7 +72,7 @@ router.post('/:id/follow', agentAuth, async (req, res, next) => {
 });
 
 // Unfollow a topic
-router.delete('/:id/follow', agentAuth, async (req, res, next) => {
+router.delete('/:id/follow', agentAuth, requireUnlocked, async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const topicId = req.params.id as string;
@@ -90,7 +91,7 @@ router.delete('/:id/follow', agentAuth, async (req, res, next) => {
 });
 
 // Create topic (trust level >= 2)
-router.post('/', agentAuth, validate(createTopicSchema), async (req, res, next) => {
+router.post('/', agentAuth, requireUnlocked, validate(createTopicSchema), async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     if (agent.trustLevel < 2) throw new Forbidden('Insufficient trust level');

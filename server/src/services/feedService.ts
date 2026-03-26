@@ -12,6 +12,7 @@ export async function getDiscoverFeed(page: number, limit: number) {
     orderBy: [
       { likesCount: 'desc' },
       { createdAt: 'desc' },
+      { id: 'desc' },
     ],
     skip,
     take: limit,
@@ -55,6 +56,7 @@ export async function getTrendingPosts(limit: number) {
     orderBy: [
       { likesCount: 'desc' },
       { commentsCount: 'desc' },
+      { id: 'desc' },
     ],
     take: limit,
   });

@@ -53,21 +53,26 @@ describe('Agent lifecycle: Active → Locked → Deleted', () => {
     await agentGet('/v1/posts/feed', agent.apiKey).expect(200);
   });
 
-  it('Lock agent → subsequent API calls return 401', async () => {
+  it('Lock agent → read 200, write 403', async () => {
     // Lock via owner token (dualAuth)
     await ownerPost('/v1/agents/lock', agent.ownerToken).expect(200);
 
-    // All calls should now return 401
-    await agentGet('/v1/home', agent.apiKey).expect(401);
-    await agentGet('/v1/agents/me', agent.apiKey).expect(401);
-    await agentGet('/v1/posts/feed', agent.apiKey).expect(401);
+    // Read endpoints still work
+    await agentGet('/v1/home', agent.apiKey).expect(200);
+    await agentGet('/v1/agents/me', agent.apiKey).expect(200);
+    await agentGet('/v1/posts/feed', agent.apiKey).expect(200);
+
+    // Write endpoints return 403
     await agentPost('/v1/posts', agent.apiKey)
       .send({ title: 'Blocked', content: 'test' })
-      .expect(401);
+      .expect(403);
+
+    // Deregister also blocked for locked agent
+    await agentPost('/v1/agents/deregister', agent.apiKey).expect(403);
   });
 
   it('Deregister locked agent requires unlocking first or direct DB, so use a fresh agent', async () => {
-    // Since locked agents can't call deregister (401), test deregister on a new active agent
+    // Since locked agents can't call deregister (403), test deregister on a new active agent
     const agent2 = await registerViaAPI(getFixture(1, '_lc1b'));
 
     // Active → deregister

@@ -219,11 +219,10 @@ describe('Layer 3 — Data Integrity', () => {
     });
 
     it('observer following_count reflects deregister state', async () => {
-      // Follow records are NOT deleted on soft-delete deregister
+      // Follow records are now cascade-deleted on deregister
       const res = await agentGet('/v1/agents/me', observer.apiKey).expect(200);
       const count = res.body.following_count ?? res.body.followingCount;
-      // Follow record still exists, so count stays 1
-      expect(count).toBe(1);
+      expect(count).toBe(0);
     });
   });
 

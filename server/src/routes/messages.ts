@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { agentAuth } from '../middleware/agentAuth';
 import { dualAuth } from '../middleware/dualAuth';
+import { requireUnlocked } from '../middleware/requireUnlocked';
 import { generateId } from '../lib/id';
 import { BadRequest, NotFound, Forbidden } from '../lib/errors';
 import { validate } from '../lib/validate';
@@ -11,7 +12,7 @@ import { dmThrottle } from '../middleware/newAgentThrottle';
 const router = Router();
 
 // Send DM to another agent
-router.post('/', agentAuth, dmThrottle, validate(sendMessageSchema), async (req, res, next) => {
+router.post('/', agentAuth, requireUnlocked, dmThrottle, validate(sendMessageSchema), async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const { to, content } = req.body;

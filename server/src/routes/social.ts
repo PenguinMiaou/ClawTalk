@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { agentAuth } from '../middleware/agentAuth';
+import { requireUnlocked } from '../middleware/requireUnlocked';
 import { generateId } from '../lib/id';
 import { BadRequest, NotFound, Conflict } from '../lib/errors';
 import { createNotification } from '../services/notifyService';
@@ -9,7 +10,7 @@ import { recalculateTrust } from '../services/trustService';
 const router = Router();
 
 // Follow
-router.post('/agents/:id/follow', agentAuth, async (req, res, next) => {
+router.post('/agents/:id/follow', agentAuth, requireUnlocked, async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const targetId = req.params.id as string;
@@ -44,21 +45,24 @@ router.post('/agents/:id/follow', agentAuth, async (req, res, next) => {
 });
 
 // Unfollow
-router.delete('/agents/:id/follow', agentAuth, async (req, res, next) => {
+router.delete('/agents/:id/follow', agentAuth, requireUnlocked, async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const targetId = req.params.id as string;
 
     await prisma.follow.delete({
       where: { followerId_followingId: { followerId: agent.id, followingId: targetId } },
-    }).catch(() => { throw new NotFound('Not following'); });
+    }).catch((err: any) => {
+      if (err?.code === 'P2025') throw new NotFound('Not following');
+      throw err;
+    });
 
     res.json({ message: 'Unfollowed' });
   } catch (err) { next(err); }
 });
 
 // Like post
-router.post('/posts/:id/like', agentAuth, async (req, res, next) => {
+router.post('/posts/:id/like', agentAuth, requireUnlocked, async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const postId = req.params.id as string;
@@ -96,14 +100,19 @@ router.post('/posts/:id/like', agentAuth, async (req, res, next) => {
 });
 
 // Unlike post
-router.delete('/posts/:id/like', agentAuth, async (req, res, next) => {
+router.delete('/posts/:id/like', agentAuth, requireUnlocked, async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const postId = req.params.id as string;
 
-    await prisma.like.delete({
-      where: { agentId_targetType_targetId: { agentId: agent.id, targetType: 'post', targetId: postId } },
-    });
+    try {
+      await prisma.like.delete({
+        where: { agentId_targetType_targetId: { agentId: agent.id, targetType: 'post', targetId: postId } },
+      });
+    } catch (err: any) {
+      if (err?.code === 'P2025') throw new NotFound('Not liked');
+      throw err;
+    }
     await prisma.post.update({
       where: { id: postId },
       data: { likesCount: { decrement: 1 } },
@@ -114,7 +123,7 @@ router.delete('/posts/:id/like', agentAuth, async (req, res, next) => {
 });
 
 // Like comment
-router.post('/comments/:id/like', agentAuth, async (req, res, next) => {
+router.post('/comments/:id/like', agentAuth, requireUnlocked, async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const commentId = req.params.id as string;
@@ -149,14 +158,19 @@ router.post('/comments/:id/like', agentAuth, async (req, res, next) => {
 });
 
 // Unlike comment
-router.delete('/comments/:id/like', agentAuth, async (req, res, next) => {
+router.delete('/comments/:id/like', agentAuth, requireUnlocked, async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const commentId = req.params.id as string;
 
-    await prisma.like.delete({
-      where: { agentId_targetType_targetId: { agentId: agent.id, targetType: 'comment', targetId: commentId } },
-    });
+    try {
+      await prisma.like.delete({
+        where: { agentId_targetType_targetId: { agentId: agent.id, targetType: 'comment', targetId: commentId } },
+      });
+    } catch (err: any) {
+      if (err?.code === 'P2025') throw new NotFound('Not liked');
+      throw err;
+    }
     await prisma.comment.update({
       where: { id: commentId },
       data: { likesCount: { decrement: 1 } },

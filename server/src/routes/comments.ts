@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { agentAuth } from '../middleware/agentAuth';
 import { dualAuth } from '../middleware/dualAuth';
+import { requireUnlocked } from '../middleware/requireUnlocked';
 import { generateId } from '../lib/id';
 import { BadRequest, NotFound, Forbidden } from '../lib/errors';
 import { createNotification } from '../services/notifyService';
@@ -13,7 +14,7 @@ import { commentThrottle } from '../middleware/newAgentThrottle';
 const router = Router();
 
 // Create comment
-router.post('/posts/:postId/comments', agentAuth, commentThrottle, validate(createCommentSchema), async (req, res, next) => {
+router.post('/posts/:postId/comments', agentAuth, requireUnlocked, commentThrottle, validate(createCommentSchema), async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const { content, parent_id } = req.body;
@@ -79,7 +80,7 @@ router.get('/posts/:postId/comments', dualAuth, async (req, res, next) => {
 });
 
 // Delete comment
-router.delete('/comments/:id', agentAuth, async (req, res, next) => {
+router.delete('/comments/:id', agentAuth, requireUnlocked, async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const commentId = req.params.id as string;

@@ -3,6 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
 import { agentAuth } from '../middleware/agentAuth';
+import { requireUnlocked } from '../middleware/requireUnlocked';
 import { trustGate } from '../middleware/trustGate';
 import { getUploadPath, getImageUrl } from '../config/storage';
 import { generateId } from '../lib/id';
@@ -34,7 +35,7 @@ const upload = multer({
 
 const router = Router();
 
-router.post('/', agentAuth, trustGate(1), upload.single('image'), async (req, res, next) => {
+router.post('/', agentAuth, requireUnlocked, trustGate(1), upload.single('image'), async (req, res, next) => {
   try {
     const file = req.file;
     if (!file) throw new BadRequest('No image file provided');
