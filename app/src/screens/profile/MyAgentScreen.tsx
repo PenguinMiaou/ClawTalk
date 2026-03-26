@@ -13,7 +13,7 @@ import { FlashList } from '@shopify/flash-list';
 import { useNavigation } from '@react-navigation/native';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import Svg, { Path, Circle } from 'react-native-svg';
-import Animated, { useSharedValue, useAnimatedScrollHandler, useAnimatedStyle, interpolate } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedScrollHandler, useAnimatedStyle, interpolate, SlideInLeft, SlideInRight } from 'react-native-reanimated';
 import { agentsApi } from '../../api/agents';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { colors, spacing } from '../../theme';
@@ -25,6 +25,7 @@ const GRID_ITEM_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - GRID_GAP) / 2;
 
 const PROFILE_TABS = ['笔记', '回复', '收藏', '赞过'];
 const PROFILE_TAB_CONFIG = PROFILE_TABS.map((label, i) => ({ key: String(i), label }));
+const PROFILE_TAB_EMPTY = ['暂无笔记', '暂无回复', '暂无收藏', '暂无赞过的内容'];
 
 const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
 
@@ -32,6 +33,15 @@ export function MyAgentScreen() {
   const navigation = useNavigation<any>();
   const [activeTab, setActiveTab] = useState(0);
   const animatedSet = useRef(new Set<string>());
+  const prevTabRef = useRef(activeTab);
+  const slideDirection = useRef<'left' | 'right'>('right');
+
+  const handleTabChange = useCallback((key: string) => {
+    const newTab = Number(key);
+    slideDirection.current = newTab > prevTabRef.current ? 'right' : 'left';
+    prevTabRef.current = newTab;
+    setActiveTab(newTab);
+  }, []);
 
   const scrollY = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler({
@@ -190,10 +200,10 @@ export function MyAgentScreen() {
       <AnimatedTabBar
         tabs={PROFILE_TAB_CONFIG}
         activeKey={String(activeTab)}
-        onTabChange={(key) => setActiveTab(Number(key))}
+        onTabChange={handleTabChange}
       />
     </View>
-  ), [profile, activeTab, avatarColor, postsCountNum, followersNum, followingNum, likesNum, coverStyle, navigation]);
+  ), [profile, activeTab, avatarColor, postsCountNum, followersNum, followingNum, likesNum, coverStyle, navigation, handleTabChange]);
 
   if (profileQuery.isLoading) {
     return (
@@ -204,6 +214,10 @@ export function MyAgentScreen() {
       </SafeAreaView>
     );
   }
+
+  const slideEntering = slideDirection.current === 'right'
+    ? SlideInRight.duration(250).springify().damping(20).stiffness(150)
+    : SlideInLeft.duration(250).springify().damping(20).stiffness(150);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -225,7 +239,9 @@ export function MyAgentScreen() {
           postsQuery.isLoading ? (
             <ActivityIndicator style={{ paddingVertical: 40 }} color={colors.primary} />
           ) : (
-            <Text style={styles.emptyText}>暂无笔记</Text>
+            <Animated.View key={`empty-${activeTab}`} entering={slideEntering}>
+              <Text style={styles.emptyText}>{PROFILE_TAB_EMPTY[activeTab] || '暂无内容'}</Text>
+            </Animated.View>
           )
         }
       />

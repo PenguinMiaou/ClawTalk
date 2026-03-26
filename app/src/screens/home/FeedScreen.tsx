@@ -10,6 +10,7 @@ import { FlashList } from '@shopify/flash-list';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import Svg, { Path, Circle } from 'react-native-svg';
+import Animated, { SlideInLeft, SlideInRight } from 'react-native-reanimated';
 import { postsApi } from '../../api/posts';
 import { PostCard } from '../../components/PostCard';
 import { LoadingView } from '../../components/ui/LoadingView';
@@ -29,6 +30,18 @@ export function FeedScreen() {
   const navigation = useNavigation<any>();
   const [activeTab, setActiveTab] = useState<TabKey>('discover');
   const animatedSet = useRef(new Set<string>());
+  const prevTabRef = useRef(activeTab);
+  const slideDirection = useRef<'left' | 'right'>('right');
+
+  const handleTabChange = useCallback((key: string) => {
+    const newTab = key as TabKey;
+    const tabKeys: TabKey[] = ['following', 'discover', 'trending'];
+    const prevIdx = tabKeys.indexOf(prevTabRef.current);
+    const newIdx = tabKeys.indexOf(newTab);
+    slideDirection.current = newIdx > prevIdx ? 'right' : 'left';
+    prevTabRef.current = newTab;
+    setActiveTab(newTab);
+  }, []);
 
   // Infinite query for "关注"
   const followingQuery = useInfiniteQuery({
@@ -103,6 +116,10 @@ export function FeedScreen() {
 
   const posts = getActiveData();
 
+  const slideEntering = slideDirection.current === 'right'
+    ? SlideInRight.duration(250).springify().damping(20).stiffness(150)
+    : SlideInLeft.duration(250).springify().damping(20).stiffness(150);
+
   const renderItem = useCallback(
     ({ item, index }: { item: any; index: number }) => (
       <View style={styles.cardWrapper}>
@@ -126,32 +143,34 @@ export function FeedScreen() {
         <AnimatedTabBar
           tabs={TABS}
           activeKey={activeTab}
-          onTabChange={(key) => setActiveTab(key as TabKey)}
+          onTabChange={handleTabChange}
         />
       </View>
 
       {/* Feed */}
-      {isLoading ? (
-        <LoadingView />
-      ) : isError ? (
-        <ErrorView onRetry={handleRefresh} />
-      ) : (
-        <FlashList
-          data={posts}
-          renderItem={renderItem}
-          numColumns={2}
-          keyExtractor={(item: any) => item.id?.toString() ?? Math.random().toString()}
-          onEndReached={handleEndReached}
-          onEndReachedThreshold={0.5}
-          refreshing={isRefreshing}
-          onRefresh={handleRefresh}
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <Text style={styles.emptyText}>暂无内容</Text>
-            </View>
-          }
-        />
-      )}
+      <Animated.View key={`feed-${activeTab}`} entering={slideEntering} style={styles.flex}>
+        {isLoading ? (
+          <LoadingView />
+        ) : isError ? (
+          <ErrorView onRetry={handleRefresh} />
+        ) : (
+          <FlashList
+            data={posts}
+            renderItem={renderItem}
+            numColumns={2}
+            keyExtractor={(item: any) => item.id?.toString() ?? Math.random().toString()}
+            onEndReached={handleEndReached}
+            onEndReachedThreshold={0.5}
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <Text style={styles.emptyText}>暂无内容</Text>
+              </View>
+            }
+          />
+        )}
+      </Animated.View>
     </SafeAreaView>
   );
 }
@@ -181,6 +200,9 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: colors.text,
     lineHeight: 28,
+  },
+  flex: {
+    flex: 1,
   },
   listContent: {
   },
