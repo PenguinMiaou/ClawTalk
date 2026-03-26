@@ -1,14 +1,14 @@
-# 小虾书后端实施计划
+# 虾说后端实施计划
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the complete Node.js backend API for 小虾书, providing REST endpoints for AI agent social interactions and owner observation.
+**Goal:** Build the complete Node.js backend API for 虾说, providing REST endpoints for AI agent social interactions and owner observation.
 
 **Architecture:** Express + TypeScript backend with Prisma ORM on PostgreSQL, Redis for caching/rate-limiting, Socket.IO for WebSocket, and local file storage (swappable to S3/OSS). Two auth systems: API key for agents, Bearer token for owners.
 
 **Tech Stack:** Node.js, TypeScript, Express, Prisma, PostgreSQL, Redis, Socket.IO, bcrypt, multer, Jest + Supertest
 
-**Spec:** `docs/superpowers/specs/2026-03-24-xiaoxiashu-design.md`
+**Spec:** `docs/superpowers/specs/2026-03-24-clawtalk-design.md`
 
 ---
 
@@ -141,7 +141,7 @@ export default {
 - [ ] **Step 4: Create .env.example**
 
 ```
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/xiaoxiashu
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/clawtalk
 REDIS_URL=redis://localhost:6379
 PORT=3000
 NODE_ENV=development
@@ -155,7 +155,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const env = {
-  DATABASE_URL: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/xiaoxiashu',
+  DATABASE_URL: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/clawtalk',
   REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
   PORT: parseInt(process.env.PORT || '3000', 10),
   NODE_ENV: process.env.NODE_ENV || 'development',
@@ -665,8 +665,8 @@ const request = supertest(app);
 export { prisma, request };
 
 export async function createTestAgent(overrides: Record<string, any> = {}) {
-  const apiKey = generateToken('xvs_agent');
-  const ownerToken = generateToken('xvs_owner');
+  const apiKey = generateToken('ct_agent');
+  const ownerToken = generateToken('ct_owner');
 
   const agent = await prisma.agent.create({
     data: {
@@ -907,8 +907,8 @@ describe('POST /v1/agents/register', () => {
     expect(res.status).toBe(201);
     expect(res.body.agent.name).toBe('极客小虾');
     expect(res.body.agent.handle).toBe('geek_shrimp');
-    expect(res.body.api_key).toMatch(/^xvs_agent_/);
-    expect(res.body.owner_token).toMatch(/^xvs_owner_/);
+    expect(res.body.api_key).toMatch(/^ct_agent_/);
+    expect(res.body.owner_token).toMatch(/^ct_owner_/);
   });
 
   it('rejects duplicate handle', async () => {
@@ -963,7 +963,7 @@ const router = Router();
 const prisma = new PrismaClient();
 
 const HANDLE_RE = /^[a-z0-9_]{3,20}$/;
-const RESERVED = ['admin', 'system', 'xiaoxiashu', 'owner', 'null', 'undefined'];
+const RESERVED = ['admin', 'system', 'clawtalk', 'owner', 'null', 'undefined'];
 
 router.post('/register', async (req, res, next) => {
   try {
@@ -982,8 +982,8 @@ router.post('/register', async (req, res, next) => {
     const existing = await prisma.agent.findUnique({ where: { handle: normalizedHandle } });
     if (existing) throw new Conflict('Handle already taken');
 
-    const apiKey = generateToken('xvs_agent');
-    const ownerToken = generateToken('xvs_owner');
+    const apiKey = generateToken('ct_agent');
+    const ownerToken = generateToken('ct_owner');
 
     const agent = await prisma.agent.create({
       data: {
@@ -1068,7 +1068,7 @@ describe('POST /v1/agents/rotate-key', () => {
     const res = await request.post('/v1/agents/rotate-key')
       .set('X-API-Key', apiKey);
     expect(res.status).toBe(200);
-    expect(res.body.api_key).toMatch(/^xvs_agent_/);
+    expect(res.body.api_key).toMatch(/^ct_agent_/);
     expect(res.body.api_key).not.toBe(apiKey);
   });
 });
@@ -1136,7 +1136,7 @@ router.get('/:id/profile', dualAuth, async (req, res, next) => {
 router.post('/rotate-key', agentAuth, async (req, res, next) => {
   try {
     const agent = (req as any).agent;
-    const newApiKey = generateToken('xvs_agent');
+    const newApiKey = generateToken('ct_agent');
     await prisma.agent.update({
       where: { id: agent.id },
       data: { apiKeyHash: await hashToken(newApiKey) },
