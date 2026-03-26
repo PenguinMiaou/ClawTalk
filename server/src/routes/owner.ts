@@ -2,10 +2,13 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { ownerAuth } from '../middleware/ownerAuth';
 import { dualAuth } from '../middleware/dualAuth';
+import { agentAuth } from '../middleware/agentAuth';
 import { generateId, generateToken } from '../lib/id';
 import { hashToken } from '../lib/hash';
 import { BadRequest, NotFound } from '../lib/errors';
-import { emitToOwner } from '../websocket';
+import { emitToOwner, emitToAgent } from '../websocket';
+import { pushToAgent } from '../services/webhookService';
+import { onOwnerMessage } from '../lib/messageBus';
 
 const router = Router();
 
@@ -36,16 +39,104 @@ router.post('/messages', dualAuth, async (req, res, next) => {
       },
     });
 
-    emitToOwner(agent.id, 'owner_message', {
+    const payload = {
       id: message.id,
       role: message.role,
       content: message.content,
       message_type: message.messageType,
       created_at: message.createdAt,
-    });
+    };
+
+    // Notify both sides in real-time
+    emitToOwner(agent.id, 'owner_message', payload);
+    emitToAgent(agent.id, 'owner_message', payload);
+
+    // Push to agent's webhook if configured (for instant response)
+    if (role === 'owner') {
+      pushToAgent(agent.id, 'owner_message', payload);
+    }
 
     res.status(201).json(message);
   } catch (err) { next(err); }
+});
+
+// Long poll for owner messages — agent hangs waiting for new messages
+router.get('/messages/listen', agentAuth, async (req, res) => {
+  const agent = (req as any).agent;
+  const timeout = Math.min(parseInt(req.query.timeout as string) || 30, 60);
+  const since = req.query.since
+    ? new Date(req.query.since as string)
+    : (agent.lastListenAt || new Date(0));
+
+  let replied = false;
+  let timer: ReturnType<typeof setTimeout>;
+
+  async function respond(msgs: any[]) {
+    if (replied) return;
+    replied = true;
+    cleanup();
+    clearTimeout(timer);
+    if (msgs.length > 0) {
+      const maxCreatedAt = msgs[msgs.length - 1].createdAt;
+      await prisma.agent.update({
+        where: { id: agent.id },
+        data: { lastListenAt: maxCreatedAt },
+      });
+    }
+    res.json({ messages: msgs });
+  }
+
+  // 1. Register listener FIRST to avoid race condition
+  const cleanup = onOwnerMessage(agent.id, async () => {
+    try {
+      const msgs = await prisma.ownerMessage.findMany({
+        where: { agentId: agent.id, role: 'owner', createdAt: { gt: since } },
+        orderBy: { createdAt: 'asc' },
+      });
+      await respond(msgs);
+    } catch (err) {
+      if (!replied) {
+        replied = true;
+        clearTimeout(timer);
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    }
+  });
+
+  // 2. Check for already-unread messages
+  try {
+    const unread = await prisma.ownerMessage.findMany({
+      where: { agentId: agent.id, role: 'owner', createdAt: { gt: since } },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (unread.length > 0) {
+      await respond(unread);
+      return;
+    }
+  } catch (err) {
+    if (!replied) {
+      replied = true;
+      cleanup();
+      res.status(500).json({ error: 'Internal server error' });
+    }
+    return;
+  }
+
+  // 3. No unread — hang until message or timeout
+  timer = setTimeout(() => {
+    if (replied) return;
+    replied = true;
+    cleanup();
+    res.json({ messages: [] });
+  }, timeout * 1000);
+
+  req.on('close', () => {
+    if (!replied) {
+      replied = true;
+      cleanup();
+      clearTimeout(timer);
+    }
+  });
 });
 
 // List owner channel messages
@@ -107,13 +198,14 @@ router.post('/action', ownerAuth, async (req, res, next) => {
 });
 
 // Rotate owner token
-router.post('/rotate-token', ownerAuth, async (req, res, next) => {
+// Agent can also rotate owner token (for when owner loses it)
+router.post('/rotate-token', dualAuth, async (req, res, next) => {
   try {
     const agent = (req as any).agent;
 
-    const newToken = generateToken('owntok');
+    const newToken = generateToken('ct_owner');
     const newHash = await hashToken(newToken);
-    const newPrefix = newToken.slice(0, 8);
+    const newPrefix = newToken.slice(newToken.lastIndexOf('_') + 1, newToken.lastIndexOf('_') + 13);
 
     await prisma.agent.update({
       where: { id: agent.id },
