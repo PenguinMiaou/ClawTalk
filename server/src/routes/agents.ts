@@ -5,12 +5,13 @@ import { hashToken } from '../lib/hash';
 import { BadRequest, Conflict, NotFound } from '../lib/errors';
 import { agentAuth } from '../middleware/agentAuth';
 import { dualAuth } from '../middleware/dualAuth';
+import { requireUnlocked } from '../middleware/requireUnlocked';
 import { registerRateLimit } from '../middleware/rateLimiter';
 import { ownerAuth } from '../middleware/ownerAuth';
 import { emitToOwner, emitToAgent } from '../websocket';
 import { notifyAgentDeleted } from '../lib/messageBus';
 import axios from 'axios';
-import { AGENT_SELECT, maskPostAgents } from '../lib/agentMask';
+import { AGENT_SELECT, maskPostAgents, maskDeletedAgent } from '../lib/agentMask';
 import { validate } from '../lib/validate';
 import { registerAgentSchema, webhookSchema } from '../lib/schemas';
 
@@ -66,7 +67,8 @@ router.post('/register', registerRateLimit, validate(registerAgentSchema), async
         method: 'GET',
       },
     });
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.code === 'P2002') return next(new Conflict('Handle already taken'));
     next(err);
   }
 });
@@ -109,7 +111,7 @@ router.get('/me', dualAuth, async (req, res, next) => {
 });
 
 // POST /webhook - register webhook URL for real-time notifications
-router.post('/webhook', agentAuth, validate(webhookSchema), async (req, res, next) => {
+router.post('/webhook', agentAuth, requireUnlocked, validate(webhookSchema), async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const { url, token } = req.body;
@@ -123,7 +125,7 @@ router.post('/webhook', agentAuth, validate(webhookSchema), async (req, res, nex
 });
 
 // DELETE /webhook - remove webhook
-router.delete('/webhook', agentAuth, async (req, res, next) => {
+router.delete('/webhook', agentAuth, requireUnlocked, async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     await prisma.agent.update({
@@ -135,7 +137,7 @@ router.delete('/webhook', agentAuth, async (req, res, next) => {
 });
 
 // POST /rotate-key
-router.post('/rotate-key', agentAuth, async (req, res, next) => {
+router.post('/rotate-key', agentAuth, requireUnlocked, async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const newApiKey = generateToken('ct_agent');
@@ -167,6 +169,16 @@ async function deregisterAgent(agent: any) {
   const savedWebhookUrl = agent.webhookUrl;
   const savedWebhookToken = agent.webhookToken;
 
+  // Cascade: clean up follow relationships before soft-delete
+  await prisma.$transaction(async (tx) => {
+    // Remove all follows where this agent is the follower (they followed others)
+    await tx.follow.deleteMany({ where: { followerId: agent.id } });
+    // Remove all follows where this agent is being followed
+    await tx.follow.deleteMany({ where: { followingId: agent.id } });
+    // Remove topic follows
+    await tx.agentTopic.deleteMany({ where: { agentId: agent.id } });
+  });
+
   await prisma.agent.update({
     where: { id: agent.id },
     data: {
@@ -194,7 +206,7 @@ async function deregisterAgent(agent: any) {
   }
 }
 
-router.post('/deregister', agentAuth, async (req, res, next) => {
+router.post('/deregister', agentAuth, requireUnlocked, async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     await deregisterAgent(agent);
@@ -214,17 +226,19 @@ router.delete('/me', ownerAuth, async (req, res, next) => {
 router.get('/:id/profile', dualAuth, async (req, res, next) => {
   try {
     const agentId = req.params.id as string;
-    const agent = await prisma.agent.findUnique({
+    const rawAgent = await prisma.agent.findUnique({
       where: { id: agentId },
     });
-    if (!agent) throw new NotFound('Agent not found');
+    if (!rawAgent) throw new NotFound('Agent not found');
+
+    const agent = maskDeletedAgent(rawAgent);
 
     const [publishedPostsCount, followersCount, followingCount, totalLikes] = await Promise.all([
-      prisma.post.count({ where: { agentId: agent.id, status: 'published' } }),
-      prisma.follow.count({ where: { followingId: agent.id } }),
-      prisma.follow.count({ where: { followerId: agent.id } }),
+      prisma.post.count({ where: { agentId: rawAgent.id, status: 'published' } }),
+      prisma.follow.count({ where: { followingId: rawAgent.id } }),
+      prisma.follow.count({ where: { followerId: rawAgent.id } }),
       prisma.post.aggregate({
-        where: { agentId: agent.id, status: 'published' },
+        where: { agentId: rawAgent.id, status: 'published' },
         _sum: { likesCount: true },
       }),
     ]);
@@ -232,8 +246,9 @@ router.get('/:id/profile', dualAuth, async (req, res, next) => {
     res.json({
       id: agent.id, name: agent.name, handle: agent.handle,
       bio: agent.bio, avatar_color: agent.avatarColor,
-      trust_level: agent.trustLevel, is_online: computeOnline(agent),
+      trust_level: agent.trustLevel, is_online: computeOnline(rawAgent),
       last_active_at: agent.lastActiveAt, created_at: agent.createdAt,
+      is_deleted: rawAgent.isDeleted,
       posts_count: publishedPostsCount,
       followers_count: followersCount,
       following_count: followingCount,

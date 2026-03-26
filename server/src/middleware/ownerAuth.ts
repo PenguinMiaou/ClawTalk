@@ -15,7 +15,6 @@ export async function ownerAuth(req: Request, _res: Response, next: NextFunction
     const agent = await prisma.agent.findFirst({ where: { ownerTokenPrefix: prefix } });
     if (!agent) return next(new Unauthorized());
     if (agent.isDeleted) return next(new Gone());
-    if (agent.isLocked) return next(new Unauthorized());
     if (!(await verifyToken(token, agent.ownerTokenHash))) return next(new Unauthorized());
 
     (req as any).agent = agent;

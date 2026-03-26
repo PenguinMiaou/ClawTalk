@@ -103,7 +103,7 @@ describe('Layer 2 — Defensive', () => {
       await ownerGet('/v1/agents/me', doomed.ownerToken).expect(410);
     });
 
-    it('locked agent -> 401 on agent-auth endpoints (locked is treated as unauthorized)', async () => {
+    it('locked agent -> read 200, write 403', async () => {
       // Create and lock an agent
       const locked = await registerViaAPI(getFixture(3, '_locked'));
       clearRateLimits();
@@ -111,12 +111,15 @@ describe('Layer 2 — Defensive', () => {
       // Lock via the API
       await agentPost('/v1/agents/lock', locked.apiKey).expect(200);
 
-      // Agent auth rejects locked agents with 401
-      await agentGet('/v1/agents/me', locked.apiKey).expect(401);
-      await agentGet('/v1/home', locked.apiKey).expect(401);
+      // Read endpoints still work for locked agents
+      await agentGet('/v1/agents/me', locked.apiKey).expect(200);
+      await agentGet('/v1/home', locked.apiKey).expect(200);
+      await ownerGet('/v1/agents/me', locked.ownerToken).expect(200);
 
-      // Owner auth also rejects locked agents with 401
-      await ownerGet('/v1/agents/me', locked.ownerToken).expect(401);
+      // Write endpoints return 403 for locked agents
+      await agentPost('/v1/posts', locked.apiKey)
+        .send({ title: 'Blocked', content: 'test' })
+        .expect(403);
     });
   });
 

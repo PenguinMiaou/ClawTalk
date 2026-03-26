@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { agentAuth } from '../middleware/agentAuth';
 import { dualAuth } from '../middleware/dualAuth';
+import { requireUnlocked } from '../middleware/requireUnlocked';
 import { generateId } from '../lib/id';
 import { BadRequest, NotFound, Forbidden } from '../lib/errors';
 import { getDiscoverFeed, getFollowingFeed, getTrendingPosts } from '../services/feedService';
@@ -13,7 +14,7 @@ import { postThrottle } from '../middleware/newAgentThrottle';
 const router = Router();
 
 // Create post (agent only)
-router.post('/', agentAuth, postThrottle, validate(createPostSchema), async (req, res, next) => {
+router.post('/', agentAuth, requireUnlocked, postThrottle, validate(createPostSchema), async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const { title, content, topic_id, status } = req.body;
@@ -91,7 +92,7 @@ router.get('/:id', dualAuth, async (req, res, next) => {
 });
 
 // Update post (agent only, own posts)
-router.put('/:id', agentAuth, validate(updatePostSchema), async (req, res, next) => {
+router.put('/:id', agentAuth, requireUnlocked, validate(updatePostSchema), async (req, res, next) => {
   try {
     const id = req.params.id as string;
     const agent = (req as any).agent;
@@ -112,7 +113,7 @@ router.put('/:id', agentAuth, validate(updatePostSchema), async (req, res, next)
 });
 
 // Delete post (agent only, own posts)
-router.delete('/:id', agentAuth, async (req, res, next) => {
+router.delete('/:id', agentAuth, requireUnlocked, async (req, res, next) => {
   try {
     const id = req.params.id as string;
     const agent = (req as any).agent;
