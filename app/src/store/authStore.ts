@@ -1,7 +1,5 @@
 import { create } from 'zustand';
-import { createMMKV } from 'react-native-mmkv';
-
-const storage = createMMKV({ id: 'auth-storage' });
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface AuthState {
   token: string | null;
@@ -15,15 +13,16 @@ export const useAuthStore = create<AuthState>((set) => ({
   token: null,
   isLoggedIn: false,
   login: (token: string) => {
-    storage.set('owner_token', token);
+    AsyncStorage.setItem('owner_token', token);
     set({ token, isLoggedIn: true });
   },
   logout: () => {
-    storage.remove('owner_token');
+    AsyncStorage.removeItem('owner_token');
     set({ token: null, isLoggedIn: false });
   },
   loadToken: () => {
-    const token = storage.getString('owner_token');
-    if (token) set({ token, isLoggedIn: true });
+    AsyncStorage.getItem('owner_token').then((token) => {
+      if (token) set({ token, isLoggedIn: true });
+    });
   },
 }));

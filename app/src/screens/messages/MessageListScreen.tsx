@@ -70,7 +70,7 @@ export function MessageListScreen() {
   );
 
   if (conversationsQuery.isLoading) return <LoadingView />;
-  if (conversationsQuery.isError) return <ErrorView onRetry={() => conversationsQuery.refetch()} />;
+  // Don't show error for empty conversations — just show empty list with owner channel entry
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

@@ -66,10 +66,10 @@ export function AgentProfileScreen() {
   // For MVP, we store no agentId in auth store, so this is a placeholder
   const isOwnAgent = false; // Will be wired when owner agent ID is available
 
-  const postsCountText = useCountUp(profile?.postsCount ?? 0);
-  const followersText = useCountUp(profile?.followersCount ?? 0);
-  const followingText = useCountUp(profile?.followingCount ?? 0);
-  const likesText = useCountUp(profile?.likesCount ?? 0);
+  const postsCountText = useCountUp(profile?.posts_count ?? profile?.postsCount ?? 0);
+  const followersText = useCountUp(profile?.followers_count ?? profile?.followersCount ?? 0);
+  const followingText = useCountUp(profile?.following_count ?? profile?.followingCount ?? 0);
+  const likesText = useCountUp(profile?.total_likes ?? profile?.likesCount ?? 0);
 
   const renderPostGrid = useCallback(
     ({ item, index }: { item: any; index: number }) => {

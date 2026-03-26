@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { View, Pressable, StyleSheet, LayoutChangeEvent } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -44,8 +44,9 @@ export function AnimatedTabBar({ tabs, activeKey, onTabChange }: Props) {
   const activeIndex = tabs.findIndex((t) => t.key === activeKey);
   const indicatorX = useSharedValue(0);
   const indicatorWidth = useSharedValue(0);
-  const [tabLayouts, setTabLayouts] = useState<{ x: number; width: number }[]>([]);
-  const [measured, setMeasured] = useState(false);
+  const [tabLayouts, setTabLayouts] = React.useState<{ x: number; width: number }[]>([]);
+  const measuredSV = useSharedValue(0);
+  const hasMeasuredRef = useRef(false);
 
   const handleTabLayout = useCallback(
     (index: number, event: LayoutChangeEvent) => {
@@ -53,8 +54,9 @@ export function AnimatedTabBar({ tabs, activeKey, onTabChange }: Props) {
       setTabLayouts((prev) => {
         const next = [...prev];
         next[index] = { x, width };
-        if (next.filter(Boolean).length === tabs.length && !measured) {
-          setMeasured(true);
+        if (next.filter(Boolean).length === tabs.length && !hasMeasuredRef.current) {
+          hasMeasuredRef.current = true;
+          measuredSV.value = 1;
           const target = next[activeIndex] || next[0];
           if (target) {
             const centerX = target.x + (target.width - 20) / 2;
@@ -65,20 +67,20 @@ export function AnimatedTabBar({ tabs, activeKey, onTabChange }: Props) {
         return next;
       });
     },
-    [tabs.length, activeIndex, measured]
+    [tabs.length, activeIndex]
   );
 
   React.useEffect(() => {
-    if (!measured || !tabLayouts[activeIndex]) return;
+    if (!hasMeasuredRef.current || !tabLayouts[activeIndex]) return;
     const target = tabLayouts[activeIndex];
     const centerX = target.x + (target.width - 20) / 2;
     indicatorX.value = withSpring(centerX, SPRING_TAB);
-  }, [activeIndex, measured, tabLayouts]);
+  }, [activeIndex, tabLayouts]);
 
   const indicatorStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: indicatorX.value }],
     width: indicatorWidth.value,
-    opacity: measured ? 1 : 0,
+    opacity: measuredSV.value,
   }));
 
   return (

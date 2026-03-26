@@ -48,24 +48,27 @@ export function MyAgentScreen() {
     queryFn: () => agentsApi.getProfile('me'),
   });
 
-  const profile = profileQuery.data?.agent ?? profileQuery.data;
+  const profile = profileQuery.data;
   const agentId = profile?.id;
-  const avatarColor = profile?.avatarColor || colors.primary;
+  const avatarColor = profile?.avatar_color ?? profile?.avatarColor ?? colors.primary;
 
   const postsQuery = useInfiniteQuery({
     queryKey: ['agentPosts', agentId],
-    queryFn: ({ pageParam = 1 }) => agentsApi.getPosts(agentId!, pageParam),
-    getNextPageParam: (lastPage: any) => lastPage?.nextPage ?? undefined,
-    initialPageParam: 1,
+    queryFn: ({ pageParam = 0 }) => agentsApi.getPosts(agentId!, pageParam),
+    getNextPageParam: (lastPage: any, allPages: any) => {
+      const posts = lastPage?.posts ?? [];
+      return posts.length >= 20 ? allPages.length : undefined;
+    },
+    initialPageParam: 0,
     enabled: !!agentId,
   });
 
   const posts = postsQuery.data?.pages.flatMap((p: any) => p?.posts ?? p?.data ?? []) ?? [];
 
-  const postsCountText = useCountUp(profile?.postsCount ?? 0);
-  const followersText = useCountUp(profile?.followersCount ?? 0);
-  const followingText = useCountUp(profile?.followingCount ?? 0);
-  const likesText = useCountUp(profile?.likesCount ?? 0);
+  const postsCountNum = profile?.posts_count ?? profile?.postsCount ?? 0;
+  const followersNum = profile?.followers_count ?? profile?.followersCount ?? 0;
+  const followingNum = profile?.following_count ?? profile?.followingCount ?? 0;
+  const likesNum = profile?.total_likes ?? profile?.likesCount ?? 0;
 
   const renderPostGrid = useCallback(
     ({ item, index }: { item: any; index: number }) => {
@@ -143,22 +146,22 @@ export function MyAgentScreen() {
           {/* Stats row */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <AnimatedCountText text={postsCountText} style={{ fontSize: 17, fontWeight: '700', color: colors.text }} />
+              <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>{postsCountNum}</Text>
               <Text style={styles.statLabel}>笔记</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <AnimatedCountText text={followersText} style={{ fontSize: 17, fontWeight: '700', color: colors.text }} />
+              <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>{followersNum}</Text>
               <Text style={styles.statLabel}>粉丝</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <AnimatedCountText text={followingText} style={{ fontSize: 17, fontWeight: '700', color: colors.text }} />
+              <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>{followingNum}</Text>
               <Text style={styles.statLabel}>关注</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <AnimatedCountText text={likesText} style={{ fontSize: 17, fontWeight: '700', color: colors.text }} />
+              <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>{likesNum}</Text>
               <Text style={styles.statLabel}>获赞</Text>
             </View>
           </View>
@@ -190,7 +193,7 @@ export function MyAgentScreen() {
         onTabChange={(key) => setActiveTab(Number(key))}
       />
     </View>
-  ), [profile, activeTab, avatarColor, postsCountText, followersText, followingText, likesText, coverStyle, navigation]);
+  ), [profile, activeTab, avatarColor, postsCountNum, followersNum, followingNum, likesNum, coverStyle, navigation]);
 
   if (profileQuery.isLoading) {
     return (

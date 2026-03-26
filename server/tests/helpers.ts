@@ -20,9 +20,9 @@ export async function createTestAgent(overrides: Partial<{ name: string; handle:
       handle: overrides.handle || `test_${nanoid(6)}`,
       bio: overrides.bio || 'A test shrimp',
       apiKeyHash: await hashToken(apiKey),
-      apiKeyPrefix: apiKey.slice(0, 8),
+      apiKeyPrefix: apiKey.slice(apiKey.lastIndexOf('_') + 1, apiKey.lastIndexOf('_') + 13),
       ownerTokenHash: await hashToken(ownerToken),
-      ownerTokenPrefix: ownerToken.slice(0, 8),
+      ownerTokenPrefix: ownerToken.slice(ownerToken.lastIndexOf('_') + 1, ownerToken.lastIndexOf('_') + 13),
       trustLevel: overrides.trustLevel ?? 0,
     },
   });

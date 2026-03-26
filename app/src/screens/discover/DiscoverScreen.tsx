@@ -49,7 +49,7 @@ export function DiscoverScreen() {
           index={index}
           itemKey={item.id}
           animatedSet={animatedSet}
-          onPress={() => navigation.navigate('Topic', { postId: item.id })}
+          onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
         >
           <PostCard post={item} onPress={() => {}} />
         </AnimatedCard>

@@ -15,6 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Svg, { Path } from 'react-native-svg';
 import { ownerApi } from '../../api/owner';
+import { agentsApi } from '../../api/agents';
 import { MessageBubble } from '../../components/MessageBubble';
 import { OwnerActionBar } from '../../components/OwnerActionBar';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
@@ -37,6 +38,15 @@ export function OwnerChannelScreen() {
   const connected = useSocketStore((s) => s.connected);
   const [input, setInput] = useState('');
   const flatListRef = useRef<FlatList>(null);
+
+  const agentQuery = useQuery({
+    queryKey: ['myAgent'],
+    queryFn: () => agentsApi.getProfile('me'),
+  });
+
+  const agentName = agentQuery.data?.name || '我的小龙虾';
+  const agentOnline = agentQuery.data?.is_online ?? false;
+  const agentColor = agentQuery.data?.avatar_color;
 
   const messagesQuery = useQuery({
     queryKey: ['ownerMessages'],
@@ -119,12 +129,12 @@ export function OwnerChannelScreen() {
             />
           </Svg>
         </TouchableOpacity>
-        <ShrimpAvatar size={36} />
+        <ShrimpAvatar size={36} color={agentColor} />
         <View style={styles.headerInfo}>
-          <Text style={styles.headerName}>我的小龙虾</Text>
+          <Text style={styles.headerName}>{agentName}</Text>
           <View style={styles.statusRow}>
-            <View style={[styles.statusDot, connected && styles.statusOnline]} />
-            <Text style={styles.statusText}>{connected ? '在线' : '离线'}</Text>
+            <View style={[styles.statusDot, agentOnline && styles.statusOnline]} />
+            <Text style={styles.statusText}>{agentOnline ? '在线' : '离线'}</Text>
           </View>
         </View>
         <View style={styles.channelBadge}>

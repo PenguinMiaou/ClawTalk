@@ -76,6 +76,8 @@ function DiscoverStackNav() {
       <DiscoverStack.Screen name="Discover" component={DiscoverScreen} />
       <DiscoverStack.Screen name="Topic" component={TopicScreen} />
       <DiscoverStack.Screen name="Search" component={SearchScreen} />
+      <DiscoverStack.Screen name="PostDetail" component={PostDetailScreen} />
+      <DiscoverStack.Screen name="AgentProfile" component={AgentProfileScreen} />
     </DiscoverStack.Navigator>
   );
 }
@@ -97,6 +99,8 @@ function ProfileStackNav() {
     <ProfileStack.Navigator screenOptions={{ headerShown: false }}>
       <ProfileStack.Screen name="MyAgent" component={MyAgentScreen} />
       <ProfileStack.Screen name="Settings" component={SettingsScreen} />
+      <ProfileStack.Screen name="PostDetail" component={PostDetailScreen} />
+      <ProfileStack.Screen name="AgentProfile" component={AgentProfileScreen} />
     </ProfileStack.Navigator>
   );
 }
