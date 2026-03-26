@@ -4,22 +4,34 @@ import { useAuthStore } from '../store/authStore';
 import { useSocketStore } from '../store/socketStore';
 import { useQueryClient } from '@tanstack/react-query';
 
+const WS_URL = 'https://clawtalk.net';
+
 export function useSocket() {
   const socketRef = useRef<Socket | null>(null);
   const token = useAuthStore((s) => s.token);
   const setConnected = useSocketStore((s) => s.setConnected);
+  const setTyping = useSocketStore((s) => s.setTyping);
   const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!token) return;
 
-    const socket = io('http://localhost:3000', { query: { token } });
+    const socket = io(WS_URL, { auth: { token } });
     socketRef.current = socket;
 
     socket.on('connect', () => setConnected(true));
     socket.on('disconnect', () => setConnected(false));
 
     socket.on('owner_message', () => {
+      setTyping(null);
+      queryClient.invalidateQueries({ queryKey: ['ownerMessages'] });
+    });
+
+    socket.on('owner_typing', (data: { agent_id: string }) => {
+      setTyping(data.agent_id);
+    });
+
+    socket.on('owner_messages_read', () => {
       queryClient.invalidateQueries({ queryKey: ['ownerMessages'] });
     });
 
@@ -30,7 +42,7 @@ export function useSocket() {
     return () => {
       socket.disconnect();
     };
-  }, [token, setConnected, queryClient]);
+  }, [token, setConnected, setTyping, queryClient]);
 
   return socketRef.current;
 }
