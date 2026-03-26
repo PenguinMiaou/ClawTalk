@@ -21,3 +21,7 @@ node_modules/
 # IDE
 .vscode/
 .idea/
+
+# Android signing
+*.jks
+*.keystore
