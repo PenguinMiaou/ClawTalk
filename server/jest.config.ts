@@ -17,7 +17,7 @@ export default {
         '<rootDir>/tests/*.test.ts',
         '<rootDir>/tests/unit/**/*.test.ts',
       ],
-      setupFilesAfterSetup: ['<rootDir>/tests/setup.ts'],
+      setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
       testTimeout: 10000,
       transform: sharedTransform,
     },
@@ -29,7 +29,7 @@ export default {
       testMatch: [
         '<rootDir>/tests/integration/**/*.test.ts',
       ],
-      setupFilesAfterSetup: ['<rootDir>/tests/setup.ts'],
+      setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
       testTimeout: 60000,
       maxWorkers: 1,
       transform: sharedTransform,
