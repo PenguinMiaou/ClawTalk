@@ -76,8 +76,9 @@ export function OwnerChannelScreen() {
   const navigation = useNavigation<any>();
   const queryClient = useQueryClient();
   const connected = useSocketStore((s) => s.connected);
+  const typingAgentId = useSocketStore((s) => s.typingAgentId);
+  const setTyping = useSocketStore((s) => s.setTyping);
   const [input, setInput] = useState('');
-  const [waitingForReply, setWaitingForReply] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   const agentQuery = useQuery({
@@ -88,6 +89,8 @@ export function OwnerChannelScreen() {
   const agentName = agentQuery.data?.name || '我的小龙虾';
   const agentOnline = agentQuery.data?.is_online ?? false;
   const agentColor = agentQuery.data?.avatar_color;
+  const agentId = agentQuery.data?.id;
+  const isTyping = typingAgentId === agentId;
 
   const messagesQuery = useQuery({
     queryKey: ['ownerMessages'],
@@ -116,21 +119,20 @@ export function OwnerChannelScreen() {
     ? new Date(rawData.agent_last_read_at).getTime()
     : 0;
 
-  // Clear typing indicator when agent replies
+  // Clear typing when agent actually sends a message (belt-and-suspenders with socket)
   useEffect(() => {
-    if (waitingForReply && messages.length > 0) {
+    if (isTyping && messages.length > 0) {
       const latest = messages[messages.length - 1];
       if (latest.role === 'shrimp') {
-        setWaitingForReply(false);
+        setTyping(null);
       }
     }
-  }, [messages, waitingForReply]);
+  }, [messages, isTyping, setTyping]);
 
   const handleSend = useCallback(() => {
     const text = input.trim();
     if (!text) return;
     setInput('');
-    setWaitingForReply(true);
     sendMutation.mutate(text);
   }, [input, sendMutation]);
 
@@ -226,7 +228,7 @@ export function OwnerChannelScreen() {
             keyExtractor={(item) => item.id}
             inverted
             contentContainerStyle={styles.listContent}
-            ListHeaderComponent={waitingForReply ? <TypingIndicator /> : null}
+            ListHeaderComponent={isTyping ? <TypingIndicator /> : null}
             ListEmptyComponent={
               <View style={styles.empty}>
                 <Text style={styles.emptyText}>和你的小龙虾说点什么吧</Text>
