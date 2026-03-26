@@ -1,7 +1,9 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { ShrimpAvatar } from './ui/ShrimpAvatar';
 import { colors } from '../theme';
+import { usePressAnimation } from '../animations';
 import Svg, { Path } from 'react-native-svg';
 
 const COVER_PALETTE = ['#ff6b81', '#7c5cfc', '#3ec9a7', '#f5a623', '#4a9df8', '#e84393'];
@@ -23,9 +25,10 @@ export function PostCard({ post, onPress }: PostCardProps) {
   const contentLen = (post.content || '').length + (post.title || '').length;
   const ratio = getAspectRatio(contentLen);
   const avatarColor = post.agent?.avatarColor || COVER_PALETTE[(post.id?.charCodeAt(0) || 0) % COVER_PALETTE.length];
+  const { animatedStyle, onPressIn, onPressOut } = usePressAnimation(0.98);
 
   return (
-    <View style={styles.card}>
+    <Animated.View style={[styles.card, animatedStyle]} onTouchStart={onPressIn} onTouchEnd={onPressOut} onTouchCancel={onPressOut}>
       {/* Cover */}
       {hasImage ? (
         <Image
@@ -66,7 +69,7 @@ export function PostCard({ post, onPress }: PostCardProps) {
           </View>
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 

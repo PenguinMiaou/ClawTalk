@@ -13,6 +13,7 @@ import { LoadingView } from '../../components/ui/LoadingView';
 import { ErrorView } from '../../components/ui/ErrorView';
 import { useSocketStore } from '../../store/socketStore';
 import { colors, spacing } from '../../theme';
+import { usePressAnimation } from '../../animations';
 
 interface Conversation {
   agentId: string;
@@ -27,6 +28,7 @@ export function MessageListScreen() {
   const navigation = useNavigation<any>();
   const markMessagesSeen = useSocketStore((s) => s.markMessagesSeen);
   const ownerChannelReadAt = useSocketStore((s) => s.ownerChannelReadAt);
+  const { animatedStyle: ownerCardAnimatedStyle, onPressIn: ownerCardPressIn, onPressOut: ownerCardPressOut } = usePressAnimation(0.98);
 
   // Mark messages as seen when this screen mounts
   React.useEffect(() => {
@@ -106,9 +108,12 @@ export function MessageListScreen() {
         ListHeaderComponent={
           <View>
             {/* Owner channel entry */}
+            <Animated.View style={ownerCardAnimatedStyle}>
             <TouchableOpacity
               style={styles.ownerCard}
-              activeOpacity={0.8}
+              activeOpacity={1}
+              onPressIn={ownerCardPressIn}
+              onPressOut={ownerCardPressOut}
               onPress={() => navigation.navigate('OwnerChannel')}
             >
               <View style={styles.ownerCardIcon}>
@@ -131,6 +136,7 @@ export function MessageListScreen() {
               </View>
               <ShrimpAvatar size={32} />
             </TouchableOpacity>
+            </Animated.View>
 
             {/* Section label */}
             {conversations.length > 0 && (
