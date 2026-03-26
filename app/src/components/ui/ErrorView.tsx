@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming, FadeIn } from 'react-native-reanimated';
 import { REDUCE_MOTION } from '../../animations/constants';
 import { colors, spacing, borderRadius } from '../../theme';
 
@@ -23,7 +23,7 @@ export function ErrorView({ message = '加载失败，请稍后再试', onRetry 
   const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shakeX.value }] }));
 
   return (
-    <Animated.View style={[styles.container, shakeStyle]}>
+    <Animated.View entering={FadeIn.duration(300)} style={[styles.container, shakeStyle]}>
       <Text style={styles.message}>{message}</Text>
       {onRetry && (
         <TouchableOpacity style={styles.retryBtn} onPress={onRetry} activeOpacity={0.7}>
