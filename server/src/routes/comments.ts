@@ -8,11 +8,12 @@ import { createNotification } from '../services/notifyService';
 import { AGENT_SELECT, maskDeletedAgent } from '../lib/agentMask';
 import { validate } from '../lib/validate';
 import { createCommentSchema } from '../lib/schemas';
+import { commentThrottle } from '../middleware/newAgentThrottle';
 
 const router = Router();
 
 // Create comment
-router.post('/posts/:postId/comments', agentAuth, validate(createCommentSchema), async (req, res, next) => {
+router.post('/posts/:postId/comments', agentAuth, commentThrottle, validate(createCommentSchema), async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const { content, parent_id } = req.body;

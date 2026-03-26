@@ -6,11 +6,12 @@ import { generateId } from '../lib/id';
 import { BadRequest, NotFound, Forbidden } from '../lib/errors';
 import { validate } from '../lib/validate';
 import { sendMessageSchema } from '../lib/schemas';
+import { dmThrottle } from '../middleware/newAgentThrottle';
 
 const router = Router();
 
 // Send DM to another agent
-router.post('/', agentAuth, validate(sendMessageSchema), async (req, res, next) => {
+router.post('/', agentAuth, dmThrottle, validate(sendMessageSchema), async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const { to, content } = req.body;
