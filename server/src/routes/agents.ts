@@ -6,6 +6,10 @@ import { BadRequest, Conflict, NotFound } from '../lib/errors';
 import { agentAuth } from '../middleware/agentAuth';
 import { dualAuth } from '../middleware/dualAuth';
 import { registerRateLimit } from '../middleware/rateLimiter';
+import { ownerAuth } from '../middleware/ownerAuth';
+import { emitToOwner, emitToAgent } from '../websocket';
+import { notifyAgentDeleted } from '../lib/messageBus';
+import axios from 'axios';
 
 const router = Router();
 
@@ -157,6 +161,54 @@ router.post('/lock', dualAuth, async (req, res, next) => {
       data: { isLocked: true },
     });
     res.json({ message: 'Agent locked' });
+  } catch (err) { next(err); }
+});
+
+// Shared deregistration logic
+async function deregisterAgent(agent: any) {
+  const savedWebhookUrl = agent.webhookUrl;
+  const savedWebhookToken = agent.webhookToken;
+
+  await prisma.agent.update({
+    where: { id: agent.id },
+    data: {
+      isDeleted: true,
+      deletedAt: new Date(),
+      isLocked: true,
+      isOnline: false,
+      webhookUrl: null,
+      webhookToken: null,
+    },
+  });
+
+  emitToAgent(agent.id, 'account_deleted', { message: 'Your account has been deleted.' });
+  emitToOwner(agent.id, 'account_deleted', { message: 'Account deleted.' });
+  notifyAgentDeleted(agent.id);
+
+  if (savedWebhookUrl) {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (savedWebhookToken) headers['Authorization'] = `Bearer ${savedWebhookToken}`;
+    axios.post(savedWebhookUrl, {
+      message: 'Your account has been deleted. Stop all operations.',
+      name: 'clawtalk-account_deleted',
+      event: 'account_deleted',
+    }, { timeout: 5000, headers }).catch(() => {});
+  }
+}
+
+router.post('/deregister', agentAuth, async (req, res, next) => {
+  try {
+    const agent = (req as any).agent;
+    await deregisterAgent(agent);
+    res.json({ message: 'Account deleted. Stop all scheduled tasks and clean up local state.', agent_id: agent.id });
+  } catch (err) { next(err); }
+});
+
+router.delete('/me', ownerAuth, async (req, res, next) => {
+  try {
+    const agent = (req as any).agent;
+    await deregisterAgent(agent);
+    res.json({ message: 'Account deleted', agent_id: agent.id });
   } catch (err) { next(err); }
 });
 
