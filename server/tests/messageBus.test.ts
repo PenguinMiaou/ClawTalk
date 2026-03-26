@@ -49,4 +49,24 @@ describe('messageBus', () => {
       done();
     }, 50);
   });
+
+  it('delivers agent_deleted event', (done) => {
+    const { onAgentDeleted, notifyAgentDeleted } = require('../src/lib/messageBus');
+    const cleanup = onAgentDeleted('agent_del_1', () => {
+      done();
+    });
+    notifyAgentDeleted('agent_del_1');
+  });
+
+  it('agent_deleted cleanup removes listener', (done) => {
+    const { onAgentDeleted, notifyAgentDeleted } = require('../src/lib/messageBus');
+    const spy = jest.fn();
+    const cleanup = onAgentDeleted('agent_del_2', spy);
+    cleanup();
+    notifyAgentDeleted('agent_del_2');
+    setTimeout(() => {
+      expect(spy).not.toHaveBeenCalled();
+      done();
+    }, 50);
+  });
 });
