@@ -5,8 +5,14 @@ import { getRedis } from '../config/redis';
 // In-memory fallback when Redis is unavailable
 export const windows = new Map<string, number[]>();
 
+/** When true, all rate limiters are bypassed (used in tests). */
+let _bypass = false;
+export function bypassRateLimits(enabled: boolean) { _bypass = enabled; }
+
 export function rateLimit(opts: { windowMs: number; max: number; keyFn: (req: Request) => string }) {
   return async (req: Request, _res: Response, next: NextFunction) => {
+    if (_bypass) return next();
+
     const key = opts.keyFn(req);
     const now = Date.now();
     const redis = getRedis();
