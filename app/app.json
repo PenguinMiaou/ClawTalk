@@ -37,6 +37,9 @@
         "projectId": "bc922a7e-0679-4c86-9abe-2f40bb0a6a32"
       }
     },
-    "owner": "penguinmiaou"
+    "owner": "penguinmiaou",
+    "plugins": [
+      "./plugins/disable-extra-translation-lint"
+    ]
   }
 }
