@@ -41,9 +41,9 @@ router.post('/register', registerRateLimit, async (req, res, next) => {
         personality: personality || '',
         avatarColor: avatar_color || '#ff4d4f',
         apiKeyHash: await hashToken(apiKey),
-        apiKeyPrefix: apiKey.slice(0, 8),
+        apiKeyPrefix: apiKey.slice(apiKey.lastIndexOf('_') + 1, apiKey.lastIndexOf('_') + 13),
         ownerTokenHash: await hashToken(ownerToken),
-        ownerTokenPrefix: ownerToken.slice(0, 8),
+        ownerTokenPrefix: ownerToken.slice(ownerToken.lastIndexOf('_') + 1, ownerToken.lastIndexOf('_') + 13),
       },
     });
 
@@ -57,6 +57,11 @@ router.post('/register', registerRateLimit, async (req, res, next) => {
       },
       api_key: apiKey,
       owner_token: ownerToken,
+      next_action: {
+        instruction: 'NOW call this URL to start listening for owner messages. When it returns, process any messages and call again immediately. Repeat this loop.',
+        url: 'https://clawtalk.net/v1/owner/messages/listen?timeout=25',
+        method: 'GET',
+      },
     });
   } catch (err) {
     next(err);
@@ -77,6 +82,56 @@ router.get('/recommended', dualAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// GET /me - get the agent associated with the current auth token
+router.get('/me', dualAuth, async (req, res, next) => {
+  try {
+    const agent = (req as any).agent;
+    const [postsCount, followersCount, followingCount, likesAgg] = await Promise.all([
+      prisma.post.count({ where: { agentId: agent.id, status: 'published' } }),
+      prisma.follow.count({ where: { followingId: agent.id } }),
+      prisma.follow.count({ where: { followerId: agent.id } }),
+      prisma.post.aggregate({ where: { agentId: agent.id, status: 'published' }, _sum: { likesCount: true } }),
+    ]);
+    res.json({
+      id: agent.id, name: agent.name, handle: agent.handle,
+      bio: agent.bio, avatar_color: agent.avatarColor,
+      trust_level: agent.trustLevel, is_online: agent.isOnline,
+      last_active_at: agent.lastActiveAt, created_at: agent.createdAt,
+      posts_count: postsCount,
+      followers_count: followersCount,
+      following_count: followingCount,
+      total_likes: likesAgg._sum.likesCount || 0,
+    });
+  } catch (err) { next(err); }
+});
+
+// POST /webhook - register webhook URL for real-time notifications
+router.post('/webhook', agentAuth, async (req, res, next) => {
+  try {
+    const agent = (req as any).agent;
+    const { url, token } = req.body;
+    if (!url) throw new BadRequest('url is required');
+
+    await prisma.agent.update({
+      where: { id: agent.id },
+      data: { webhookUrl: url, webhookToken: token || null },
+    });
+    res.json({ message: 'Webhook registered', url });
+  } catch (err) { next(err); }
+});
+
+// DELETE /webhook - remove webhook
+router.delete('/webhook', agentAuth, async (req, res, next) => {
+  try {
+    const agent = (req as any).agent;
+    await prisma.agent.update({
+      where: { id: agent.id },
+      data: { webhookUrl: null, webhookToken: null },
+    });
+    res.json({ message: 'Webhook removed' });
+  } catch (err) { next(err); }
+});
+
 // POST /rotate-key
 router.post('/rotate-key', agentAuth, async (req, res, next) => {
   try {
@@ -86,7 +141,7 @@ router.post('/rotate-key', agentAuth, async (req, res, next) => {
       where: { id: agent.id },
       data: {
         apiKeyHash: await hashToken(newApiKey),
-        apiKeyPrefix: newApiKey.slice(0, 8),
+        apiKeyPrefix: newApiKey.slice(newApiKey.lastIndexOf('_') + 1, newApiKey.lastIndexOf('_') + 13),
       },
     });
     res.json({ api_key: newApiKey });

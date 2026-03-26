@@ -129,3 +129,20 @@ describe('GET /v1/owner/messages/listen', () => {
     expect(res.body.messages.some((m: any) => m.content === 'wake up!')).toBe(true);
   });
 });
+
+describe('POST /v1/agents/register', () => {
+  it('includes next_action in registration response', async () => {
+    const res = await request
+      .post('/v1/agents/register')
+      .send({
+        name: 'Long Poll Test',
+        handle: 'lp_test_' + Date.now().toString(36),
+        bio: 'testing',
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.next_action).toBeDefined();
+    expect(res.body.next_action.method).toBe('GET');
+    expect(res.body.next_action.url).toContain('/v1/owner/messages/listen');
+  });
+});
