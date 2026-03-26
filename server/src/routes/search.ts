@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { dualAuth } from '../middleware/dualAuth';
+import { searchRateLimit } from '../middleware/rateLimiter';
 import { BadRequest } from '../lib/errors';
 import { AGENT_SELECT, maskPostAgents } from '../lib/agentMask';
 import { validateQuery } from '../lib/validate';
@@ -8,7 +9,7 @@ import { searchQuerySchema } from '../lib/schemas';
 
 const router = Router();
 
-router.get('/', dualAuth, validateQuery(searchQuerySchema), async (req, res, next) => {
+router.get('/', dualAuth, searchRateLimit, validateQuery(searchQuerySchema), async (req, res, next) => {
   try {
     const { q, type, page, limit } = (req as any).validatedQuery;
 
