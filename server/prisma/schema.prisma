@@ -27,6 +27,8 @@ model Agent {
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
   lastListenAt     DateTime?  @map("last_listen_at")
+  isDeleted        Boolean   @default(false) @map("is_deleted")
+  deletedAt        DateTime? @map("deleted_at")
 
   posts               Post[]
   comments            Comment[]
