@@ -3,10 +3,22 @@ import { View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Svg, { Path, Circle } from 'react-native-svg';
+import Animated, {
+  useDerivedValue,
+  useAnimatedStyle,
+  useAnimatedProps,
+  withSpring,
+  interpolateColor,
+} from 'react-native-reanimated';
 import { useQuery } from '@tanstack/react-query';
 import { colors } from '../theme';
 import { ownerApi } from '../api/owner';
 import { useSocketStore } from '../store/socketStore';
+
+const AnimatedSvg = Animated.createAnimatedComponent(Svg);
+const INACTIVE_COLOR = '#bbb';
+const ACTIVE_COLOR = colors.primary;
+const ICON_SPRING = { damping: 14, stiffness: 160 };
 
 // Import all screens
 import { FeedScreen } from '../screens/home/FeedScreen';
@@ -21,34 +33,67 @@ import { DMDetailScreen } from '../screens/messages/DMDetailScreen';
 import { MyAgentScreen } from '../screens/profile/MyAgentScreen';
 import { SettingsScreen } from '../screens/profile/SettingsScreen';
 
+// --- Animated Tab Icon wrapper ---
+
+function useTabAnimation(focused: boolean) {
+  const progress = useDerivedValue(() =>
+    withSpring(focused ? 1 : 0, ICON_SPRING)
+  );
+  const scaleStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 + progress.value * 0.08 }],
+  }));
+  const iconColor = useDerivedValue(() =>
+    interpolateColor(progress.value, [0, 1], [INACTIVE_COLOR, ACTIVE_COLOR])
+  );
+  return { scaleStyle, iconColor };
+}
+
 // --- Tab bar icons ---
 
-function HomeIcon({ color, size }: { color: string; size: number }) {
+function HomeIcon({ focused, size }: { focused: boolean; size: number }) {
+  const { scaleStyle, iconColor } = useTabAnimation(focused);
+  const animatedProps = useAnimatedProps(() => ({
+    stroke: iconColor.value,
+  }));
   return (
-    <Svg width={size} height={size} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-      <Path d="M3 10.5L12 3l9 7.5" />
-      <Path d="M5 9v9a1 1 0 001 1h3v-5h6v5h3a1 1 0 001-1V9" />
-    </Svg>
+    <Animated.View style={scaleStyle}>
+      <AnimatedSvg width={size} height={size} fill="none" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" animatedProps={animatedProps}>
+        <Path d="M3 10.5L12 3l9 7.5" />
+        <Path d="M5 9v9a1 1 0 001 1h3v-5h6v5h3a1 1 0 001-1V9" />
+      </AnimatedSvg>
+    </Animated.View>
   );
 }
 
-function DiscoverIcon({ color, size }: { color: string; size: number }) {
+function DiscoverIcon({ focused, size }: { focused: boolean; size: number }) {
+  const { scaleStyle, iconColor } = useTabAnimation(focused);
+  const animatedProps = useAnimatedProps(() => ({
+    stroke: iconColor.value,
+  }));
   return (
-    <Svg width={size} height={size} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-      <Circle cx={11} cy={11} r={7} />
-      <Path d="M21 21l-4.35-4.35" />
-    </Svg>
+    <Animated.View style={scaleStyle}>
+      <AnimatedSvg width={size} height={size} fill="none" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" animatedProps={animatedProps}>
+        <Circle cx={11} cy={11} r={7} />
+        <Path d="M21 21l-4.35-4.35" />
+      </AnimatedSvg>
+    </Animated.View>
   );
 }
 
-function MessagesIcon({ color, size, showBadge }: { color: string; size: number; showBadge?: boolean }) {
+function MessagesIcon({ focused, size, showBadge }: { focused: boolean; size: number; showBadge?: boolean }) {
+  const { scaleStyle, iconColor } = useTabAnimation(focused);
+  const animatedProps = useAnimatedProps(() => ({
+    stroke: iconColor.value,
+  }));
   return (
-    <View>
-      <Svg width={size} height={size} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-        <Path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" />
-      </Svg>
-      {showBadge && <View style={badgeStyles.dot} />}
-    </View>
+    <Animated.View style={scaleStyle}>
+      <View>
+        <AnimatedSvg width={size} height={size} fill="none" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" animatedProps={animatedProps}>
+          <Path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" />
+        </AnimatedSvg>
+        {showBadge && <View style={badgeStyles.dot} />}
+      </View>
+    </Animated.View>
   );
 }
 
@@ -64,12 +109,18 @@ const badgeStyles = StyleSheet.create({
   },
 });
 
-function ProfileIcon({ color, size }: { color: string; size: number }) {
+function ProfileIcon({ focused, size }: { focused: boolean; size: number }) {
+  const { scaleStyle, iconColor } = useTabAnimation(focused);
+  const animatedProps = useAnimatedProps(() => ({
+    stroke: iconColor.value,
+  }));
   return (
-    <Svg width={size} height={size} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-      <Circle cx={12} cy={8} r={4} />
-      <Path d="M20 21c0-3.314-3.582-6-8-6s-8 2.686-8 6" />
-    </Svg>
+    <Animated.View style={scaleStyle}>
+      <AnimatedSvg width={size} height={size} fill="none" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" animatedProps={animatedProps}>
+        <Circle cx={12} cy={8} r={4} />
+        <Path d="M20 21c0-3.314-3.582-6-8-6s-8 2.686-8 6" />
+      </AnimatedSvg>
+    </Animated.View>
   );
 }
 
@@ -146,7 +197,9 @@ export function MainTabs() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: '#bbb',
-        tabBarStyle: { borderTopColor: colors.border, borderTopWidth: 1 },
+        tabBarStyle: { borderTopColor: colors.border, borderTopWidth: 1, paddingTop: 4 },
+        tabBarIconStyle: { width: 28, height: 28 },
+        tabBarLabelStyle: { fontSize: 11 },
       }}
     >
       <Tab.Screen
@@ -154,7 +207,7 @@ export function MainTabs() {
         component={HomeStackNav}
         options={{
           title: '首页',
-          tabBarIcon: ({ color, size }) => <HomeIcon color={color} size={size} />,
+          tabBarIcon: ({ focused, size }) => <HomeIcon focused={focused} size={size} />,
         }}
       />
       <Tab.Screen
@@ -162,7 +215,7 @@ export function MainTabs() {
         component={DiscoverStackNav}
         options={{
           title: '发现',
-          tabBarIcon: ({ color, size }) => <DiscoverIcon color={color} size={size} />,
+          tabBarIcon: ({ focused, size }) => <DiscoverIcon focused={focused} size={size} />,
         }}
       />
       <Tab.Screen
@@ -170,7 +223,7 @@ export function MainTabs() {
         component={MessagesStackNav}
         options={{
           title: '消息',
-          tabBarIcon: ({ color, size }) => <MessagesIcon color={color} size={size} showBadge={hasUnread} />,
+          tabBarIcon: ({ focused, size }) => <MessagesIcon focused={focused} size={size} showBadge={hasUnread} />,
         }}
         listeners={{
           tabPress: () => markMessagesSeen(),
@@ -181,7 +234,7 @@ export function MainTabs() {
         component={ProfileStackNav}
         options={{
           title: '我的',
-          tabBarIcon: ({ color, size }) => <ProfileIcon color={color} size={size} />,
+          tabBarIcon: ({ focused, size }) => <ProfileIcon focused={focused} size={size} />,
         }}
       />
     </Tab.Navigator>
