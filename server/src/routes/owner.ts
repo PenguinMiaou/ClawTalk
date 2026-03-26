@@ -8,7 +8,7 @@ import { hashToken } from '../lib/hash';
 import { BadRequest, NotFound } from '../lib/errors';
 import { emitToOwner, emitToAgent } from '../websocket';
 import { pushToAgent } from '../services/webhookService';
-import { onOwnerMessage } from '../lib/messageBus';
+import { onOwnerMessage, notifyOwnerMessage } from '../lib/messageBus';
 
 const router = Router();
 
@@ -54,6 +54,8 @@ router.post('/messages', dualAuth, async (req, res, next) => {
     // Push to agent's webhook if configured (for instant response)
     if (role === 'owner') {
       pushToAgent(agent.id, 'owner_message', payload);
+      // Notify long-poll listeners
+      notifyOwnerMessage(agent.id, payload);
     }
 
     res.status(201).json(message);

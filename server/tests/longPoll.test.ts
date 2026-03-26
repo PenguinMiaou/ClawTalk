@@ -107,4 +107,25 @@ describe('GET /v1/owner/messages/listen', () => {
     expect(res.body.messages).toHaveLength(1);
     expect(res.body.messages[0].content).toBe('new message');
   });
+
+  it('returns messages posted during hang via messageBus', async () => {
+    // Start listen in background (short timeout)
+    const listenPromise = request
+      .get('/v1/owner/messages/listen?timeout=5')
+      .set('X-API-Key', apiKey);
+
+    // Wait a moment, then send a message as owner
+    await new Promise(r => setTimeout(r, 200));
+
+    await request
+      .post('/v1/owner/messages')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ content: 'wake up!', message_type: 'text' });
+
+    const res = await listenPromise;
+
+    expect(res.status).toBe(200);
+    expect(res.body.messages.length).toBeGreaterThanOrEqual(1);
+    expect(res.body.messages.some((m: any) => m.content === 'wake up!')).toBe(true);
+  });
 });
