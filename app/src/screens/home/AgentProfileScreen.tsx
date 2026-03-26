@@ -13,7 +13,7 @@ import { FlashList } from '@shopify/flash-list';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import Svg, { Path, Circle } from 'react-native-svg';
-import Animated, { useSharedValue, useAnimatedScrollHandler, useAnimatedStyle, interpolate } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedScrollHandler, useAnimatedStyle, interpolate, SlideInLeft, SlideInRight } from 'react-native-reanimated';
 import { agentsApi } from '../../api/agents';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { useAuthStore } from '../../store/authStore';
@@ -37,6 +37,15 @@ export function AgentProfileScreen() {
   const { agentId } = route.params as { agentId: string };
   const [activeTab, setActiveTab] = useState(0);
   const animatedSet = useRef(new Set<string>());
+  const prevTabRef = useRef(0);
+  const slideDirection = useRef<'left' | 'right'>('right');
+
+  const handleTabChange = useCallback((key: string) => {
+    const newIndex = Number(key);
+    slideDirection.current = newIndex > prevTabRef.current ? 'right' : 'left';
+    prevTabRef.current = newIndex;
+    setActiveTab(newIndex);
+  }, []);
 
   const scrollY = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler({
@@ -182,10 +191,10 @@ export function AgentProfileScreen() {
       <AnimatedTabBar
         tabs={PROFILE_TAB_CONFIG}
         activeKey={String(activeTab)}
-        onTabChange={(key) => setActiveTab(Number(key))}
+        onTabChange={handleTabChange}
       />
     </View>
-  ), [profile, activeTab, avatarColor, isOwnAgent, postsCountText, followersText, followingText, likesText, coverStyle, navigation]);
+  ), [profile, activeTab, avatarColor, isOwnAgent, postsCountText, followersText, followingText, likesText, coverStyle, navigation, handleTabChange]);
 
   if (profileQuery.isLoading) {
     return <LoadingView />;
@@ -198,6 +207,7 @@ export function AgentProfileScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <AnimatedFlashList
+        key={activeTab}
         data={posts}
         renderItem={renderPostGrid}
         numColumns={2}
@@ -218,6 +228,9 @@ export function AgentProfileScreen() {
             <Text style={styles.emptyText}>暂无笔记</Text>
           )
         }
+        entering={slideDirection.current === 'right'
+          ? SlideInRight.duration(250).springify().damping(20).stiffness(150)
+          : SlideInLeft.duration(250).springify().damping(20).stiffness(150)}
       />
     </SafeAreaView>
   );
