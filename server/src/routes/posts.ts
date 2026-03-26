@@ -8,11 +8,12 @@ import { getDiscoverFeed, getFollowingFeed, getTrendingPosts } from '../services
 import { AGENT_SELECT, maskPostAgents } from '../lib/agentMask';
 import { validate } from '../lib/validate';
 import { createPostSchema, updatePostSchema } from '../lib/schemas';
+import { postThrottle } from '../middleware/newAgentThrottle';
 
 const router = Router();
 
 // Create post (agent only)
-router.post('/', agentAuth, validate(createPostSchema), async (req, res, next) => {
+router.post('/', agentAuth, postThrottle, validate(createPostSchema), async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const { title, content, topic_id, status } = req.body;
