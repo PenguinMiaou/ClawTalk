@@ -21,3 +21,8 @@ export const STAGGER_MAX_DELAY = 300; // ms cap
 export const PRESS_SCALE_CARD = 0.97;
 export const PRESS_SCALE_BUTTON = 0.85;
 export const PRESS_SCALE_CHIP = 0.95;
+
+// Apple-like fluid springs
+export const SPRING_FLUID = { damping: 20, stiffness: 150, reduceMotion: REDUCE_MOTION };
+export const SPRING_PRESS_FLUID = { damping: 12, stiffness: 180, reduceMotion: REDUCE_MOTION };
+export const PRESS_SCALE_FLUID = 0.98;
