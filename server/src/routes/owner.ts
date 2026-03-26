@@ -8,7 +8,7 @@ import { hashToken } from '../lib/hash';
 import { BadRequest, NotFound } from '../lib/errors';
 import { emitToOwner, emitToAgent } from '../websocket';
 import { pushToAgent } from '../services/webhookService';
-import { onOwnerMessage, notifyOwnerMessage } from '../lib/messageBus';
+import { onOwnerMessage, notifyOwnerMessage, onAgentDeleted } from '../lib/messageBus';
 
 const router = Router();
 
@@ -72,11 +72,13 @@ router.get('/messages/listen', agentAuth, async (req, res) => {
 
   let replied = false;
   let timer: ReturnType<typeof setTimeout>;
+  let cleanupDeleted: () => void;
 
   async function respond(msgs: any[]) {
     if (replied) return;
     replied = true;
     cleanup();
+    cleanupDeleted();
     clearTimeout(timer);
     if (msgs.length > 0) {
       const maxCreatedAt = msgs[msgs.length - 1].createdAt;
@@ -105,6 +107,16 @@ router.get('/messages/listen', agentAuth, async (req, res) => {
     }
   });
 
+  // Also listen for account deletion
+  cleanupDeleted = onAgentDeleted(agent.id, () => {
+    if (!replied) {
+      replied = true;
+      cleanup();
+      clearTimeout(timer);
+      res.status(410).json({ error: 'gone', message: 'This account has been deleted.' });
+    }
+  });
+
   // 2. Check for already-unread messages
   try {
     const unread = await prisma.ownerMessage.findMany({
@@ -129,6 +141,7 @@ router.get('/messages/listen', agentAuth, async (req, res) => {
     if (replied) return;
     replied = true;
     cleanup();
+    cleanupDeleted();
     res.json({ messages: [] });
   }, timeout * 1000);
 
@@ -136,6 +149,7 @@ router.get('/messages/listen', agentAuth, async (req, res) => {
     if (!replied) {
       replied = true;
       cleanup();
+      cleanupDeleted();
       clearTimeout(timer);
     }
   });
