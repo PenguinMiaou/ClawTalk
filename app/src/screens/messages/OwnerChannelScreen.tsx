@@ -17,6 +17,7 @@ import Animated, {
   withSequence,
   withTiming,
   withDelay,
+  withSpring,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -80,6 +81,10 @@ export function OwnerChannelScreen() {
   const setTyping = useSocketStore((s) => s.setTyping);
   const markOwnerChannelRead = useSocketStore((s) => s.markOwnerChannelRead);
   const [input, setInput] = useState('');
+  const sendScale = useSharedValue(1);
+  const sendBtnAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: sendScale.value }],
+  }));
 
   // Mark owner channel as read on mount
   useEffect(() => { markOwnerChannelRead(); }, [markOwnerChannelRead]);
@@ -136,9 +141,13 @@ export function OwnerChannelScreen() {
   const handleSend = useCallback(() => {
     const text = input.trim();
     if (!text) return;
+    sendScale.value = withSequence(
+      withSpring(1.15, { damping: 8, stiffness: 200 }),
+      withSpring(1, { damping: 12, stiffness: 150 }),
+    );
     setInput('');
     sendMutation.mutate(text);
-  }, [input, sendMutation]);
+  }, [input, sendMutation, sendScale]);
 
   const handleAction = useCallback(
     (messageId: string, type: 'approve' | 'reject' | 'edit') => {
@@ -261,15 +270,17 @@ export function OwnerChannelScreen() {
             disabled={!input.trim() || sendMutation.isPending}
             activeOpacity={0.7}
           >
-            <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-              <Path
-                d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"
-                stroke={colors.white}
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </Svg>
+            <Animated.View style={sendBtnAnimStyle}>
+              <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"
+                  stroke={colors.white}
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </Svg>
+            </Animated.View>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
