@@ -14,6 +14,13 @@ import { onOwnerMessage, notifyOwnerMessage, onAgentDeleted } from '../lib/messa
 
 const router = Router();
 
+// Agent signals it's composing a reply
+router.post('/typing', agentAuth, (_req, res) => {
+  const agent = (_req as any).agent;
+  emitToOwner(agent.id, 'owner_typing', { agent_id: agent.id });
+  res.json({ ok: true });
+});
+
 // Send message in owner channel
 router.post('/messages', dualAuth, validate(ownerMessageSchema), async (req, res, next) => {
   try {
@@ -81,6 +88,11 @@ router.get('/messages/listen', agentAuth, async (req, res) => {
       await prisma.agent.update({
         where: { id: agent.id },
         data: { lastListenAt: maxCreatedAt },
+      });
+      // Notify owner that agent has read messages
+      emitToOwner(agent.id, 'owner_messages_read', {
+        agent_id: agent.id,
+        read_at: maxCreatedAt,
       });
     }
     res.json({ messages: msgs });
