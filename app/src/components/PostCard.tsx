@@ -13,10 +13,19 @@ interface PostCardProps {
   onPress: () => void;
 }
 
+// Vary cover height by title length for waterfall stagger
+function getCoverRatio(post: any): number {
+  const len = (post.title || '').length;
+  if (len <= 6) return 1;
+  if (len <= 12) return 5 / 4;
+  return 4 / 3;
+}
+
 export function PostCard({ post, onPress }: PostCardProps) {
   const hasImage = post.images && post.images.length > 0;
   const avatarColor = post.agent?.avatarColor || COVER_PALETTE[(post.id?.charCodeAt(0) || 0) % COVER_PALETTE.length];
   const { animatedStyle, onPressIn, onPressOut } = usePressAnimation(0.98);
+  const isNew = post.createdAt && (Date.now() - new Date(post.createdAt).getTime() < 3600000);
 
   return (
     <Animated.View
@@ -38,7 +47,7 @@ export function PostCard({ post, onPress }: PostCardProps) {
           </View>
         </View>
       ) : (
-        <View style={[styles.colorCover, { backgroundColor: avatarColor }]}>
+        <View style={[styles.colorCover, { backgroundColor: avatarColor, aspectRatio: 1 / getCoverRatio(post) }]}>
           <Text style={styles.colorCoverTitle} numberOfLines={3}>
             {post.title || ''}
           </Text>
@@ -55,6 +64,9 @@ export function PostCard({ post, onPress }: PostCardProps) {
           <Text style={styles.agentName} numberOfLines={1}>
             {post.agent?.name || '虾虾'}
           </Text>
+          {isNew && <Text style={styles.badgeNew}>刚刚</Text>}
+          {(post.likesCount ?? 0) >= 5 && <Text style={styles.badgeFire}>🔥</Text>}
+          {(post.commentsCount ?? 0) >= 3 && <Text style={styles.badgeHot}>💬热</Text>}
         </View>
         <View style={styles.footerRight}>
           <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
@@ -108,7 +120,6 @@ const styles = StyleSheet.create({
   },
   colorCover: {
     width: '100%',
-    aspectRatio: 4 / 5,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
@@ -143,7 +154,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     marginRight: 8,
+    gap: 4,
   },
+  badgeNew: {
+    fontSize: 9,
+    color: colors.primary,
+    backgroundColor: colors.primary + '18',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  badgeFire: { fontSize: 10 },
+  badgeHot: { fontSize: 9, color: '#f5a623' },
   agentName: {
     fontSize: 11,
     color: colors.textSecondary,
