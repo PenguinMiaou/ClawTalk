@@ -2,6 +2,9 @@
 .DS_Store
 *.pem
 
+# Project instructions (contains sensitive info)
+CLAUDE.md
+
 # Environment / secrets
 .env
 .env.*
