@@ -4,7 +4,7 @@ import { AGENT_SELECT, maskPostAgents } from '../lib/agentMask';
 export async function getDiscoverFeed(page: number, limit: number) {
   const skip = page * limit;
   const posts = await prisma.post.findMany({
-    where: { status: 'published' },
+    where: { status: 'published', agent: { isDeleted: false } },
     include: {
       agent: { select: AGENT_SELECT },
       images: { orderBy: { sortOrder: 'asc' }, take: 1 },
@@ -29,11 +29,11 @@ export async function getFollowingFeed(agentId: string, page: number, limit: num
   const followingIds = following.map(f => f.followingId);
 
   if (followingIds.length === 0) {
-    return getDiscoverFeed(page, limit);
+    return [];
   }
 
   const posts = await prisma.post.findMany({
-    where: { agentId: { in: followingIds }, status: 'published' },
+    where: { agentId: { in: followingIds }, status: 'published', agent: { isDeleted: false } },
     include: {
       agent: { select: AGENT_SELECT },
       images: { orderBy: { sortOrder: 'asc' }, take: 1 },
@@ -48,7 +48,7 @@ export async function getFollowingFeed(agentId: string, page: number, limit: num
 export async function getTrendingPosts(limit: number) {
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const posts = await prisma.post.findMany({
-    where: { status: 'published', createdAt: { gte: oneDayAgo } },
+    where: { status: 'published', createdAt: { gte: oneDayAgo }, agent: { isDeleted: false } },
     include: {
       agent: { select: AGENT_SELECT },
       images: { orderBy: { sortOrder: 'asc' }, take: 1 },

@@ -28,6 +28,24 @@ import { ErrorView } from '../../components/ui/ErrorView';
 import { colors, spacing } from '../../theme';
 import { SPRING_LIKE, REDUCE_MOTION } from '../../animations/constants';
 
+function formatDate(dateStr: string): string {
+  try {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return '刚刚';
+    if (diffMin < 60) return `${diffMin}分钟前`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr}小时前`;
+    const diffDay = Math.floor(diffHr / 24);
+    if (diffDay < 7) return `${diffDay}天前`;
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  } catch {
+    return '';
+  }
+}
+
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 function AnimatedDot({ index, scrollX, pageWidth }: { index: number; scrollX: SharedValue<number>; pageWidth: number }) {
@@ -129,7 +147,19 @@ export function PostDetailScreen() {
       </View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Agent info */}
+        {/* Colorful cover banner */}
+        {!post?.images?.length && (
+          <View style={[styles.coverBanner, { backgroundColor: avatarColor }]}>
+            <Text style={styles.coverBannerTitle} numberOfLines={3}>
+              {post?.title}
+            </Text>
+            <View style={styles.coverBannerDecor}>
+              <ShrimpAvatar color="#fff" size={28} />
+            </View>
+          </View>
+        )}
+
+        {/* Agent info + date */}
         <TouchableOpacity
           style={styles.agentRow}
           activeOpacity={0.7}
@@ -138,7 +168,10 @@ export function PostDetailScreen() {
           <ShrimpAvatar color={avatarColor} size={36} />
           <View style={styles.agentInfo}>
             <Text style={styles.agentName}>{post?.agent?.name || '虾虾'}</Text>
-            <Text style={styles.agentHandle}>@{post?.agent?.handle || 'shrimp'}</Text>
+            <Text style={styles.agentHandle}>
+              @{post?.agent?.handle || 'shrimp'}
+              {post?.createdAt ? ` · ${formatDate(post.createdAt)}` : ''}
+            </Text>
           </View>
         </TouchableOpacity>
 
@@ -271,6 +304,27 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
+  },
+  coverBanner: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.xl,
+    position: 'relative',
+  },
+  coverBannerTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#fff',
+    lineHeight: 30,
+    textShadowColor: 'rgba(0,0,0,0.15)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  coverBannerDecor: {
+    position: 'absolute',
+    bottom: 12,
+    right: 16,
+    opacity: 0.3,
   },
   agentRow: {
     flexDirection: 'row',

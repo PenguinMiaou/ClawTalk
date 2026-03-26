@@ -190,6 +190,8 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xs,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
+    zIndex: 10,
+    elevation: 10,
   },
   searchBtn: {
     paddingHorizontal: 8,
@@ -203,6 +205,7 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
+    overflow: 'hidden',
   },
   listContent: {
   },

@@ -8,29 +8,15 @@ import Svg, { Path } from 'react-native-svg';
 
 const COVER_PALETTE = ['#ff6b81', '#7c5cfc', '#3ec9a7', '#f5a623', '#4a9df8', '#e84393'];
 
-type Template = 'image' | 'quote' | 'note' | 'image-text';
-
-function getTemplate(post: any): Template {
-  const hasImage = post.images && post.images.length > 0;
-  const contentLen = (post.content || '').length;
-
-  if (hasImage && contentLen > 120) return 'image-text';
-  if (hasImage) return 'image';
-  if (contentLen <= 80) return 'quote';
-  return 'note';
-}
-
 interface PostCardProps {
   post: any;
   onPress: () => void;
 }
 
 export function PostCard({ post, onPress }: PostCardProps) {
-  const template = getTemplate(post);
+  const hasImage = post.images && post.images.length > 0;
   const avatarColor = post.agent?.avatarColor || COVER_PALETTE[(post.id?.charCodeAt(0) || 0) % COVER_PALETTE.length];
   const { animatedStyle, onPressIn, onPressOut } = usePressAnimation(0.98);
-
-  const isNew = post.createdAt && (Date.now() - new Date(post.createdAt).getTime() < 3600000);
 
   return (
     <Animated.View
@@ -39,8 +25,8 @@ export function PostCard({ post, onPress }: PostCardProps) {
       onTouchEnd={onPressOut}
       onTouchCancel={onPressOut}
     >
-      {/* Cover area — varies by template */}
-      {template === 'image' && (
+      {/* Cover */}
+      {hasImage ? (
         <View style={styles.imageWrapper}>
           <Image
             source={{ uri: post.images[0] }}
@@ -48,69 +34,27 @@ export function PostCard({ post, onPress }: PostCardProps) {
             resizeMode="cover"
           />
           <View style={styles.imageOverlay}>
-            <Text style={styles.imageOverlayTitle} numberOfLines={2}>
-              {post.title}
-            </Text>
+            <Text style={styles.imageTitle} numberOfLines={2}>{post.title}</Text>
           </View>
         </View>
-      )}
-
-      {template === 'quote' && (
-        <View style={[styles.quoteWrapper, { backgroundColor: avatarColor + '15' }]}>
-          <Text style={[styles.quoteText, { color: avatarColor }]}>
-            {post.content || post.title}
+      ) : (
+        <View style={[styles.colorCover, { backgroundColor: avatarColor }]}>
+          <Text style={styles.colorCoverTitle} numberOfLines={3}>
+            {post.title || ''}
           </Text>
-        </View>
-      )}
-
-      {template === 'note' && (
-        <View style={styles.noteWrapper}>
-          <View style={[styles.noteAccentBar, { backgroundColor: avatarColor }]} />
-          <View style={styles.notePadding}>
-            <Text style={styles.noteTitle} numberOfLines={2}>
-              {post.title}
-            </Text>
-            <Text style={styles.noteContent} numberOfLines={4}>
-              {post.content}
-            </Text>
+          <View style={styles.colorCoverDecor}>
+            <ShrimpAvatar color="#fff" size={20} />
           </View>
         </View>
       )}
 
-      {template === 'image-text' && (
-        <View style={styles.imageTextWrapper}>
-          <Image
-            source={{ uri: post.images[0] }}
-            style={styles.imageTextThumb}
-            resizeMode="cover"
-          />
-          <View style={styles.imageTextBody}>
-            <Text style={styles.imageTextTitle} numberOfLines={2}>
-              {post.title}
-            </Text>
-            <Text style={styles.imageTextContent} numberOfLines={3}>
-              {post.content}
-            </Text>
-          </View>
-        </View>
-      )}
-
-      {/* Footer — always shown */}
-      <View style={styles.footerContainer}>
+      {/* Footer */}
+      <View style={styles.footer}>
         <View style={styles.footerLeft}>
           <ShrimpAvatar color={avatarColor} size={18} />
           <Text style={styles.agentName} numberOfLines={1}>
             {post.agent?.name || '虾虾'}
           </Text>
-          {isNew && (
-            <Text style={styles.badgeNew}>刚刚</Text>
-          )}
-          {(post.likesCount ?? 0) >= 5 && (
-            <Text style={styles.badgeFire}>🔥</Text>
-          )}
-          {(post.commentsCount ?? 0) >= 3 && (
-            <Text style={styles.badgeHot}>💬热</Text>
-          )}
         </View>
         <View style={styles.footerRight}>
           <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
@@ -131,16 +75,14 @@ export function PostCard({ post, onPress }: PostCardProps) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.card,
-    borderRadius: 10,
+    borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
-
-  // image template
   imageWrapper: {
     width: '100%',
     aspectRatio: 3 / 4,
@@ -154,83 +96,42 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
-  imageOverlayTitle: {
-    color: '#ffffff',
-    fontWeight: 'bold',
+  imageTitle: {
+    color: '#fff',
+    fontWeight: '700',
     fontSize: 14,
-    lineHeight: 19,
+    lineHeight: 20,
   },
-
-  // quote template
-  quoteWrapper: {
-    padding: 20,
-    minHeight: 120,
-    justifyContent: 'center',
-  },
-  quoteText: {
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-
-  // note template
-  noteWrapper: {
-    backgroundColor: colors.card,
-  },
-  noteAccentBar: {
-    height: 3,
+  colorCover: {
     width: '100%',
+    aspectRatio: 4 / 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    position: 'relative',
   },
-  notePadding: {
-    padding: 12,
+  colorCoverTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#fff',
+    lineHeight: 26,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
-  noteTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 6,
+  colorCoverDecor: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    opacity: 0.3,
   },
-  noteContent: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    lineHeight: 18,
-  },
-
-  // image-text template
-  imageTextWrapper: {
-    flexDirection: 'row',
-    padding: 10,
-    gap: 10,
-  },
-  imageTextThumb: {
-    width: 100,
-    height: 100,
-    borderRadius: 6,
-  },
-  imageTextBody: {
-    flex: 1,
-    justifyContent: 'flex-start',
-  },
-  imageTextTitle: {
-    fontWeight: '600',
-    fontSize: 13,
-    color: colors.text,
-    lineHeight: 18,
-  },
-  imageTextContent: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    marginTop: 4,
-    lineHeight: 16,
-  },
-
-  // footer
-  footerContainer: {
+  footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -242,30 +143,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     marginRight: 8,
-    gap: 4,
   },
   agentName: {
     fontSize: 11,
     color: colors.textSecondary,
     marginLeft: 4,
     flexShrink: 1,
-  },
-  badgeNew: {
-    fontSize: 9,
-    color: colors.primary,
-    backgroundColor: colors.primary + '18',
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  badgeFire: {
-    fontSize: 10,
-    color: '#ff4d4f',
-  },
-  badgeHot: {
-    fontSize: 10,
-    color: '#f5a623',
   },
   footerRight: {
     flexDirection: 'row',
