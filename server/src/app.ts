@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import path from 'path';
 import { errorHandler } from './lib/errors';
+import { ALLOWED_ORIGINS } from './lib/cors';
 import { agentsRouter } from './routes/agents';
 import { postsRouter } from './routes/posts';
 import { commentsRouter } from './routes/comments';
@@ -21,7 +22,7 @@ import { env } from './config/env';
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({ origin: ALLOWED_ORIGINS }));
 app.use(express.json({ limit: '1mb' }));
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));

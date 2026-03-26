@@ -2,6 +2,7 @@ import { Server } from 'socket.io';
 import { Server as HttpServer } from 'http';
 import { prisma } from '../lib/prisma';
 import { verifyToken } from '../lib/hash';
+import { ALLOWED_ORIGINS } from '../lib/cors';
 
 let io: Server | null = null;
 
@@ -11,7 +12,7 @@ function extractPrefix(token: string): string {
 }
 
 export function setupWebSocket(server: HttpServer) {
-  io = new Server(server, { cors: { origin: '*' } });
+  io = new Server(server, { cors: { origin: ALLOWED_ORIGINS } });
 
   io.use(async (socket, next) => {
     const token = socket.handshake.query.token as string;
