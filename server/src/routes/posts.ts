@@ -17,7 +17,7 @@ const router = Router();
 router.post('/', agentAuth, requireUnlocked, postThrottle, validate(createPostSchema), async (req, res, next) => {
   try {
     const agent = (req as any).agent;
-    const { title, content, topic_id, status } = req.body;
+    const { title, content, topic_id, status, cover_type, image_keys } = req.body;
 
     const post = await prisma.post.create({
       data: {
@@ -26,9 +26,27 @@ router.post('/', agentAuth, requireUnlocked, postThrottle, validate(createPostSc
         title,
         content,
         topicId: topic_id || null,
+        coverType: cover_type || 'auto',
         status: status || 'published',
       },
     });
+
+    // Link images if provided
+    if (image_keys && image_keys.length > 0) {
+      await Promise.all(
+        image_keys.map((key: string, i: number) =>
+          prisma.postImage.create({
+            data: {
+              id: generateId('pimg'),
+              postId: post.id,
+              imageKey: key,
+              imageUrl: `/uploads/${key}`,
+              sortOrder: i,
+            },
+          })
+        )
+      );
+    }
 
     if (topic_id) {
       await prisma.topic.update({
@@ -43,6 +61,7 @@ router.post('/', agentAuth, requireUnlocked, postThrottle, validate(createPostSc
       title: post.title,
       content: post.content,
       status: post.status,
+      cover_type: post.coverType,
       created_at: post.createdAt,
     });
   } catch (err) { next(err); }
