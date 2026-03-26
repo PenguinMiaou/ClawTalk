@@ -1,59 +1,73 @@
 import React from 'react';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Stop, Path, Circle } from 'react-native-svg';
 
 interface ShrimpAvatarProps {
   color?: string;
   size?: number;
 }
 
-export function ShrimpAvatar({ color = '#ff4d4f', size = 40 }: ShrimpAvatarProps) {
-  const cx = size / 2;
-  const cy = size / 2;
-  const r = size / 2;
-
-  // Scale factors relative to size
-  const s = size / 40;
-
+export function ShrimpAvatar({ color = '#ff6b35', size = 40 }: ShrimpAvatarProps) {
   return (
-    <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      {/* Background circle */}
-      <Circle cx={cx} cy={cy} r={r} fill={color} opacity={0.3} />
-
-      {/* Body curve */}
+    <Svg width={size} height={size} viewBox="0 0 100 100">
+      <Defs>
+        <LinearGradient id="shrimpGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <Stop offset="0%" stopColor={color} />
+          <Stop offset="100%" stopColor="#ff3366" />
+        </LinearGradient>
+      </Defs>
+      {/* Main bubble body */}
       <Path
-        d={`M${12 * s} ${22 * s} C${14 * s} ${14 * s} ${22 * s} ${10 * s} ${28 * s} ${14 * s} C${32 * s} ${17 * s} ${30 * s} ${24 * s} ${26 * s} ${28 * s} C${22 * s} ${32 * s} ${16 * s} ${30 * s} ${12 * s} ${22 * s}Z`}
-        fill={color}
+        d="M50 10 C73 10, 88 26, 88 48 C88 70, 73 86, 50 86 C42 86, 35 83, 30 79 L18 88 L22 74 C14 68, 12 58, 12 48 C12 26, 27 10, 50 10Z"
+        fill="url(#shrimpGrad)"
       />
-
-      {/* Eye */}
-      <Circle cx={22 * s} cy={18 * s} r={2 * s} fill="#ffffff" />
-
-      {/* Antenna left */}
+      {/* Upper claw */}
       <Path
-        d={`M${18 * s} ${14 * s} C${14 * s} ${8 * s} ${10 * s} ${6 * s} ${8 * s} ${5 * s}`}
-        stroke={color}
-        strokeWidth={1.5 * s}
-        strokeLinecap="round"
-        fill="none"
+        d="M72 24 C77 19, 84 18, 88 22 C91 25, 89 30, 84 30 L76 28"
+        fill="url(#shrimpGrad)"
       />
-
-      {/* Antenna right */}
+      {/* Lower claw */}
       <Path
-        d={`M${22 * s} ${12 * s} C${22 * s} ${6 * s} ${26 * s} ${4 * s} ${28 * s} ${4 * s}`}
-        stroke={color}
-        strokeWidth={1.5 * s}
-        strokeLinecap="round"
-        fill="none"
+        d="M72 72 C77 77, 84 78, 88 74 C91 71, 89 66, 84 66 L76 68"
+        fill="url(#shrimpGrad)"
       />
-
-      {/* Tail */}
-      <Path
-        d={`M${14 * s} ${28 * s} C${12 * s} ${32 * s} ${10 * s} ${34 * s} ${8 * s} ${34 * s}`}
-        stroke={color}
-        strokeWidth={1.5 * s}
-        strokeLinecap="round"
-        fill="none"
-      />
+      {/* Eyes */}
+      <Circle cx={38} cy={40} r={size > 32 ? 5.5 : 9} fill="#fff" />
+      <Circle cx={58} cy={40} r={size > 32 ? 5.5 : 9} fill="#fff" />
+      {size > 32 && (
+        <>
+          <Circle cx={39} cy={39.5} r={2.8} fill="#1a1a24" />
+          <Circle cx={59} cy={39.5} r={2.8} fill="#1a1a24" />
+          <Circle cx={40.2} cy={38} r={1.1} fill="#fff" />
+          <Circle cx={60.2} cy={38} r={1.1} fill="#fff" />
+        </>
+      )}
+      {size <= 32 && (
+        <>
+          <Circle cx={39} cy={39} r={5} fill="#1a1a24" />
+          <Circle cx={59} cy={39} r={5} fill="#1a1a24" />
+        </>
+      )}
+      {/* Sound wave mouth — only at larger sizes */}
+      {size > 32 && (
+        <>
+          <Path
+            d="M34 56 C34 52, 38 50, 42 52 C46 54, 50 52, 54 50 C58 48, 62 50, 62 54"
+            stroke="#fff"
+            strokeWidth={3}
+            strokeLinecap="round"
+            fill="none"
+            opacity={0.9}
+          />
+          <Path
+            d="M38 64 C38 60, 42 58, 46 60 C50 62, 54 60, 58 58"
+            stroke="#fff"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            fill="none"
+            opacity={0.55}
+          />
+        </>
+      )}
     </Svg>
   );
 }
