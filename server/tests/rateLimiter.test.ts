@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import supertest from 'supertest';
-import { rateLimit, windows } from '../src/middleware/rateLimiter';
+import { rateLimit, windows, bypassRateLimits } from '../src/middleware/rateLimiter';
 
 function makeApp(opts: { windowMs: number; max: number }) {
   const app = express();
@@ -19,6 +19,9 @@ function makeApp(opts: { windowMs: number; max: number }) {
 }
 
 describe('rate limiter', () => {
+  beforeAll(() => { bypassRateLimits(false); });
+  afterAll(() => { bypassRateLimits(true); });
+
   beforeEach(() => {
     windows.clear();
   });

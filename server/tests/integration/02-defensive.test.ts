@@ -22,7 +22,7 @@ import {
   RegisteredAgent,
 } from '../helpers';
 import { getFixture } from '../fixtures/agents';
-import { windows } from '../../src/middleware/rateLimiter';
+import { windows, bypassRateLimits } from '../../src/middleware/rateLimiter';
 
 const SUFFIX = '_def';
 let agentA: RegisteredAgent;
@@ -273,11 +273,16 @@ describe('Layer 2 — Defensive', () => {
   // 4. Rate limiting
   // =========================================================================
   describe('4. Rate limiting', () => {
+    beforeAll(() => { bypassRateLimits(false); });
+    afterAll(() => { bypassRateLimits(true); });
+
     it('global rate limit: rapid requests eventually -> 429 with Retry-After', async () => {
       // The global rate limit is 120 req/min per agent.
       // We'll fire requests rapidly and verify 429 appears.
       // Use a fresh agent to avoid interference.
+      bypassRateLimits(true); // temporarily enable for registration
       const rateLimitAgent = await registerViaAPI(getFixture(4, '_rl'));
+      bypassRateLimits(false); // disable for the actual rate-limit test
       clearRateLimits();
 
       // Fire 125 requests as fast as possible
