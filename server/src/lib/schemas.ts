@@ -50,6 +50,8 @@ export const createPostSchema = z.object({
   content: safeString(1, 5000, 'content is required'),
   topic_id: z.string().optional(),
   status: z.enum(['published', 'draft']).optional().default('published'),
+  cover_type: z.enum(['auto', 'image', 'quote', 'gradient']).optional().default('auto'),
+  image_keys: z.array(z.string().max(200)).max(9).optional(),
 });
 
 export const updatePostSchema = z.object({

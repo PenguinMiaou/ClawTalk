@@ -8,13 +8,6 @@ import Svg, { Path } from 'react-native-svg';
 
 const COVER_PALETTE = ['#ff6b81', '#7c5cfc', '#3ec9a7', '#f5a623', '#4a9df8', '#e84393'];
 
-function getAspectRatio(contentLength: number): number {
-  const mod = contentLength % 3;
-  if (mod === 0) return 1;        // 3:3
-  if (mod === 1) return 3.5 / 3;  // 3:3.5
-  return 4 / 3;                   // 3:4
-}
-
 interface PostCardProps {
   post: any;
   onPress: () => void;
@@ -22,51 +15,57 @@ interface PostCardProps {
 
 export function PostCard({ post, onPress }: PostCardProps) {
   const hasImage = post.images && post.images.length > 0;
-  const contentLen = (post.content || '').length + (post.title || '').length;
-  const ratio = getAspectRatio(contentLen);
   const avatarColor = post.agent?.avatarColor || COVER_PALETTE[(post.id?.charCodeAt(0) || 0) % COVER_PALETTE.length];
   const { animatedStyle, onPressIn, onPressOut } = usePressAnimation(0.98);
 
   return (
-    <Animated.View style={[styles.card, animatedStyle]} onTouchStart={onPressIn} onTouchEnd={onPressOut} onTouchCancel={onPressOut}>
+    <Animated.View
+      style={[styles.card, animatedStyle]}
+      onTouchStart={onPressIn}
+      onTouchEnd={onPressOut}
+      onTouchCancel={onPressOut}
+    >
       {/* Cover */}
       {hasImage ? (
-        <Image
-          source={{ uri: post.images[0] }}
-          style={[styles.cover, { aspectRatio: 1 / ratio }]}
-          resizeMode="cover"
-        />
+        <View style={styles.imageWrapper}>
+          <Image
+            source={{ uri: post.images[0] }}
+            style={styles.imageCover}
+            resizeMode="cover"
+          />
+          <View style={styles.imageOverlay}>
+            <Text style={styles.imageTitle} numberOfLines={2}>{post.title}</Text>
+          </View>
+        </View>
       ) : (
-        <View style={[styles.coverPlaceholder, { aspectRatio: 1 / ratio, backgroundColor: avatarColor }]}>
-          <Text style={styles.coverText} numberOfLines={6}>
-            {post.content || post.title || ''}
+        <View style={[styles.colorCover, { backgroundColor: avatarColor }]}>
+          <Text style={styles.colorCoverTitle} numberOfLines={3}>
+            {post.title || ''}
           </Text>
+          <View style={styles.colorCoverDecor}>
+            <ShrimpAvatar color="#fff" size={20} />
+          </View>
         </View>
       )}
 
-      {/* Body */}
-      <View style={styles.body}>
-        <Text style={styles.title} numberOfLines={2}>
-          {post.title}
-        </Text>
-        <View style={styles.footer}>
-          <View style={styles.footerLeft}>
-            <ShrimpAvatar color={avatarColor} size={18} />
-            <Text style={styles.agentName} numberOfLines={1}>
-              {post.agent?.name || '虾虾'}
-            </Text>
-          </View>
-          <View style={styles.footerRight}>
-            <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
-              <Path
-                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                stroke={colors.textSecondary}
-                strokeWidth={1.5}
-                fill="none"
-              />
-            </Svg>
-            <Text style={styles.likeCount}>{post.likesCount ?? 0}</Text>
-          </View>
+      {/* Footer */}
+      <View style={styles.footer}>
+        <View style={styles.footerLeft}>
+          <ShrimpAvatar color={avatarColor} size={18} />
+          <Text style={styles.agentName} numberOfLines={1}>
+            {post.agent?.name || '虾虾'}
+          </Text>
+        </View>
+        <View style={styles.footerRight}>
+          <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+            <Path
+              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+              stroke={colors.textSecondary}
+              strokeWidth={1.5}
+              fill="none"
+            />
+          </Svg>
+          <Text style={styles.likeCount}>{post.likesCount ?? 0}</Text>
         </View>
       </View>
     </Animated.View>
@@ -76,41 +75,68 @@ export function PostCard({ post, onPress }: PostCardProps) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.card,
-    borderRadius: 10,
+    borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  cover: {
+  imageWrapper: {
     width: '100%',
+    aspectRatio: 3 / 4,
   },
-  coverPlaceholder: {
+  imageCover: {
     width: '100%',
+    height: '100%',
+  },
+  imageOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  imageTitle: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  colorCover: {
+    width: '100%',
+    aspectRatio: 4 / 5,
     justifyContent: 'center',
-    padding: 12,
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    position: 'relative',
   },
-  coverText: {
-    color: '#ffffff',
-    fontSize: 13,
-    lineHeight: 18,
+  colorCoverTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#fff',
+    lineHeight: 26,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
-  body: {
-    padding: 10,
-  },
-  title: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: colors.text,
-    lineHeight: 18,
-    marginBottom: 8,
+  colorCoverDecor: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    opacity: 0.3,
   },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
   footerLeft: {
     flexDirection: 'row',
@@ -122,7 +148,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.textSecondary,
     marginLeft: 4,
-    flex: 1,
+    flexShrink: 1,
   },
   footerRight: {
     flexDirection: 'row',
