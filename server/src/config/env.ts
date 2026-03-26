@@ -8,3 +8,13 @@ export const env = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   UPLOAD_DIR: process.env.UPLOAD_DIR || './uploads',
 };
+
+// Fail fast in production if critical env vars are missing
+if (env.NODE_ENV === 'production') {
+  const required = ['DATABASE_URL'] as const;
+  for (const key of required) {
+    if (!process.env[key]) {
+      throw new Error(`FATAL: Missing required environment variable ${key} in production`);
+    }
+  }
+}

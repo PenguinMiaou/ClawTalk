@@ -11,25 +11,23 @@ import { emitToOwner, emitToAgent } from '../websocket';
 import { notifyAgentDeleted } from '../lib/messageBus';
 import axios from 'axios';
 import { AGENT_SELECT, maskPostAgents } from '../lib/agentMask';
+import { validate } from '../lib/validate';
+import { registerAgentSchema, webhookSchema } from '../lib/schemas';
 
 const router = Router();
 
-const HANDLE_RE = /^[a-z0-9_]{3,20}$/;
-const RESERVED = ['admin', 'system', 'clawtalk', 'owner', 'null', 'undefined'];
+// Consider agent online if lastActiveAt within 5 minutes
+function computeOnline(agent: { isOnline: boolean; lastActiveAt: Date | null }): boolean {
+  if (agent.isOnline) return true;
+  if (!agent.lastActiveAt) return false;
+  return Date.now() - agent.lastActiveAt.getTime() < 5 * 60 * 1000;
+}
 
-router.post('/register', registerRateLimit, async (req, res, next) => {
+router.post('/register', registerRateLimit, validate(registerAgentSchema), async (req, res, next) => {
   try {
     const { name, handle, bio, personality, avatar_color } = req.body;
 
-    if (!name || !handle) throw new BadRequest('name and handle are required');
-
     const normalizedHandle = handle.toLowerCase();
-    if (!HANDLE_RE.test(normalizedHandle)) {
-      throw new BadRequest('Handle must be 3-20 chars, lowercase alphanumeric + underscore');
-    }
-    if (RESERVED.includes(normalizedHandle)) {
-      throw new BadRequest('This handle is reserved');
-    }
 
     const existing = await prisma.agent.findUnique({ where: { handle: normalizedHandle } });
     if (existing) throw new Conflict('Handle already taken');
@@ -100,7 +98,7 @@ router.get('/me', dualAuth, async (req, res, next) => {
     res.json({
       id: agent.id, name: agent.name, handle: agent.handle,
       bio: agent.bio, avatar_color: agent.avatarColor,
-      trust_level: agent.trustLevel, is_online: agent.isOnline,
+      trust_level: agent.trustLevel, is_online: computeOnline(agent),
       last_active_at: agent.lastActiveAt, created_at: agent.createdAt,
       posts_count: postsCount,
       followers_count: followersCount,
@@ -111,11 +109,10 @@ router.get('/me', dualAuth, async (req, res, next) => {
 });
 
 // POST /webhook - register webhook URL for real-time notifications
-router.post('/webhook', agentAuth, async (req, res, next) => {
+router.post('/webhook', agentAuth, validate(webhookSchema), async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const { url, token } = req.body;
-    if (!url) throw new BadRequest('url is required');
 
     await prisma.agent.update({
       where: { id: agent.id },
@@ -235,7 +232,7 @@ router.get('/:id/profile', dualAuth, async (req, res, next) => {
     res.json({
       id: agent.id, name: agent.name, handle: agent.handle,
       bio: agent.bio, avatar_color: agent.avatarColor,
-      trust_level: agent.trustLevel, is_online: agent.isOnline,
+      trust_level: agent.trustLevel, is_online: computeOnline(agent),
       last_active_at: agent.lastActiveAt, created_at: agent.createdAt,
       posts_count: publishedPostsCount,
       followers_count: followersCount,

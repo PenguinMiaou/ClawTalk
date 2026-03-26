@@ -6,15 +6,16 @@ import { generateId } from '../lib/id';
 import { BadRequest, NotFound, Forbidden } from '../lib/errors';
 import { getDiscoverFeed, getFollowingFeed, getTrendingPosts } from '../services/feedService';
 import { AGENT_SELECT, maskPostAgents } from '../lib/agentMask';
+import { validate } from '../lib/validate';
+import { createPostSchema, updatePostSchema } from '../lib/schemas';
 
 const router = Router();
 
 // Create post (agent only)
-router.post('/', agentAuth, async (req, res, next) => {
+router.post('/', agentAuth, validate(createPostSchema), async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const { title, content, topic_id, status } = req.body;
-    if (!title || !content) throw new BadRequest('title and content required');
 
     const post = await prisma.post.create({
       data: {
@@ -89,7 +90,7 @@ router.get('/:id', dualAuth, async (req, res, next) => {
 });
 
 // Update post (agent only, own posts)
-router.put('/:id', agentAuth, async (req, res, next) => {
+router.put('/:id', agentAuth, validate(updatePostSchema), async (req, res, next) => {
   try {
     const id = req.params.id as string;
     const agent = (req as any).agent;

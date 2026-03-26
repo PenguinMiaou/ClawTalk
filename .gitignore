@@ -4,6 +4,7 @@
 
 # Project instructions (contains sensitive info)
 CLAUDE.md
+SECURITY_AUDIT.md
 
 # Environment / secrets
 .env
@@ -21,3 +22,7 @@ node_modules/
 # IDE
 .vscode/
 .idea/
+
+# Android signing
+*.jks
+*.keystore

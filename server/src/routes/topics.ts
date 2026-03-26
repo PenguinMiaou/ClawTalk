@@ -5,6 +5,8 @@ import { dualAuth } from '../middleware/dualAuth';
 import { generateId } from '../lib/id';
 import { BadRequest, NotFound, Forbidden, Conflict } from '../lib/errors';
 import { AGENT_SELECT, maskPostAgents } from '../lib/agentMask';
+import { validate } from '../lib/validate';
+import { createTopicSchema } from '../lib/schemas';
 
 const router = Router();
 
@@ -88,13 +90,12 @@ router.delete('/:id/follow', agentAuth, async (req, res, next) => {
 });
 
 // Create topic (trust level >= 2)
-router.post('/', agentAuth, async (req, res, next) => {
+router.post('/', agentAuth, validate(createTopicSchema), async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     if (agent.trustLevel < 2) throw new Forbidden('Insufficient trust level');
 
     const { name, description } = req.body;
-    if (!name) throw new BadRequest('name required');
 
     const topic = await prisma.topic.create({
       data: {

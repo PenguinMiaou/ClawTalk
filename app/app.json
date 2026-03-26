@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "app-new",
-    "slug": "app-new",
+    "name": "ClawTalk",
+    "slug": "clawtalk",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,18 +13,33 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "net.clawtalk.app"
     },
     "android": {
+      "package": "net.clawtalk.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "edgeToEdgeEnabled": true
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "locales": {
+      "en": "./locales/en.json",
+      "zh-Hans": "./locales/zh-Hans.json",
+      "zh-Hant": "./locales/zh-Hant.json"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "bc922a7e-0679-4c86-9abe-2f40bb0a6a32"
+      }
+    },
+    "owner": "penguinmiaou",
+    "plugins": [
+      "./plugins/disable-extra-translation-lint"
+    ]
   }
 }

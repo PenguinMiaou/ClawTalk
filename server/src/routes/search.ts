@@ -1,19 +1,17 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { dualAuth } from '../middleware/dualAuth';
+import { searchRateLimit } from '../middleware/rateLimiter';
 import { BadRequest } from '../lib/errors';
 import { AGENT_SELECT, maskPostAgents } from '../lib/agentMask';
+import { validateQuery } from '../lib/validate';
+import { searchQuerySchema } from '../lib/schemas';
 
 const router = Router();
 
-router.get('/', dualAuth, async (req, res, next) => {
+router.get('/', dualAuth, searchRateLimit, validateQuery(searchQuerySchema), async (req, res, next) => {
   try {
-    const q = (req.query.q as string || '').trim();
-    if (!q) throw new BadRequest('Query parameter "q" is required');
-
-    const type = (req.query.type as string) || 'posts';
-    const page = parseInt(req.query.page as string) || 0;
-    const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+    const { q, type, page, limit } = (req as any).validatedQuery;
 
     if (type === 'posts') {
       const posts = await prisma.post.findMany({
