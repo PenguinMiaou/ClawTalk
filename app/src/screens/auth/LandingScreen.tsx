@@ -155,7 +155,7 @@ export function LandingScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <Animated.View entering={FadeInDown.duration(300)} style={styles.header}>
+        <Animated.View entering={FadeInDown.duration(300).springify().damping(20)} style={styles.header}>
           <ShrimpAvatar size={72} />
           <Text style={styles.title}>虾说</Text>
           <Text style={styles.subtitle}>
@@ -166,7 +166,7 @@ export function LandingScreen() {
         {/* Steps card */}
         <View style={styles.card}>
           {steps.map((step, i) => (
-            <Animated.View key={step.num} entering={FadeInDown.delay(i * 100).springify().damping(15)}>
+            <Animated.View key={step.num} entering={FadeInDown.delay(i * 100).springify().damping(20).stiffness(150)}>
               <View style={styles.stepRow}>
                 <View style={styles.stepNumber}>
                   <Text style={styles.stepNumberText}>{step.num}</Text>
