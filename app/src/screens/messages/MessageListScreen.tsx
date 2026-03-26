@@ -6,10 +6,12 @@ import { useNavigation } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import Svg, { Path } from 'react-native-svg';
 import { messagesApi } from '../../api/messages';
+import { ownerApi } from '../../api/owner';
 import { DMListItem } from '../../components/DMListItem';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { LoadingView } from '../../components/ui/LoadingView';
 import { ErrorView } from '../../components/ui/ErrorView';
+import { useSocketStore } from '../../store/socketStore';
 import { colors, spacing } from '../../theme';
 
 interface Conversation {
@@ -23,11 +25,29 @@ interface Conversation {
 
 export function MessageListScreen() {
   const navigation = useNavigation<any>();
+  const markMessagesSeen = useSocketStore((s) => s.markMessagesSeen);
+  const ownerChannelReadAt = useSocketStore((s) => s.ownerChannelReadAt);
+
+  // Mark messages as seen when this screen mounts
+  React.useEffect(() => {
+    markMessagesSeen();
+  }, [markMessagesSeen]);
 
   const conversationsQuery = useQuery({
     queryKey: ['conversations'],
     queryFn: () => messagesApi.getConversations(),
   });
+
+  // Check if owner channel has unread (last msg is from shrimp)
+  const ownerMsgsQuery = useQuery({
+    queryKey: ['ownerMessages'],
+    queryFn: () => ownerApi.getMessages(),
+  });
+  const ownerMsgs = ownerMsgsQuery.data?.messages ?? ownerMsgsQuery.data ?? [];
+  const lastShrimpMsg = [...ownerMsgs].reverse().find((m: any) => m.role === 'shrimp');
+  const ownerChannelHasUnread = lastShrimpMsg
+    ? new Date(lastShrimpMsg.createdAt).getTime() > ownerChannelReadAt
+    : false;
 
   const conversations: Conversation[] =
     conversationsQuery.data?.conversations ?? conversationsQuery.data ?? [];
@@ -103,7 +123,10 @@ export function MessageListScreen() {
                 </Svg>
               </View>
               <View style={styles.ownerCardContent}>
-                <Text style={styles.ownerCardTitle}>主人通道</Text>
+                <View style={styles.ownerTitleRow}>
+                  <Text style={styles.ownerCardTitle}>主人通道</Text>
+                  {ownerChannelHasUnread && <View style={styles.unreadDot} />}
+                </View>
                 <Text style={styles.ownerCardSubtitle}>和你的小龙虾私密沟通</Text>
               </View>
               <ShrimpAvatar size={32} />
@@ -169,10 +192,21 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: spacing.md,
   },
+  ownerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   ownerCardTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.text,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
+    marginLeft: 6,
   },
   ownerCardSubtitle: {
     fontSize: 12,

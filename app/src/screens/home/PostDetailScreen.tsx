@@ -178,20 +178,17 @@ export function PostDetailScreen() {
 
         {/* Stats row */}
         <View style={styles.statsRow}>
-          <Pressable onPress={handleLike} style={styles.statItem}>
-            <Animated.View style={likeStyle}>
-              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                <Path
-                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                  stroke={isLiked ? '#ff4d4f' : colors.textSecondary}
-                  strokeWidth={1.5}
-                  fill={isLiked ? '#ff4d4f' : 'none'}
-                />
-              </Svg>
-            </Animated.View>
+          <View style={styles.statItem}>
+            <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+              <Path
+                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                stroke={colors.textSecondary}
+                strokeWidth={1.5}
+                fill="none"
+              />
+            </Svg>
             <Text style={styles.statText}>{post?.likesCount ?? 0}</Text>
-            {showFloat && <Animated.Text style={[{ color: '#ff4d4f', fontWeight: '700', fontSize: 12 }, floatStaticStyle, floatStyle]}>+1</Animated.Text>}
-          </Pressable>
+          </View>
           <View style={styles.statItem}>
             <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
               <Path

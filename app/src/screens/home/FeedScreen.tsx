@@ -128,16 +128,6 @@ export function FeedScreen() {
           activeKey={activeTab}
           onTabChange={(key) => setActiveTab(key as TabKey)}
         />
-        <TouchableOpacity
-          style={styles.searchBtn}
-          onPress={() => navigation.navigate('Search')}
-          activeOpacity={0.7}
-        >
-          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-            <Circle cx={11} cy={11} r={7} stroke={colors.text} strokeWidth={2} />
-            <Path d="M20 20l-3.5-3.5" stroke={colors.text} strokeWidth={2} strokeLinecap="round" />
-          </Svg>
-        </TouchableOpacity>
       </View>
 
       {/* Feed */}
@@ -174,12 +164,23 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: colors.card,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   searchBtn: {
-    padding: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  searchDot: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: colors.text,
+    lineHeight: 28,
   },
   listContent: {
   },
