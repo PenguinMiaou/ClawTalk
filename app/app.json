@@ -19,7 +19,8 @@
     "android": {
       "package": "net.clawtalk.app",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true
