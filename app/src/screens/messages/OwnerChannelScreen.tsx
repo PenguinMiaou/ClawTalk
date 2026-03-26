@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,14 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+  withDelay,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -32,11 +40,44 @@ interface Message {
   messageType?: string;
 }
 
+function TypingDot({ delay: d }: { delay: number }) {
+  const opacity = useSharedValue(0.3);
+  useEffect(() => {
+    const anim = withDelay(
+      d,
+      withRepeat(
+        withSequence(
+          withTiming(1, { duration: 400 }),
+          withTiming(0.3, { duration: 400 }),
+        ),
+        -1,
+      ),
+    );
+    opacity.value = anim;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [d]);
+  const style = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  return <Animated.View style={[typingStyles.dot, style]} />;
+}
+
+function TypingIndicator() {
+  return (
+    <View style={typingStyles.row}>
+      <View style={typingStyles.bubble}>
+        <TypingDot delay={0} />
+        <TypingDot delay={150} />
+        <TypingDot delay={300} />
+      </View>
+    </View>
+  );
+}
+
 export function OwnerChannelScreen() {
   const navigation = useNavigation<any>();
   const queryClient = useQueryClient();
   const connected = useSocketStore((s) => s.connected);
   const [input, setInput] = useState('');
+  const [waitingForReply, setWaitingForReply] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   const agentQuery = useQuery({
@@ -69,12 +110,27 @@ export function OwnerChannelScreen() {
     },
   });
 
-  const messages: Message[] = messagesQuery.data?.messages ?? messagesQuery.data ?? [];
+  const rawData = messagesQuery.data;
+  const messages: Message[] = rawData?.messages ?? rawData ?? [];
+  const agentLastReadAt = rawData?.agent_last_read_at
+    ? new Date(rawData.agent_last_read_at).getTime()
+    : 0;
+
+  // Clear typing indicator when agent replies
+  useEffect(() => {
+    if (waitingForReply && messages.length > 0) {
+      const latest = messages[messages.length - 1];
+      if (latest.role === 'shrimp') {
+        setWaitingForReply(false);
+      }
+    }
+  }, [messages, waitingForReply]);
 
   const handleSend = useCallback(() => {
     const text = input.trim();
     if (!text) return;
     setInput('');
+    setWaitingForReply(true);
     sendMutation.mutate(text);
   }, [input, sendMutation]);
 
@@ -95,23 +151,33 @@ export function OwnerChannelScreen() {
   };
 
   const renderItem = useCallback(
-    ({ item }: { item: Message }) => (
-      <View>
-        <MessageBubble
-          role={item.role}
-          content={item.content}
-          time={formatTime(item.createdAt)}
-          messageType={item.messageType}
-        />
-        {item.messageType === 'approval_request' && (
-          <OwnerActionBar
-            messageId={item.id}
-            onAction={(type) => handleAction(item.id, type)}
+    ({ item }: { item: Message }) => {
+      const isRead = item.role === 'owner' && agentLastReadAt > 0 &&
+        new Date(item.createdAt).getTime() <= agentLastReadAt;
+
+      return (
+        <View>
+          <MessageBubble
+            role={item.role}
+            content={item.content}
+            time={formatTime(item.createdAt)}
+            messageType={item.messageType}
           />
-        )}
-      </View>
-    ),
-    [handleAction],
+          {item.role === 'owner' && (
+            <Text style={styles.readStatus}>
+              {isRead ? '已读' : '已发送'}
+            </Text>
+          )}
+          {item.messageType === 'approval_request' && (
+            <OwnerActionBar
+              messageId={item.id}
+              onAction={(type) => handleAction(item.id, type)}
+            />
+          )}
+        </View>
+      );
+    },
+    [handleAction, agentLastReadAt],
   );
 
   return (
@@ -160,6 +226,7 @@ export function OwnerChannelScreen() {
             keyExtractor={(item) => item.id}
             inverted
             contentContainerStyle={styles.listContent}
+            ListHeaderComponent={waitingForReply ? <TypingIndicator /> : null}
             ListEmptyComponent={
               <View style={styles.empty}>
                 <Text style={styles.emptyText}>和你的小龙虾说点什么吧</Text>
@@ -314,5 +381,43 @@ const styles = StyleSheet.create({
   },
   sendBtnDisabled: {
     opacity: 0.4,
+  },
+  readStatus: {
+    fontSize: 10,
+    color: colors.textTertiary,
+    textAlign: 'right',
+    paddingHorizontal: spacing.lg,
+    marginTop: 2,
+    marginBottom: spacing.xs,
+  },
+});
+
+const typingStyles = StyleSheet.create({
+  row: {
+    paddingHorizontal: spacing.lg,
+    marginVertical: spacing.xs,
+    alignItems: 'flex-start',
+  },
+  bubble: {
+    flexDirection: 'row',
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 18,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
+    gap: 5,
+  },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: colors.textSecondary,
   },
 });

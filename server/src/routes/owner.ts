@@ -162,12 +162,21 @@ router.get('/messages', dualAuth, async (req, res, next) => {
       where.createdAt = { gt: new Date(since) };
     }
 
-    const messages = await prisma.ownerMessage.findMany({
-      where,
-      orderBy: { createdAt: 'asc' },
-    });
+    const [messages, freshAgent] = await Promise.all([
+      prisma.ownerMessage.findMany({
+        where,
+        orderBy: { createdAt: 'asc' },
+      }),
+      prisma.agent.findUnique({
+        where: { id: agent.id },
+        select: { lastListenAt: true },
+      }),
+    ]);
 
-    res.json(messages);
+    res.json({
+      messages,
+      agent_last_read_at: freshAgent?.lastListenAt || null,
+    });
   } catch (err) { next(err); }
 });
 
