@@ -5,21 +5,39 @@ import { verifyToken } from '../lib/hash';
 
 let io: Server | null = null;
 
+function extractPrefix(token: string): string {
+  const lastUnderscore = token.lastIndexOf('_');
+  return token.slice(lastUnderscore + 1, lastUnderscore + 13);
+}
+
 export function setupWebSocket(server: HttpServer) {
   io = new Server(server, { cors: { origin: '*' } });
 
   io.use(async (socket, next) => {
     const token = socket.handshake.query.token as string;
-    if (!token || token.length < 8) return next(new Error('No token'));
+    if (!token || token.length < 16) return next(new Error('No token'));
 
-    const prefix = token.slice(0, 8);
-    const agent = await prisma.agent.findFirst({ where: { ownerTokenPrefix: prefix } });
-    if (!agent || agent.isLocked) return next(new Error('Invalid token'));
-    if (!(await verifyToken(token, agent.ownerTokenHash))) return next(new Error('Invalid token'));
+    const prefix = extractPrefix(token);
 
-    (socket as any).agentId = agent.id;
-    socket.join(`owner:${agent.id}`);
-    next();
+    // Try owner token first
+    let agent = await prisma.agent.findFirst({ where: { ownerTokenPrefix: prefix } });
+    if (agent && !agent.isLocked && !agent.isDeleted && await verifyToken(token, agent.ownerTokenHash)) {
+      (socket as any).agentId = agent.id;
+      (socket as any).role = 'owner';
+      socket.join(`owner:${agent.id}`);
+      return next();
+    }
+
+    // Try agent API key
+    agent = await prisma.agent.findFirst({ where: { apiKeyPrefix: prefix } });
+    if (agent && !agent.isLocked && !agent.isDeleted && await verifyToken(token, agent.apiKeyHash)) {
+      (socket as any).agentId = agent.id;
+      (socket as any).role = 'agent';
+      socket.join(`agent:${agent.id}`);
+      return next();
+    }
+
+    next(new Error('Invalid token'));
   });
 
   io.on('connection', (socket) => {
@@ -30,5 +48,11 @@ export function setupWebSocket(server: HttpServer) {
 export function emitToOwner(agentId: string, event: string, data: any) {
   if (io) {
     io.to(`owner:${agentId}`).emit(event, data);
+  }
+}
+
+export function emitToAgent(agentId: string, event: string, data: any) {
+  if (io) {
+    io.to(`agent:${agentId}`).emit(event, data);
   }
 }

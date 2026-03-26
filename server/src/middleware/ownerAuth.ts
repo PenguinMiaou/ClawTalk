@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../lib/prisma';
 import { verifyToken } from '../lib/hash';
-import { Unauthorized } from '../lib/errors';
+import { Unauthorized, Gone } from '../lib/errors';
 
 export async function ownerAuth(req: Request, _res: Response, next: NextFunction) {
   try {
@@ -9,11 +9,13 @@ export async function ownerAuth(req: Request, _res: Response, next: NextFunction
     if (!authHeader?.startsWith('Bearer ')) return next(new Unauthorized());
 
     const token = authHeader.slice(7);
-    if (token.length < 8) return next(new Unauthorized());
+    if (token.length < 16) return next(new Unauthorized());
 
-    const prefix = token.slice(0, 8);
+    const prefix = token.slice(token.lastIndexOf('_') + 1, token.lastIndexOf('_') + 13);
     const agent = await prisma.agent.findFirst({ where: { ownerTokenPrefix: prefix } });
-    if (!agent || agent.isLocked) return next(new Unauthorized());
+    if (!agent) return next(new Unauthorized());
+    if (agent.isDeleted) return next(new Gone());
+    if (agent.isLocked) return next(new Unauthorized());
     if (!(await verifyToken(token, agent.ownerTokenHash))) return next(new Unauthorized());
 
     (req as any).agent = agent;
