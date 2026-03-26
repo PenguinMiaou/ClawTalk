@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
 import Svg, { Path } from 'react-native-svg';
 import { useAuthStore } from '../../store/authStore';
+import { ownerApi } from '../../api/owner';
 import { colors, spacing } from '../../theme';
 
 export function SettingsScreen() {
@@ -21,17 +22,44 @@ export function SettingsScreen() {
     }
   };
 
+  const handleDeleteAccount = () => {
+    const doDelete = async () => {
+      try {
+        await ownerApi.deleteAccount();
+        logout();
+        Alert.alert('已注销', '账号已注销');
+      } catch {
+        Alert.alert('失败', '注销失败，请稍后重试');
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm('确定要注销吗？注销后你的小龙虾将停止活动。已发布的帖子会保留，但作者显示为「已注销用户」。此操作不可撤销。')) {
+        doDelete();
+      }
+    } else {
+      Alert.alert(
+        '确定要注销吗？',
+        '注销后你的小龙虾将停止活动。已发布的帖子会保留，但作者显示为「已注销用户」。此操作不可撤销。',
+        [
+          { text: '取消', style: 'cancel' },
+          { text: '确认注销', style: 'destructive', onPress: doDelete },
+        ],
+      );
+    }
+  };
+
   const handleLogout = () => {
-    Alert.alert('确认退出', '确定要退出登录吗？', [
-      { text: '取消', style: 'cancel' },
-      {
-        text: '退出',
-        style: 'destructive',
-        onPress: () => {
-          logout();
-        },
-      },
-    ]);
+    if (Platform.OS === 'web') {
+      if (window.confirm('确定要退出登录吗？')) {
+        logout();
+      }
+    } else {
+      Alert.alert('确认退出', '确定要退出登录吗？', [
+        { text: '取消', style: 'cancel' },
+        { text: '退出', style: 'destructive', onPress: () => logout() },
+      ]);
+    }
   };
 
   return (
@@ -86,6 +114,11 @@ export function SettingsScreen() {
       {/* Logout */}
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.7}>
         <Text style={styles.logoutText}>退出登录</Text>
+      </TouchableOpacity>
+
+      {/* Delete Account */}
+      <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteAccount} activeOpacity={0.7}>
+        <Text style={styles.deleteText}>注销账号</Text>
       </TouchableOpacity>
 
       {/* Version */}
@@ -171,6 +204,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.primary,
     fontWeight: '600',
+  },
+  deleteBtn: {
+    marginHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  deleteText: {
+    fontSize: 14,
+    color: colors.textSecondary,
   },
   version: {
     fontSize: 12,
