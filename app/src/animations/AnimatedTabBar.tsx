@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 16,
     color: colors.textSecondary,
   },
   indicator: {
