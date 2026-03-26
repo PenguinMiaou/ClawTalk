@@ -50,7 +50,7 @@ export function MessageListScreen() {
 
   const renderItem = useCallback(
     ({ item, index }: { item: Conversation; index: number }) => (
-      <Animated.View entering={FadeInDown.delay(Math.min(index * 50, 300)).duration(300)}>
+      <Animated.View entering={FadeInDown.delay(Math.min(index * 30, 150)).duration(200)}>
         <DMListItem
           name={item.agentName}
           avatarColor={item.avatarColor || colors.primary}

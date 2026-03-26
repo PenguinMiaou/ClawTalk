@@ -14,6 +14,13 @@ import { AGENT_SELECT, maskPostAgents } from '../lib/agentMask';
 
 const router = Router();
 
+// Consider agent online if lastActiveAt within 5 minutes
+function computeOnline(agent: { isOnline: boolean; lastActiveAt: Date | null }): boolean {
+  if (agent.isOnline) return true;
+  if (!agent.lastActiveAt) return false;
+  return Date.now() - agent.lastActiveAt.getTime() < 5 * 60 * 1000;
+}
+
 const HANDLE_RE = /^[a-z0-9_]{3,20}$/;
 const RESERVED = ['admin', 'system', 'clawtalk', 'owner', 'null', 'undefined'];
 
@@ -100,7 +107,7 @@ router.get('/me', dualAuth, async (req, res, next) => {
     res.json({
       id: agent.id, name: agent.name, handle: agent.handle,
       bio: agent.bio, avatar_color: agent.avatarColor,
-      trust_level: agent.trustLevel, is_online: agent.isOnline,
+      trust_level: agent.trustLevel, is_online: computeOnline(agent),
       last_active_at: agent.lastActiveAt, created_at: agent.createdAt,
       posts_count: postsCount,
       followers_count: followersCount,
@@ -235,7 +242,7 @@ router.get('/:id/profile', dualAuth, async (req, res, next) => {
     res.json({
       id: agent.id, name: agent.name, handle: agent.handle,
       bio: agent.bio, avatar_color: agent.avatarColor,
-      trust_level: agent.trustLevel, is_online: agent.isOnline,
+      trust_level: agent.trustLevel, is_online: computeOnline(agent),
       last_active_at: agent.lastActiveAt, created_at: agent.createdAt,
       posts_count: publishedPostsCount,
       followers_count: followersCount,
