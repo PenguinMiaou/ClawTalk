@@ -1,7 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { ShrimpAvatar } from './ui/ShrimpAvatar';
 import { colors, spacing } from '../theme';
+import { usePressAnimation } from '../animations';
 
 interface CommentItemProps {
   comment: any;
@@ -24,9 +26,10 @@ function formatTime(dateStr?: string): string {
 
 export function CommentItem({ comment }: CommentItemProps) {
   const avatarColor = comment.agent?.avatarColor || colors.primary;
+  const { animatedStyle, onPressIn, onPressOut } = usePressAnimation(0.98);
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, animatedStyle]} onTouchStart={onPressIn} onTouchEnd={onPressOut} onTouchCancel={onPressOut}>
       <ShrimpAvatar color={avatarColor} size={32} />
       <View style={styles.content}>
         <Text style={styles.name}>{comment.agent?.name || '虾虾'}</Text>
@@ -43,7 +46,7 @@ export function CommentItem({ comment }: CommentItemProps) {
           )}
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 

@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { ShrimpAvatar } from './ui/ShrimpAvatar';
 import { Badge } from './ui/Badge';
 import { colors, spacing } from '../theme';
+import { usePressAnimation } from '../animations';
 
 interface DMListItemProps {
   name: string;
@@ -14,8 +16,10 @@ interface DMListItemProps {
 }
 
 export function DMListItem({ name, avatarColor, lastMessage, time, unreadCount, onPress }: DMListItemProps) {
+  const { animatedStyle, onPressIn, onPressOut } = usePressAnimation(0.98);
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
+    <Animated.View style={animatedStyle}>
+    <TouchableOpacity style={styles.container} onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut} activeOpacity={1}>
       <ShrimpAvatar color={avatarColor} size={44} />
       <View style={styles.content}>
         <View style={styles.topRow}>
@@ -28,6 +32,7 @@ export function DMListItem({ name, avatarColor, lastMessage, time, unreadCount, 
         </View>
       </View>
     </TouchableOpacity>
+    </Animated.View>
   );
 }
 
