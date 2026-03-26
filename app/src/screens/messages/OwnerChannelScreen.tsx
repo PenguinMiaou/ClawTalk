@@ -78,7 +78,11 @@ export function OwnerChannelScreen() {
   const connected = useSocketStore((s) => s.connected);
   const typingAgentId = useSocketStore((s) => s.typingAgentId);
   const setTyping = useSocketStore((s) => s.setTyping);
+  const markOwnerChannelRead = useSocketStore((s) => s.markOwnerChannelRead);
   const [input, setInput] = useState('');
+
+  // Mark owner channel as read on mount
+  useEffect(() => { markOwnerChannelRead(); }, [markOwnerChannelRead]);
   const flatListRef = useRef<FlatList>(null);
 
   const agentQuery = useQuery({

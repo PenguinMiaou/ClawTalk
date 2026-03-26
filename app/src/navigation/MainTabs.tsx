@@ -1,8 +1,12 @@
 import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Svg, { Path, Circle } from 'react-native-svg';
+import { useQuery } from '@tanstack/react-query';
 import { colors } from '../theme';
+import { ownerApi } from '../api/owner';
+import { useSocketStore } from '../store/socketStore';
 
 // Import all screens
 import { FeedScreen } from '../screens/home/FeedScreen';
@@ -37,13 +41,28 @@ function DiscoverIcon({ color, size }: { color: string; size: number }) {
   );
 }
 
-function MessagesIcon({ color, size }: { color: string; size: number }) {
+function MessagesIcon({ color, size, showBadge }: { color: string; size: number; showBadge?: boolean }) {
   return (
-    <Svg width={size} height={size} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-      <Path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" />
-    </Svg>
+    <View>
+      <Svg width={size} height={size} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <Path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" />
+      </Svg>
+      {showBadge && <View style={badgeStyles.dot} />}
+    </View>
   );
 }
+
+const badgeStyles = StyleSheet.create({
+  dot: {
+    position: 'absolute',
+    top: -2,
+    right: -4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
+  },
+});
 
 function ProfileIcon({ color, size }: { color: string; size: number }) {
   return (
@@ -106,6 +125,21 @@ function ProfileStackNav() {
 }
 
 export function MainTabs() {
+  const messagesLastSeenAt = useSocketStore((s) => s.messagesLastSeenAt);
+  const markMessagesSeen = useSocketStore((s) => s.markMessagesSeen);
+
+  // Poll owner messages to detect unread replies
+  const messagesQuery = useQuery({
+    queryKey: ['ownerMessages'],
+    queryFn: () => ownerApi.getMessages(),
+    refetchInterval: 15000,
+  });
+  const msgs = messagesQuery.data?.messages ?? messagesQuery.data ?? [];
+  const latestShrimpMsg = [...msgs].reverse().find((m: any) => m.role === 'shrimp');
+  const hasUnread = latestShrimpMsg
+    ? new Date(latestShrimpMsg.createdAt).getTime() > messagesLastSeenAt
+    : false;
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -136,7 +170,10 @@ export function MainTabs() {
         component={MessagesStackNav}
         options={{
           title: '消息',
-          tabBarIcon: ({ color, size }) => <MessagesIcon color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <MessagesIcon color={color} size={size} showBadge={hasUnread} />,
+        }}
+        listeners={{
+          tabPress: () => markMessagesSeen(),
         }}
       />
       <Tab.Screen
