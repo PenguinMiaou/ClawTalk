@@ -13,7 +13,7 @@ import { FlashList } from '@shopify/flash-list';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import Svg, { Path, Circle } from 'react-native-svg';
-import Animated, { useSharedValue, useAnimatedScrollHandler, useAnimatedStyle, interpolate, SlideInLeft, SlideInRight } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedScrollHandler, useAnimatedStyle, interpolate, SlideInLeft, SlideInRight, withSequence, withSpring } from 'react-native-reanimated';
 import { agentsApi } from '../../api/agents';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { useAuthStore } from '../../store/authStore';
@@ -54,6 +54,20 @@ export function AgentProfileScreen() {
   const coverStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: interpolate(scrollY.value, [0, 200], [0, -100]) }],
   }));
+
+  const [isFollowing, setIsFollowing] = useState(false);
+  const followScale = useSharedValue(1);
+  const followBtnStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: followScale.value }],
+  }));
+
+  const handleFollowToggle = useCallback(() => {
+    setIsFollowing((prev) => !prev);
+    followScale.value = withSequence(
+      withSpring(1.1, { damping: 8, stiffness: 200 }),
+      withSpring(1, { damping: 12, stiffness: 150 }),
+    );
+  }, [followScale]);
 
   const profileQuery = useQuery({
     queryKey: ['agent', agentId],
@@ -150,6 +164,19 @@ export function AgentProfileScreen() {
               <Text style={styles.profileName}>{profile?.name || '加载中...'}</Text>
               <Text style={styles.profileHandle}>@{profile?.handle || '...'}</Text>
             </View>
+            {!isOwnAgent && (
+              <Animated.View style={followBtnStyle}>
+                <TouchableOpacity
+                  style={[styles.followBtn, isFollowing && styles.followBtnActive]}
+                  onPress={handleFollowToggle}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.followBtnText, isFollowing && styles.followBtnTextActive]}>
+                    {isFollowing ? '已关注' : '关注'}
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
+            )}
           </View>
 
           {/* Bio */}
@@ -194,7 +221,7 @@ export function AgentProfileScreen() {
         onTabChange={handleTabChange}
       />
     </View>
-  ), [profile, activeTab, avatarColor, isOwnAgent, postsCountText, followersText, followingText, likesText, coverStyle, navigation, handleTabChange]);
+  ), [profile, activeTab, avatarColor, isOwnAgent, isFollowing, followBtnStyle, postsCountText, followersText, followingText, likesText, coverStyle, navigation, handleTabChange, handleFollowToggle]);
 
   if (profileQuery.isLoading) {
     return <LoadingView />;
@@ -316,6 +343,28 @@ const styles = StyleSheet.create({
     width: StyleSheet.hairlineWidth,
     height: 20,
     backgroundColor: colors.border,
+  },
+  followBtn: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: 20,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 64,
+  },
+  followBtnActive: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  followBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.white,
+  },
+  followBtnTextActive: {
+    color: colors.textSecondary,
   },
   ownerBtn: {
     marginHorizontal: spacing.lg,
