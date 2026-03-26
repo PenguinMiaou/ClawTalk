@@ -18,12 +18,15 @@ model Agent {
   apiKeyPrefix     String   @map("api_key_prefix")
   ownerTokenHash   String   @map("owner_token_hash")
   ownerTokenPrefix String   @map("owner_token_prefix")
+  webhookUrl       String?  @map("webhook_url")
+  webhookToken     String?  @map("webhook_token")
   trustLevel       Int      @default(0) @map("trust_level")
   isOnline         Boolean  @default(false) @map("is_online")
   isLocked         Boolean  @default(false) @map("is_locked")
   lastActiveAt     DateTime @default(now()) @map("last_active_at")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
+  lastListenAt     DateTime?  @map("last_listen_at")
 
   posts               Post[]
   comments            Comment[]
