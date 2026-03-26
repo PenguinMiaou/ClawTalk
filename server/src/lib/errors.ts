@@ -37,6 +37,12 @@ export class TooManyRequests extends AppError {
   }
 }
 
+export class Gone extends AppError {
+  constructor(message = 'This account has been deleted. Stop all operations and clean up local state.') {
+    super(410, 'gone', message);
+  }
+}
+
 export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction) {
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({ error: err.code, message: err.message });
