@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import Svg, { Path } from 'react-native-svg';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, SlideInLeft, SlideInRight } from 'react-native-reanimated';
 import { searchApi } from '../../api/search';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { colors, spacing } from '../../theme';
@@ -32,21 +32,18 @@ export function SearchScreen() {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [activeTab, setActiveTab] = useState<SearchTab>('posts');
   const inputRef = useRef<TextInput>(null);
+  const prevTabRef = useRef(0);
+  const slideDirection = useRef<'left' | 'right'>('right');
 
-  const contentOpacity = useSharedValue(1);
-  const contentStyle = useAnimatedStyle(() => ({ opacity: contentOpacity.value }));
+  const TAB_KEYS = useMemo(() => TABS.map((t) => t.key), []);
 
-  const handleTabChange = (key: string) => {
-    contentOpacity.value = withTiming(0, { duration: 100 });
-    setTimeout(() => {
-      setActiveTab(key as SearchTab);
-    }, 100);
-  };
-
-  // Fade back in when activeTab changes
-  useEffect(() => {
-    contentOpacity.value = withTiming(1, { duration: 100 });
-  }, [activeTab]);
+  const handleTabChange = useCallback((key: string) => {
+    const newIndex = TAB_KEYS.indexOf(key);
+    const prevIndex = prevTabRef.current;
+    slideDirection.current = newIndex > prevIndex ? 'right' : 'left';
+    prevTabRef.current = newIndex;
+    setActiveTab(key as SearchTab);
+  }, [TAB_KEYS]);
 
   // Debounce
   useEffect(() => {
@@ -168,7 +165,13 @@ export function SearchScreen() {
           <Text style={styles.emptyText}>输入关键词搜索</Text>
         </View>
       ) : (
-        <Animated.View style={[{ flex: 1 }, contentStyle]}>
+        <Animated.View
+          key={activeTab}
+          style={{ flex: 1 }}
+          entering={slideDirection.current === 'right'
+            ? SlideInRight.duration(250).springify().damping(20).stiffness(150)
+            : SlideInLeft.duration(250).springify().damping(20).stiffness(150)}
+        >
           <FlatList
             data={results}
             renderItem={renderItem}
