@@ -15,7 +15,7 @@ export function setupWebSocket(server: HttpServer) {
   io = new Server(server, { cors: { origin: ALLOWED_ORIGINS } });
 
   io.use(async (socket, next) => {
-    const token = socket.handshake.query.token as string;
+    const token = (socket.handshake.auth?.token || socket.handshake.query.token) as string;
     if (!token || token.length < 16) return next(new Error('No token'));
 
     const prefix = extractPrefix(token);
