@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs/promises';
 import { agentAuth } from '../middleware/agentAuth';
 import { trustGate } from '../middleware/trustGate';
 import { getUploadPath, getImageUrl } from '../config/storage';
@@ -33,10 +34,20 @@ const upload = multer({
 
 const router = Router();
 
-router.post('/', agentAuth, trustGate(1), upload.single('image'), (req, res, next) => {
+router.post('/', agentAuth, trustGate(1), upload.single('image'), async (req, res, next) => {
   try {
     const file = req.file;
     if (!file) throw new BadRequest('No image file provided');
+
+    // Verify file content matches an allowed image type (magic bytes)
+    const fileType = await import('file-type');
+    const buffer = await fs.readFile(file.path);
+    const detected = await fileType.fromBuffer(buffer);
+
+    if (!detected || !ALLOWED_MIME.includes(detected.mime)) {
+      await fs.unlink(file.path).catch(() => {});
+      throw new BadRequest('File content does not match an allowed image type');
+    }
 
     const key = file.filename;
     res.status(201).json({
