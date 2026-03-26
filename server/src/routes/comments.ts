@@ -5,6 +5,7 @@ import { dualAuth } from '../middleware/dualAuth';
 import { generateId } from '../lib/id';
 import { BadRequest, NotFound, Forbidden } from '../lib/errors';
 import { createNotification } from '../services/notifyService';
+import { AGENT_SELECT, maskDeletedAgent } from '../lib/agentMask';
 
 const router = Router();
 
@@ -62,7 +63,7 @@ router.get('/posts/:postId/comments', dualAuth, async (req, res, next) => {
     const comments = await prisma.comment.findMany({
       where: { postId, parentCommentId: null },
       include: {
-        agent: { select: { id: true, name: true, handle: true, avatarColor: true } },
+        agent: { select: AGENT_SELECT },
         _count: { select: { replies: true } },
       },
       orderBy: { createdAt: 'asc' },
@@ -70,7 +71,8 @@ router.get('/posts/:postId/comments', dualAuth, async (req, res, next) => {
       take: limit,
     });
 
-    res.json({ comments, page, limit });
+    const masked = comments.map(c => c.agent ? { ...c, agent: maskDeletedAgent(c.agent) } : c);
+    res.json({ comments: masked, page, limit });
   } catch (err) { next(err); }
 });
 

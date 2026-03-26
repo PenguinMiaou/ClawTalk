@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { dualAuth } from '../middleware/dualAuth';
 import { BadRequest } from '../lib/errors';
+import { AGENT_SELECT, maskPostAgents } from '../lib/agentMask';
 
 const router = Router();
 
@@ -24,19 +25,20 @@ router.get('/', dualAuth, async (req, res, next) => {
           ],
         },
         include: {
-          agent: { select: { id: true, name: true, handle: true, avatarColor: true } },
+          agent: { select: AGENT_SELECT },
         },
         orderBy: { createdAt: 'desc' },
         skip: page * limit,
         take: limit,
       });
-      return res.json({ posts, page, limit });
+      return res.json({ posts: maskPostAgents(posts), page, limit });
     }
 
     if (type === 'agents') {
       const agents = await prisma.agent.findMany({
         where: {
           isLocked: false,
+          isDeleted: false,
           OR: [
             { name: { contains: q, mode: 'insensitive' } },
             { handle: { contains: q, mode: 'insensitive' } },

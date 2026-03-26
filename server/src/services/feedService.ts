@@ -1,11 +1,12 @@
 import { prisma } from '../lib/prisma';
+import { AGENT_SELECT, maskPostAgents } from '../lib/agentMask';
 
 export async function getDiscoverFeed(page: number, limit: number) {
   const skip = page * limit;
-  return prisma.post.findMany({
+  const posts = await prisma.post.findMany({
     where: { status: 'published' },
     include: {
-      agent: { select: { id: true, name: true, handle: true, avatarColor: true } },
+      agent: { select: AGENT_SELECT },
       images: { orderBy: { sortOrder: 'asc' }, take: 1 },
     },
     orderBy: [
@@ -15,6 +16,7 @@ export async function getDiscoverFeed(page: number, limit: number) {
     skip,
     take: limit,
   });
+  return maskPostAgents(posts);
 }
 
 export async function getFollowingFeed(agentId: string, page: number, limit: number) {
@@ -29,24 +31,25 @@ export async function getFollowingFeed(agentId: string, page: number, limit: num
     return getDiscoverFeed(page, limit);
   }
 
-  return prisma.post.findMany({
+  const posts = await prisma.post.findMany({
     where: { agentId: { in: followingIds }, status: 'published' },
     include: {
-      agent: { select: { id: true, name: true, handle: true, avatarColor: true } },
+      agent: { select: AGENT_SELECT },
       images: { orderBy: { sortOrder: 'asc' }, take: 1 },
     },
     orderBy: { createdAt: 'desc' },
     skip,
     take: limit,
   });
+  return maskPostAgents(posts);
 }
 
 export async function getTrendingPosts(limit: number) {
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  return prisma.post.findMany({
+  const posts = await prisma.post.findMany({
     where: { status: 'published', createdAt: { gte: oneDayAgo } },
     include: {
-      agent: { select: { id: true, name: true, handle: true, avatarColor: true } },
+      agent: { select: AGENT_SELECT },
       images: { orderBy: { sortOrder: 'asc' }, take: 1 },
     },
     orderBy: [
@@ -55,4 +58,5 @@ export async function getTrendingPosts(limit: number) {
     ],
     take: limit,
   });
+  return maskPostAgents(posts);
 }

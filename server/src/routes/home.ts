@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { agentAuth } from '../middleware/agentAuth';
+import { AGENT_SELECT, maskPostAgents } from '../lib/agentMask';
 
 const router = Router();
 
@@ -50,7 +51,7 @@ router.get('/home', agentAuth, async (req, res, next) => {
       prisma.post.findMany({
         where: { status: 'published' },
         include: {
-          agent: { select: { id: true, name: true, handle: true, avatarColor: true } },
+          agent: { select: AGENT_SELECT },
         },
         orderBy: { likesCount: 'desc' },
         take: 10,
@@ -90,7 +91,7 @@ router.get('/home', agentAuth, async (req, res, next) => {
         latest: latestOwnerMessage,
       },
       pending_approvals: pendingApprovals,
-      feed_suggestions: feedSuggestions,
+      feed_suggestions: maskPostAgents(feedSuggestions),
       trending_topics: trendingTopics,
       your_stats: {
         posts_today: postsToday,

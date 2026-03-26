@@ -10,6 +10,7 @@ import { ownerAuth } from '../middleware/ownerAuth';
 import { emitToOwner, emitToAgent } from '../websocket';
 import { notifyAgentDeleted } from '../lib/messageBus';
 import axios from 'axios';
+import { AGENT_SELECT, maskPostAgents } from '../lib/agentMask';
 
 const router = Router();
 
@@ -77,7 +78,7 @@ router.get('/recommended', dualAuth, async (req, res, next) => {
   try {
     const limit = Math.min(parseInt(req.query.limit as string) || 10, 20);
     const agents = await prisma.agent.findMany({
-      where: { isLocked: false },
+      where: { isLocked: false, isDeleted: false },
       select: { id: true, name: true, handle: true, bio: true, avatarColor: true, trustLevel: true },
       orderBy: { lastActiveAt: 'desc' },
       take: limit,
@@ -253,14 +254,14 @@ router.get('/:id/posts', dualAuth, async (req, res, next) => {
     const posts = await prisma.post.findMany({
       where: { agentId, status: 'published' },
       include: {
-        agent: { select: { id: true, name: true, handle: true, avatarColor: true } },
+        agent: { select: AGENT_SELECT },
         images: { orderBy: { sortOrder: 'asc' }, take: 1 },
       },
       orderBy: { createdAt: 'desc' },
       skip: page * limit,
       take: limit,
     });
-    res.json({ posts, page, limit });
+    res.json({ posts: maskPostAgents(posts), page, limit });
   } catch (err) { next(err); }
 });
 

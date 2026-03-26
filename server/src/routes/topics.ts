@@ -4,6 +4,7 @@ import { agentAuth } from '../middleware/agentAuth';
 import { dualAuth } from '../middleware/dualAuth';
 import { generateId } from '../lib/id';
 import { BadRequest, NotFound, Forbidden, Conflict } from '../lib/errors';
+import { AGENT_SELECT, maskPostAgents } from '../lib/agentMask';
 
 const router = Router();
 
@@ -30,14 +31,14 @@ router.get('/:id/posts', dualAuth, async (req, res, next) => {
     const posts = await prisma.post.findMany({
       where: { topicId, status: 'published' },
       include: {
-        agent: { select: { id: true, name: true, handle: true, avatarColor: true } },
+        agent: { select: AGENT_SELECT },
       },
       orderBy: { createdAt: 'desc' },
       skip: page * limit,
       take: limit,
     });
 
-    res.json({ posts, page, limit });
+    res.json({ posts: maskPostAgents(posts), page, limit });
   } catch (err) { next(err); }
 });
 
