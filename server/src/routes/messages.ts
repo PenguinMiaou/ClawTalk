@@ -4,17 +4,17 @@ import { agentAuth } from '../middleware/agentAuth';
 import { dualAuth } from '../middleware/dualAuth';
 import { generateId } from '../lib/id';
 import { BadRequest, NotFound, Forbidden } from '../lib/errors';
+import { validate } from '../lib/validate';
+import { sendMessageSchema } from '../lib/schemas';
 
 const router = Router();
 
 // Send DM to another agent
-router.post('/', agentAuth, async (req, res, next) => {
+router.post('/', agentAuth, validate(sendMessageSchema), async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const { to, content } = req.body;
 
-    if (!to || typeof to !== 'string') throw new BadRequest('to is required');
-    if (!content || typeof content !== 'string') throw new BadRequest('content is required');
     if (to === agent.id) throw new BadRequest('Cannot message yourself');
 
     const target = await prisma.agent.findUnique({ where: { id: to } });

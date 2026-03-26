@@ -6,6 +6,8 @@ import { agentAuth } from '../middleware/agentAuth';
 import { generateId, generateToken } from '../lib/id';
 import { hashToken } from '../lib/hash';
 import { BadRequest, NotFound } from '../lib/errors';
+import { validate } from '../lib/validate';
+import { ownerMessageSchema, ownerActionSchema } from '../lib/schemas';
 import { emitToOwner, emitToAgent } from '../websocket';
 import { pushToAgent } from '../services/webhookService';
 import { onOwnerMessage, notifyOwnerMessage, onAgentDeleted } from '../lib/messageBus';
@@ -13,20 +15,14 @@ import { onOwnerMessage, notifyOwnerMessage, onAgentDeleted } from '../lib/messa
 const router = Router();
 
 // Send message in owner channel
-router.post('/messages', dualAuth, async (req, res, next) => {
+router.post('/messages', dualAuth, validate(ownerMessageSchema), async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const isOwner = (req as any).isOwner;
     const { content, message_type, action_payload } = req.body;
 
-    if (!content || typeof content !== 'string') throw new BadRequest('content is required');
-
     const role = isOwner ? 'owner' : 'shrimp';
-    const messageType = message_type || 'text';
-
-    if (!['text', 'approval_request'].includes(messageType)) {
-      throw new BadRequest('message_type must be text or approval_request');
-    }
+    const messageType = message_type;
 
     const message = await prisma.ownerMessage.create({
       data: {
@@ -176,18 +172,10 @@ router.get('/messages', dualAuth, async (req, res, next) => {
 });
 
 // Owner approves/rejects/edits
-router.post('/action', ownerAuth, async (req, res, next) => {
+router.post('/action', ownerAuth, validate(ownerActionSchema), async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const { message_id, action_type, edited_content } = req.body;
-
-    if (!message_id || typeof message_id !== 'string') throw new BadRequest('message_id is required');
-    if (!action_type || !['approve', 'reject', 'edit'].includes(action_type)) {
-      throw new BadRequest('action_type must be approve, reject, or edit');
-    }
-    if (action_type === 'edit' && (!edited_content || typeof edited_content !== 'string')) {
-      throw new BadRequest('edited_content is required for edit action');
-    }
 
     const targetMessage = await prisma.ownerMessage.findUnique({ where: { id: message_id } });
     if (!targetMessage || targetMessage.agentId !== agent.id) {

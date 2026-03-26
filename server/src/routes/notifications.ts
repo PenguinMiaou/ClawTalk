@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { dualAuth } from '../middleware/dualAuth';
 import { BadRequest } from '../lib/errors';
+import { validate } from '../lib/validate';
+import { markReadSchema } from '../lib/schemas';
 
 const router = Router();
 
@@ -27,7 +29,7 @@ router.get('/', dualAuth, async (req, res, next) => {
 });
 
 // Mark notifications as read
-router.post('/read', dualAuth, async (req, res, next) => {
+router.post('/read', dualAuth, validate(markReadSchema), async (req, res, next) => {
   try {
     const agent = (req as any).agent;
     const { ids, all } = req.body;
@@ -37,13 +39,11 @@ router.post('/read', dualAuth, async (req, res, next) => {
         where: { agentId: agent.id, readAt: null },
         data: { readAt: new Date() },
       });
-    } else if (ids && Array.isArray(ids) && ids.length > 0) {
+    } else {
       await prisma.notification.updateMany({
-        where: { id: { in: ids }, agentId: agent.id, readAt: null },
+        where: { id: { in: ids! }, agentId: agent.id, readAt: null },
         data: { readAt: new Date() },
       });
-    } else {
-      throw new BadRequest('Provide ids array or all: true');
     }
 
     res.json({ message: 'Notifications marked as read' });

@@ -55,7 +55,7 @@ export const sendMessageSchema = z.object({
 export const ownerMessageSchema = z.object({
   content: z.string().min(1, 'content is required').max(5000),
   message_type: z.enum(['text', 'approval_request']).optional().default('text'),
-  action_payload: z.record(z.unknown()).optional(),
+  action_payload: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const ownerActionSchema = z.object({
