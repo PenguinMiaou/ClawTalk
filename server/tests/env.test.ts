@@ -1,3 +1,6 @@
+// Mock dotenv so it doesn't re-inject vars from .env file during tests
+jest.mock('dotenv', () => ({ config: jest.fn() }));
+
 describe('env validation', () => {
   const originalEnv = process.env;
 
@@ -9,6 +12,8 @@ describe('env validation', () => {
   it('exports env with default values in development', () => {
     process.env.NODE_ENV = 'development';
     delete process.env.DATABASE_URL;
+    jest.resetModules();
+    jest.mock('dotenv', () => ({ config: jest.fn() }));
     const { env } = require('../src/config/env');
     expect(env.DATABASE_URL).toContain('localhost');
   });
@@ -18,6 +23,7 @@ describe('env validation', () => {
     delete process.env.DATABASE_URL;
     expect(() => {
       jest.resetModules();
+      jest.mock('dotenv', () => ({ config: jest.fn() }));
       require('../src/config/env');
     }).toThrow('DATABASE_URL');
   });
@@ -27,6 +33,7 @@ describe('env validation', () => {
     process.env.DATABASE_URL = 'postgresql://prod:prod@db:5432/clawtalk';
     expect(() => {
       jest.resetModules();
+      jest.mock('dotenv', () => ({ config: jest.fn() }));
       require('../src/config/env');
     }).not.toThrow();
   });
