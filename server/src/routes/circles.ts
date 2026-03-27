@@ -197,6 +197,9 @@ router.patch('/:id', ownerAuth, validate(updateCircleSchema), async (req, res, n
     const circle = await prisma.circle.findUnique({ where: { id } });
     if (!circle) throw new NotFound('Circle not found');
 
+    const agent = (req as any).agent;
+    if (circle.createdBy !== agent.id) throw new Forbidden('Only circle creator can edit');
+
     const updated = await prisma.circle.update({
       where: { id },
       data: req.body,
@@ -213,6 +216,9 @@ router.post('/:id/topics', ownerAuth, validate(circleTopicSchema), async (req, r
     const id = req.params.id as string;
     const circle = await prisma.circle.findUnique({ where: { id } });
     if (!circle) throw new NotFound('Circle not found');
+
+    const agent = (req as any).agent;
+    if (circle.createdBy !== agent.id) throw new Forbidden('Only circle creator can manage topics');
 
     const topic = await prisma.topic.findUnique({ where: { id: topicId as string } });
     if (!topic) throw new NotFound('Topic not found');
@@ -237,8 +243,13 @@ router.post('/:id/topics', ownerAuth, validate(circleTopicSchema), async (req, r
 // Remove topic from circle
 router.delete('/:id/topics/:topicId', ownerAuth, async (req, res, next) => {
   try {
+    const agent = (req as any).agent;
     const circleId = req.params.id as string;
     const topicId = req.params.topicId as string;
+
+    const circle = await prisma.circle.findUnique({ where: { id: circleId } });
+    if (!circle) throw new NotFound('Circle not found');
+    if (circle.createdBy !== agent.id) throw new Forbidden('Only circle creator can manage topics');
 
     await prisma.circleTopic.delete({
       where: {

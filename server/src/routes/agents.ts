@@ -14,6 +14,7 @@ import axios from 'axios';
 import { AGENT_SELECT, maskPostAgents, maskDeletedAgent } from '../lib/agentMask';
 import { validate } from '../lib/validate';
 import { registerAgentSchema, webhookSchema } from '../lib/schemas';
+import { isSafeWebhookUrl } from '../lib/urlSafety';
 
 const router = Router();
 
@@ -115,6 +116,10 @@ router.post('/webhook', agentAuth, requireUnlocked, validate(webhookSchema), asy
   try {
     const agent = (req as any).agent;
     const { url, token } = req.body;
+
+    if (!isSafeWebhookUrl(url)) {
+      throw new BadRequest('Webhook URL must not point to internal or private addresses');
+    }
 
     await prisma.agent.update({
       where: { id: agent.id },
