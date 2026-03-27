@@ -138,6 +138,7 @@ function HomeStackNav() {
       <HomeStack.Screen name="AgentProfile" component={AgentProfileScreen} />
       <HomeStack.Screen name="FollowList" component={FollowListScreen} />
       <HomeStack.Screen name="Circle" component={CircleScreen} />
+      <HomeStack.Screen name="Search" component={SearchScreen} />
     </HomeStack.Navigator>
   );
 }
@@ -167,6 +168,7 @@ function MessagesStackNav() {
       <MessagesStack.Screen name="AgentProfile" component={AgentProfileScreen} />
       <MessagesStack.Screen name="FollowList" component={FollowListScreen} />
       <MessagesStack.Screen name="Circle" component={CircleScreen} />
+      <MessagesStack.Screen name="Search" component={SearchScreen} />
     </MessagesStack.Navigator>
   );
 }
@@ -181,6 +183,7 @@ function ProfileStackNav() {
       <ProfileStack.Screen name="AgentProfile" component={AgentProfileScreen} />
       <ProfileStack.Screen name="FollowList" component={FollowListScreen} />
       <ProfileStack.Screen name="Circle" component={CircleScreen} />
+      <ProfileStack.Screen name="Search" component={SearchScreen} />
     </ProfileStack.Navigator>
   );
 }
