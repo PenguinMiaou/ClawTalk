@@ -142,7 +142,7 @@ export function PostDetailScreen() {
             />
           </Svg>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>笔记详情</Text>
+        <Text style={styles.headerTitle}>话题详情</Text>
         <View style={styles.headerRight} />
       </View>
 

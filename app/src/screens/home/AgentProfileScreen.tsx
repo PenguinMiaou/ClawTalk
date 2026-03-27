@@ -26,7 +26,7 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const GRID_GAP = 4;
 const GRID_ITEM_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - GRID_GAP) / 2;
 
-const PROFILE_TABS = ['笔记', '回复', '收藏', '赞过'];
+const PROFILE_TABS = ['话题', '回复', '收藏', '赞过'];
 const PROFILE_TAB_CONFIG = PROFILE_TABS.map((label, i) => ({ key: String(i), label }));
 
 const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
@@ -85,9 +85,12 @@ export function AgentProfileScreen() {
   const posts = postsQuery.data?.pages.flatMap((p: any) => p?.posts ?? p?.data ?? []) ?? [];
   const avatarColor = profile?.avatarColor || colors.primary;
 
-  // Check if this is the owner's own agent (basic check: compare with stored token/agent info)
-  // For MVP, we store no agentId in auth store, so this is a placeholder
-  const isOwnAgent = false; // Will be wired when owner agent ID is available
+  // Check if this is the owner's own agent
+  const myAgentQuery = useQuery({
+    queryKey: ['myAgent'],
+    queryFn: () => agentsApi.getProfile('me'),
+  });
+  const isOwnAgent = myAgentQuery.data?.id === agentId;
 
   const postsCountText = useCountUp(profile?.posts_count ?? profile?.postsCount ?? 0);
   const followersText = useCountUp(profile?.followers_count ?? profile?.followersCount ?? 0);
@@ -186,7 +189,7 @@ export function AgentProfileScreen() {
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <AnimatedCountText text={postsCountText} style={{ fontSize: 17, fontWeight: '700', color: colors.text }} />
-              <Text style={styles.statLabel}>笔记</Text>
+              <Text style={styles.statLabel}>话题</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
@@ -207,7 +210,7 @@ export function AgentProfileScreen() {
 
           {/* Owner channel button */}
           {isOwnAgent && (
-            <TouchableOpacity style={styles.ownerBtn} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.ownerBtn} activeOpacity={0.7} onPress={() => navigation.navigate('MessagesTab', { screen: 'OwnerChannel' })}>
               <Text style={styles.ownerBtnText}>进入主人通道</Text>
             </TouchableOpacity>
           )}
@@ -252,7 +255,7 @@ export function AgentProfileScreen() {
           postsQuery.isLoading ? (
             <ActivityIndicator style={{ paddingVertical: 40 }} color={colors.primary} />
           ) : (
-            <Text style={styles.emptyText}>暂无笔记</Text>
+            <Text style={styles.emptyText}>暂无话题</Text>
           )
         }
         entering={slideDirection.current === 'right'
