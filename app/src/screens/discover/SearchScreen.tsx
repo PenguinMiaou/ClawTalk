@@ -20,13 +20,14 @@ import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { colors, spacing } from '../../theme';
 import { AnimatedTabBar } from '../../animations';
 
-type SearchTab = 'all' | 'posts' | 'agents' | 'topics';
+type SearchTab = 'all' | 'posts' | 'agents' | 'topics' | 'circles';
 
 const TABS: { key: string; label: string }[] = [
   { key: 'all', label: '全部' },
   { key: 'posts', label: '话题' },
   { key: 'agents', label: '虾虾' },
-  { key: 'topics', label: '圈子' },
+  { key: 'topics', label: '标签' },
+  { key: 'circles', label: '圈子' },
 ];
 
 export function SearchScreen() {
@@ -67,16 +68,18 @@ export function SearchScreen() {
     enabled: debouncedQuery.length > 0,
   });
 
-  // Backend returns { posts: [...] } and/or { agents: [...] } and/or { topics: [...] }
+  // Backend returns { posts: [...] } and/or { agents: [...] } and/or { topics: [...] } and/or { circles: [...] }
   const rawData = searchQuery.data;
   const allPosts: any[] = rawData?.posts ?? [];
   const allAgents: any[] = rawData?.agents ?? [];
   const allTopics: any[] = rawData?.topics ?? [];
+  const allCircles: any[] = rawData?.circles ?? [];
   // For single-type tabs, pick the right array
   const results: any[] =
     activeTab === 'posts' ? allPosts :
     activeTab === 'agents' ? allAgents :
     activeTab === 'topics' ? allTopics :
+    activeTab === 'circles' ? allCircles :
     []; // 'all' tab uses allPosts + allAgents separately
 
   const renderPostItem = useCallback(
@@ -132,16 +135,40 @@ export function SearchScreen() {
     [navigation],
   );
 
-  const renderItem = activeTab === 'agents' ? renderAgentItem : activeTab === 'topics' ? renderTopicItem : renderPostItem;
+  const renderCircleItem = useCallback(
+    ({ item, index }: { item: any; index: number }) => (
+      <Animated.View entering={FadeInDown.delay(Math.min(index * 50, 300)).duration(300)}>
+        <TouchableOpacity
+          style={styles.circleItem}
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('Circle', { circleId: item.id })}
+        >
+          <View style={styles.circleIcon}>
+            <Text style={styles.circleEmoji}>{item.icon ?? '🔵'}</Text>
+          </View>
+          <View style={styles.circleInfo}>
+            <Text style={styles.circleName} numberOfLines={1}>{item.name}</Text>
+            <Text style={styles.circleDesc} numberOfLines={1}>{item.description ?? ''}</Text>
+          </View>
+          <Text style={styles.circleMemberCount}>
+            {(item.memberCount ?? item.member_count ?? 0)}人
+          </Text>
+        </TouchableOpacity>
+      </Animated.View>
+    ),
+    [navigation],
+  );
 
-  // "全部" tab: merge agents + posts into a single list with type markers
+  const renderItem = activeTab === 'agents' ? renderAgentItem : activeTab === 'topics' ? renderTopicItem : activeTab === 'circles' ? renderCircleItem : renderPostItem;
+
+  // "全部" tab: merge agents + posts into a single list with type markers (circles shown separately below)
   const allResults = React.useMemo(() => {
     if (activeTab !== 'all') return results;
     const tagged: any[] = [];
     allAgents.forEach(a => tagged.push({ ...a, _type: 'agent' }));
     allPosts.forEach(p => tagged.push({ ...p, _type: 'post' }));
     return tagged;
-  }, [activeTab, results, allAgents, allPosts]);
+  }, [activeTab, results, allAgents, allPosts, allCircles]);
 
   const renderAllItem = useCallback(
     ({ item, index }: { item: any; index: number }) => {
@@ -150,7 +177,7 @@ export function SearchScreen() {
       }
       return renderPostItem({ item, index });
     },
-    [renderAgentItem, renderPostItem],
+    [renderAgentItem, renderPostItem, renderCircleItem],
   );
 
   const finalRenderItem = activeTab === 'all' ? renderAllItem : renderItem;
@@ -242,7 +269,31 @@ export function SearchScreen() {
                   </View>
                 </View>
               )}
-              {allAgents.length === 0 && allPosts.length === 0 && (
+              {allCircles.length > 0 && (
+                <View>
+                  <Text style={styles.sectionTitle}>相关圈子</Text>
+                  {allCircles.map((circle: any, index: number) => (
+                    <TouchableOpacity
+                      key={circle.id}
+                      style={styles.circleItem}
+                      activeOpacity={0.7}
+                      onPress={() => navigation.navigate('Circle', { circleId: circle.id })}
+                    >
+                      <View style={styles.circleIcon}>
+                        <Text style={styles.circleEmoji}>{circle.icon ?? '🔵'}</Text>
+                      </View>
+                      <View style={styles.circleInfo}>
+                        <Text style={styles.circleName} numberOfLines={1}>{circle.name}</Text>
+                        <Text style={styles.circleDesc} numberOfLines={1}>{circle.description ?? ''}</Text>
+                      </View>
+                      <Text style={styles.circleMemberCount}>
+                        {(circle.memberCount ?? circle.member_count ?? 0)}人
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+              {allAgents.length === 0 && allPosts.length === 0 && allCircles.length === 0 && (
                 <View style={styles.empty}>
                   <Text style={styles.emptyText}>没有找到相关结果</Text>
                 </View>
@@ -266,10 +317,14 @@ export function SearchScreen() {
               )}
             </ScrollView>
           ) : (
-            // 虾虾 / 圈子: list
+            // 虾虾 / 标签 / 圈子: list
             <FlatList
               data={results}
-              renderItem={activeTab === 'agents' ? renderAgentItem : renderTopicItem}
+              renderItem={
+                activeTab === 'agents' ? renderAgentItem :
+                activeTab === 'circles' ? renderCircleItem :
+                renderTopicItem
+              }
               keyExtractor={(item: any) => item.id?.toString() ?? Math.random().toString()}
               ListEmptyComponent={
                 <View style={styles.empty}>
@@ -403,5 +458,42 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
     color: colors.textSecondary,
+  },
+  circleItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  circleIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  circleEmoji: {
+    fontSize: 22,
+  },
+  circleInfo: {
+    flex: 1,
+    marginLeft: spacing.md,
+  },
+  circleName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  circleDesc: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  circleMemberCount: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginLeft: spacing.sm,
   },
 });
