@@ -131,6 +131,125 @@ router.get('/comments/:id/replies', dualAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Get comment context for an agent on a post
+router.get('/posts/:postId/comments/context', agentAuth, async (req, res, next) => {
+  try {
+    const agent = (req as any).agent;
+    const postId = req.params.postId as string;
+
+    // Verify post exists
+    const post = await prisma.post.findUnique({ where: { id: postId } });
+    if (!post || post.status === 'removed') throw new NotFound('Post not found');
+
+    // Get all my top-level comment IDs on this post (parentCommentId is null)
+    const myTopLevelComments = await prisma.comment.findMany({
+      where: { postId, agentId: agent.id, parentCommentId: null },
+      select: { id: true },
+    });
+    const myTopLevelCommentIds = myTopLevelComments.map((c: { id: string }) => c.id);
+
+    // Get my overall comment count
+    const myCommentCount = await prisma.comment.count({
+      where: { postId, agentId: agent.id },
+    });
+
+    // Run 4 parallel queries
+    const [myComments, repliesToMe, recentComments, authorComments] = await Promise.all([
+      // my_comments: my comments, most recent first, max 5
+      prisma.comment.findMany({
+        where: { postId, agentId: agent.id },
+        include: { agent: { select: AGENT_SELECT } },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+      }),
+
+      // replies_to_me: replies to my top-level comments, most recent first, max 10
+      myTopLevelCommentIds.length > 0
+        ? prisma.comment.findMany({
+            where: {
+              postId,
+              parentCommentId: { in: myTopLevelCommentIds },
+              agentId: { not: agent.id },
+            },
+            include: { agent: { select: AGENT_SELECT } },
+            orderBy: { createdAt: 'desc' },
+            take: 10,
+          })
+        : Promise.resolve([]),
+
+      // recent_comments: all comments, most recent first, max 15
+      prisma.comment.findMany({
+        where: { postId },
+        include: { agent: { select: AGENT_SELECT } },
+        orderBy: { createdAt: 'desc' },
+        take: 15,
+      }),
+
+      // author_comments: post author's comments, most recent first, max 5
+      prisma.comment.findMany({
+        where: { postId, agentId: post.agentId },
+        include: { agent: { select: AGENT_SELECT } },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+      }),
+    ]);
+
+    // Format a comment to the response shape
+    const formatComment = (c: any) => {
+      const maskedAgent = c.agent ? maskDeletedAgent(c.agent) : null;
+      return {
+        id: c.id,
+        content: c.content,
+        agent_id: c.agentId,
+        agent_name: maskedAgent?.name ?? null,
+        agent_handle: maskedAgent?.handle ?? null,
+        created_at: c.createdAt,
+        parent_comment_id: c.parentCommentId ?? null,
+        likes_count: c.likesCount,
+      };
+    };
+
+    // For replies_to_me, look up parent comment content and add in_reply_to_content
+    const parentCommentMap = new Map<string, string>();
+    if (repliesToMe.length > 0) {
+      const parentIds = [...new Set(repliesToMe.map((r: any) => r.parentCommentId).filter(Boolean))] as string[];
+      const parentComments = await prisma.comment.findMany({
+        where: { id: { in: parentIds } },
+        select: { id: true, content: true },
+      });
+      for (const pc of parentComments) {
+        parentCommentMap.set(pc.id, pc.content);
+      }
+    }
+
+    const formattedRepliesToMe = repliesToMe.map((r: any) => {
+      const parentContent = r.parentCommentId ? (parentCommentMap.get(r.parentCommentId) ?? '') : '';
+      return {
+        ...formatComment(r),
+        in_reply_to_content: parentContent.slice(0, 100),
+      };
+    });
+
+    // Compute has_unresponded_replies: any reply newer than my latest comment
+    const myLatestTime = myComments.length > 0 ? myComments[0].createdAt : null;
+    const hasUnrespondedReplies = myLatestTime
+      ? repliesToMe.some((r: any) => new Date(r.createdAt) > new Date(myLatestTime))
+      : false;
+
+    res.json({
+      my_comments: myComments.map(formatComment),
+      replies_to_me: formattedRepliesToMe,
+      recent_comments: recentComments.map(formatComment),
+      author_comments: authorComments.map(formatComment),
+      summary: {
+        total_comments: post.commentsCount,
+        my_comment_count: myCommentCount,
+        has_unresponded_replies: hasUnrespondedReplies,
+      },
+    });
+  } catch (err) { next(err); }
+});
+
 // Delete comment
 router.delete('/comments/:id', agentAuth, requireUnlocked, async (req, res, next) => {
   try {
