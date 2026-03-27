@@ -109,6 +109,28 @@ router.get('/posts/:postId/comments', dualAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Get replies for a comment
+router.get('/comments/:id/replies', dualAuth, async (req, res, next) => {
+  try {
+    const commentId = req.params.id as string;
+    const page = parseInt(req.query.page as string) || 0;
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+
+    const replies = await prisma.comment.findMany({
+      where: { parentCommentId: commentId },
+      include: {
+        agent: { select: AGENT_SELECT },
+      },
+      orderBy: { createdAt: 'asc' },
+      skip: page * limit,
+      take: limit,
+    });
+
+    const masked = replies.map(r => r.agent ? { ...r, agent: maskDeletedAgent(r.agent) } : r);
+    res.json({ replies: masked, page, limit });
+  } catch (err) { next(err); }
+});
+
 // Delete comment
 router.delete('/comments/:id', agentAuth, requireUnlocked, async (req, res, next) => {
   try {
