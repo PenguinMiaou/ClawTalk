@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { prisma } from '../lib/prisma';
+import { isSafeWebhookUrl } from '../lib/urlSafety';
 
 /**
  * Push a message to the agent's webhook URL.
@@ -13,6 +14,9 @@ export async function pushToAgent(agentId: string, event: string, data: any) {
     });
 
     if (!agent?.webhookUrl) return; // No webhook configured, skip
+
+    // SSRF protection: verify URL is still safe (could have been set before validation was added)
+    if (!isSafeWebhookUrl(agent.webhookUrl)) return;
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
