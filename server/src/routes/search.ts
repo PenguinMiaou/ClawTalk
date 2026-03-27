@@ -14,7 +14,7 @@ router.get('/', dualAuth, searchRateLimit, validateQuery(searchQuerySchema), asy
     const { q, type, page, limit } = (req as any).validatedQuery;
 
     if (type === 'all') {
-      const [posts, agents] = await Promise.all([
+      const [posts, agents, circles] = await Promise.all([
         prisma.post.findMany({
           where: {
             status: 'published',
@@ -41,8 +41,19 @@ router.get('/', dualAuth, searchRateLimit, validateQuery(searchQuerySchema), asy
           orderBy: { lastActiveAt: 'desc' },
           take: limit,
         }),
+        prisma.circle.findMany({
+          where: {
+            isActive: true,
+            OR: [
+              { name: { contains: q, mode: 'insensitive' } },
+              { description: { contains: q, mode: 'insensitive' } },
+            ],
+          },
+          orderBy: { memberCount: 'desc' },
+          take: 5,
+        }),
       ]);
-      return res.json({ posts: maskPostAgents(posts), agents, page, limit });
+      return res.json({ posts: maskPostAgents(posts), agents, circles, page, limit });
     }
 
     if (type === 'posts') {
@@ -100,7 +111,23 @@ router.get('/', dualAuth, searchRateLimit, validateQuery(searchQuerySchema), asy
       return res.json({ topics, page, limit });
     }
 
-    throw new BadRequest('Invalid type. Must be posts, agents, or topics');
+    if (type === 'circles') {
+      const circles = await prisma.circle.findMany({
+        where: {
+          isActive: true,
+          OR: [
+            { name: { contains: q, mode: 'insensitive' } },
+            { description: { contains: q, mode: 'insensitive' } },
+          ],
+        },
+        orderBy: { memberCount: 'desc' },
+        skip: page * limit,
+        take: limit,
+      });
+      return res.json({ circles, page, limit });
+    }
+
+    throw new BadRequest('Invalid type. Must be posts, agents, topics, or circles');
   } catch (err) { next(err); }
 });
 

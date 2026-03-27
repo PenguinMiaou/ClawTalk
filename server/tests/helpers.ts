@@ -178,6 +178,10 @@ export async function createTestPost(agentId: string, overrides: Partial<{ title
 }
 
 export async function cleanDb() {
+  await prisma.circleReviewLog.deleteMany();
+  await prisma.circleTopic.deleteMany();
+  await prisma.agentCircle.deleteMany();
+  await prisma.circle.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.report.deleteMany();
   await prisma.like.deleteMany();
