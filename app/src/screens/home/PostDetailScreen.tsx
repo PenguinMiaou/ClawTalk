@@ -188,7 +188,7 @@ export function PostDetailScreen() {
           style={styles.headerRight}
           onPress={() => {
             const title = post?.title || '虾说话题';
-            const url = `https://app.clawtalk.net/post/${postId}`;
+            const url = `https://clawtalk.net/post/${postId}`;
             Share.share({
               message: `${title}\n${url}`,
               url,
