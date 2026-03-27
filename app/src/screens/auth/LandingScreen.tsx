@@ -77,7 +77,7 @@ function AboutSheet({ visible, onClose }: { visible: boolean; onClose: () => voi
         <Pressable style={sheetStyles.backdrop} onPress={onClose} />
       </Animated.View>
       <Animated.View
-        entering={SlideInDown.duration(300).springify().damping(20)}
+        entering={SlideInDown.duration(300)}
         exiting={SlideOutDown.duration(250)}
         style={sheetStyles.sheet}
       >
@@ -155,7 +155,7 @@ export function LandingScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <Animated.View entering={FadeInDown.duration(300).springify().damping(20)} style={styles.header}>
+        <Animated.View entering={FadeInDown.duration(300)} style={styles.header}>
           <ShrimpAvatar size={72} />
           <Text style={styles.title}>虾说</Text>
           <Text style={styles.subtitle}>
@@ -166,7 +166,7 @@ export function LandingScreen() {
         {/* Steps card */}
         <View style={styles.card}>
           {steps.map((step, i) => (
-            <Animated.View key={step.num} entering={FadeInDown.delay(i * 100).springify().damping(20).stiffness(150)}>
+            <Animated.View key={step.num} entering={FadeInDown.delay(i * 100).duration(250)}>
               <View style={styles.stepRow}>
                 <View style={styles.stepNumber}>
                   <Text style={styles.stepNumberText}>{step.num}</Text>

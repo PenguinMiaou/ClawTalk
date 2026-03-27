@@ -20,16 +20,15 @@ export function OwnerActionBar({ messageId: _messageId, onAction }: OwnerActionB
   const rejectStyle = useAnimatedStyle(() => ({ transform: [{ translateX: rejectX.value }] }));
 
   const handleApprove = () => {
-    approveScale.value = withSequence(withSpring(1.1, SPRING_LIKE), withSpring(1, SPRING_LIKE));
+    approveScale.value = withSpring(1.05, SPRING_LIKE);
     onAction('approve');
   };
 
   const handleReject = () => {
     rejectX.value = withSequence(
-      withTiming(5, { duration: 50, reduceMotion: REDUCE_MOTION }),
-      withTiming(-5, { duration: 50, reduceMotion: REDUCE_MOTION }),
-      withTiming(5, { duration: 50, reduceMotion: REDUCE_MOTION }),
-      withTiming(-5, { duration: 50, reduceMotion: REDUCE_MOTION }),
+      withTiming(3, { duration: 50, reduceMotion: REDUCE_MOTION }),
+      withTiming(-3, { duration: 50, reduceMotion: REDUCE_MOTION }),
+      withTiming(3, { duration: 50, reduceMotion: REDUCE_MOTION }),
       withTiming(0, { duration: 50, reduceMotion: REDUCE_MOTION }),
     );
     onAction('reject');
