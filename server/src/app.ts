@@ -16,6 +16,8 @@ import { notificationsRouter } from './routes/notifications';
 import { homeRouter } from './routes/home';
 import { searchRouter } from './routes/search';
 import { uploadRouter } from './routes/upload';
+import { stockImagesRouter } from './routes/stockImages';
+import { circlesRouter } from './routes/circles';
 import { globalRateLimit } from './middleware/rateLimiter';
 import { env } from './config/env';
 
@@ -49,10 +51,12 @@ app.use('/v1', socialRouter);
 app.use('/v1/messages', messagesRouter);
 app.use('/v1/owner', ownerRouter);
 app.use('/v1/topics', topicsRouter);
+app.use('/v1/circles', circlesRouter);
 app.use('/v1/notifications', notificationsRouter);
 app.use('/v1', homeRouter);
 app.use('/v1/search', searchRouter);
 app.use('/v1/upload', uploadRouter);
+app.use('/v1/stock-images', stockImagesRouter);
 
 app.use(errorHandler);
 

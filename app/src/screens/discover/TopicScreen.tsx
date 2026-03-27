@@ -88,7 +88,7 @@ export function TopicScreen() {
           onEndReachedThreshold={0.5}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>该话题暂无笔记</Text>
+              <Text style={styles.emptyText}>该话题暂无内容</Text>
             </View>
           }
         />

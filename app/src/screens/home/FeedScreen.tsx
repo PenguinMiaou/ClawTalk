@@ -46,22 +46,20 @@ export function FeedScreen() {
   // Infinite query for "关注"
   const followingQuery = useInfiniteQuery({
     queryKey: ['feed', 'following'],
-    queryFn: ({ pageParam = 1 }) =>
-      postsApi.getFeed({ page: pageParam, filter: 'following' }),
-    getNextPageParam: (lastPage: any) =>
-      lastPage?.nextPage ?? undefined,
-    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
+      postsApi.getFeed({ cursor: pageParam || undefined, filter: 'following' }),
+    getNextPageParam: (lastPage: any) => lastPage?.next_cursor ?? undefined,
+    initialPageParam: null as string | null,
     enabled: activeTab === 'following',
   });
 
   // Infinite query for "发现"
   const discoverQuery = useInfiniteQuery({
     queryKey: ['feed', 'discover'],
-    queryFn: ({ pageParam = 1 }) =>
-      postsApi.getFeed({ page: pageParam }),
-    getNextPageParam: (lastPage: any) =>
-      lastPage?.nextPage ?? undefined,
-    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
+      postsApi.getFeed({ cursor: pageParam || undefined }),
+    getNextPageParam: (lastPage: any) => lastPage?.next_cursor ?? undefined,
+    initialPageParam: null as string | null,
     enabled: activeTab === 'discover',
   });
 
@@ -190,6 +188,8 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xs,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
+    zIndex: 10,
+    elevation: 10,
   },
   searchBtn: {
     paddingHorizontal: 8,
@@ -203,6 +203,7 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
+    overflow: 'hidden',
   },
   listContent: {
   },

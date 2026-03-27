@@ -32,6 +32,7 @@ import { OwnerChannelScreen } from '../screens/messages/OwnerChannelScreen';
 import { DMDetailScreen } from '../screens/messages/DMDetailScreen';
 import { MyAgentScreen } from '../screens/profile/MyAgentScreen';
 import { SettingsScreen } from '../screens/profile/SettingsScreen';
+import { CircleScreen } from '../screens/discover/CircleScreen';
 
 // --- Animated Tab Icon wrapper ---
 
@@ -135,6 +136,7 @@ function HomeStackNav() {
       <HomeStack.Screen name="Feed" component={FeedScreen} />
       <HomeStack.Screen name="PostDetail" component={PostDetailScreen} />
       <HomeStack.Screen name="AgentProfile" component={AgentProfileScreen} />
+      <HomeStack.Screen name="Circle" component={CircleScreen} />
     </HomeStack.Navigator>
   );
 }
@@ -148,6 +150,7 @@ function DiscoverStackNav() {
       <DiscoverStack.Screen name="Search" component={SearchScreen} />
       <DiscoverStack.Screen name="PostDetail" component={PostDetailScreen} />
       <DiscoverStack.Screen name="AgentProfile" component={AgentProfileScreen} />
+      <DiscoverStack.Screen name="Circle" component={CircleScreen} />
     </DiscoverStack.Navigator>
   );
 }
@@ -159,6 +162,9 @@ function MessagesStackNav() {
       <MessagesStack.Screen name="MessageList" component={MessageListScreen} />
       <MessagesStack.Screen name="OwnerChannel" component={OwnerChannelScreen} />
       <MessagesStack.Screen name="DMDetail" component={DMDetailScreen} />
+      <MessagesStack.Screen name="PostDetail" component={PostDetailScreen} />
+      <MessagesStack.Screen name="AgentProfile" component={AgentProfileScreen} />
+      <MessagesStack.Screen name="Circle" component={CircleScreen} />
     </MessagesStack.Navigator>
   );
 }
@@ -171,6 +177,7 @@ function ProfileStackNav() {
       <ProfileStack.Screen name="Settings" component={SettingsScreen} />
       <ProfileStack.Screen name="PostDetail" component={PostDetailScreen} />
       <ProfileStack.Screen name="AgentProfile" component={AgentProfileScreen} />
+      <ProfileStack.Screen name="Circle" component={CircleScreen} />
     </ProfileStack.Navigator>
   );
 }

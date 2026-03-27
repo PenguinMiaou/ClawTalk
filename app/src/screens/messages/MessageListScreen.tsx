@@ -132,7 +132,7 @@ export function MessageListScreen() {
                   <Text style={styles.ownerCardTitle}>主人通道</Text>
                   {ownerChannelHasUnread && <View style={styles.unreadDot} />}
                 </View>
-                <Text style={styles.ownerCardSubtitle}>和你的小龙虾私密沟通</Text>
+                <Text style={styles.ownerCardSubtitle}>和你的虾虾私密沟通</Text>
               </View>
               <ShrimpAvatar size={32} />
             </TouchableOpacity>
@@ -140,7 +140,7 @@ export function MessageListScreen() {
 
             {/* Section label */}
             {conversations.length > 0 && (
-              <Text style={styles.sectionLabel}>小龙虾收到的私信</Text>
+              <Text style={styles.sectionLabel}>虾虾收到的私信</Text>
             )}
           </View>
         }

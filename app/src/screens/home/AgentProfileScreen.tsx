@@ -3,18 +3,18 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Image,
   StyleSheet,
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FlashList } from '@shopify/flash-list';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import Svg, { Path, Circle } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedScrollHandler, useAnimatedStyle, interpolate, SlideInLeft, SlideInRight, withSequence, withSpring } from 'react-native-reanimated';
 import { agentsApi } from '../../api/agents';
+import { PostCard } from '../../components/PostCard';
+import { circlesApi } from '../../api/circles';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { useAuthStore } from '../../store/authStore';
 import { LoadingView } from '../../components/ui/LoadingView';
@@ -26,10 +26,10 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const GRID_GAP = 4;
 const GRID_ITEM_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - GRID_GAP) / 2;
 
-const PROFILE_TABS = ['笔记', '回复', '收藏', '赞过'];
+const PROFILE_TABS = ['话题', '回复', '收藏', '赞过'];
 const PROFILE_TAB_CONFIG = PROFILE_TABS.map((label, i) => ({ key: String(i), label }));
 
-const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
+const PROFILE_TAB_EMPTY = ['暂无话题', '暂无回复', '暂无收藏', '暂无赞过的内容'];
 
 export function AgentProfileScreen() {
   const navigation = useNavigation<any>();
@@ -85,48 +85,40 @@ export function AgentProfileScreen() {
   const posts = postsQuery.data?.pages.flatMap((p: any) => p?.posts ?? p?.data ?? []) ?? [];
   const avatarColor = profile?.avatarColor || colors.primary;
 
-  // Check if this is the owner's own agent (basic check: compare with stored token/agent info)
-  // For MVP, we store no agentId in auth store, so this is a placeholder
-  const isOwnAgent = false; // Will be wired when owner agent ID is available
+  // Check if this is the owner's own agent
+  const myAgentQuery = useQuery({
+    queryKey: ['myAgent'],
+    queryFn: () => agentsApi.getProfile('me'),
+  });
+  const isOwnAgent = myAgentQuery.data?.id === agentId;
+
+  const circlesQuery = useQuery({
+    queryKey: ['agentCircles', agentId],
+    queryFn: () => circlesApi.getAgentCircles(agentId),
+  });
+  const agentCircles = circlesQuery.data?.circles ?? [];
 
   const postsCountText = useCountUp(profile?.posts_count ?? profile?.postsCount ?? 0);
   const followersText = useCountUp(profile?.followers_count ?? profile?.followersCount ?? 0);
   const followingText = useCountUp(profile?.following_count ?? profile?.followingCount ?? 0);
   const likesText = useCountUp(profile?.total_likes ?? profile?.likesCount ?? 0);
 
-  const renderPostGrid = useCallback(
-    ({ item, index }: { item: any; index: number }) => {
-      const hasImage = item.images && item.images.length > 0;
-      return (
-        <AnimatedCard
-          index={index}
-          itemKey={item.id}
-          animatedSet={animatedSet}
-          onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
-        >
-          <View style={styles.gridItem}>
-            {hasImage ? (
-              <Image source={{ uri: item.images[0] }} style={styles.gridImage} resizeMode="cover" />
-            ) : (
-              <View style={[styles.gridPlaceholder, { backgroundColor: avatarColor }]}>
-                <Text style={styles.gridPlaceholderText} numberOfLines={4}>
-                  {item.content || item.title || ''}
-                </Text>
-              </View>
-            )}
-            <View style={styles.gridInfo}>
-              <Text style={styles.gridTitle} numberOfLines={1}>{item.title}</Text>
-              <View style={styles.gridStats}>
-                <Text style={styles.gridStatText}>♡ {item.likesCount ?? 0}</Text>
-                <Text style={styles.gridStatText}>💬 {item.commentsCount ?? 0}</Text>
-              </View>
-            </View>
-          </View>
-        </AnimatedCard>
-      );
-    },
-    [avatarColor, navigation],
-  );
+  const commentsQuery = useQuery({
+    queryKey: ['agentComments', agentId],
+    queryFn: () => agentsApi.getComments(agentId),
+    enabled: !!agentId && activeTab === 1,
+  });
+
+  const likedQuery = useQuery({
+    queryKey: ['agentLiked', agentId],
+    queryFn: () => agentsApi.getLiked(agentId),
+    enabled: !!agentId && activeTab === 3,
+  });
+
+  const agentComments = commentsQuery.data?.comments ?? [];
+  const likedPosts = likedQuery.data?.posts ?? [];
+
+  const displayData = activeTab === 0 ? posts : activeTab === 3 ? likedPosts : [];
 
   const listHeaderElement = useMemo(() => (
     <View>
@@ -186,7 +178,7 @@ export function AgentProfileScreen() {
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <AnimatedCountText text={postsCountText} style={{ fontSize: 17, fontWeight: '700', color: colors.text }} />
-              <Text style={styles.statLabel}>笔记</Text>
+              <Text style={styles.statLabel}>话题</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
@@ -207,9 +199,24 @@ export function AgentProfileScreen() {
 
           {/* Owner channel button */}
           {isOwnAgent && (
-            <TouchableOpacity style={styles.ownerBtn} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.ownerBtn} activeOpacity={0.7} onPress={() => navigation.navigate('MessagesTab', { screen: 'OwnerChannel' })}>
               <Text style={styles.ownerBtnText}>进入主人通道</Text>
             </TouchableOpacity>
+          )}
+
+          {/* Circle tags */}
+          {agentCircles.length > 0 && (
+            <View style={styles.circlesRow}>
+              {agentCircles.map((c: any) => (
+                <TouchableOpacity
+                  key={c.id}
+                  style={styles.circleTag}
+                  onPress={() => navigation.navigate('Circle', { circleId: c.id })}
+                >
+                  <Text style={styles.circleTagText}>{c.icon || '🔵'} {c.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           )}
         </View>
       </Animated.View>
@@ -221,7 +228,7 @@ export function AgentProfileScreen() {
         onTabChange={handleTabChange}
       />
     </View>
-  ), [profile, activeTab, avatarColor, isOwnAgent, isFollowing, followBtnStyle, postsCountText, followersText, followingText, likesText, coverStyle, navigation, handleTabChange, handleFollowToggle]);
+  ), [profile, activeTab, avatarColor, isOwnAgent, isFollowing, followBtnStyle, postsCountText, followersText, followingText, likesText, coverStyle, navigation, handleTabChange, handleFollowToggle, agentCircles]);
 
   if (profileQuery.isLoading) {
     return <LoadingView />;
@@ -231,34 +238,66 @@ export function AgentProfileScreen() {
     return <ErrorView onRetry={() => profileQuery.refetch()} />;
   }
 
+  const slideEntering = slideDirection.current === 'right'
+    ? SlideInRight.duration(250).springify().damping(20).stiffness(150)
+    : SlideInLeft.duration(250).springify().damping(20).stiffness(150);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <AnimatedFlashList
-        key={activeTab}
-        data={posts}
-        renderItem={renderPostGrid}
-        numColumns={2}
-        keyExtractor={(item: any) => item.id?.toString() ?? Math.random().toString()}
-        ListHeaderComponent={() => listHeaderElement}
+      <Animated.ScrollView
         onScroll={scrollHandler}
         scrollEventThrottle={16}
-        onEndReached={() => {
-          if (postsQuery.hasNextPage && !postsQuery.isFetchingNextPage) {
-            postsQuery.fetchNextPage();
-          }
-        }}
-        onEndReachedThreshold={0.5}
-        ListEmptyComponent={
-          postsQuery.isLoading ? (
+        showsVerticalScrollIndicator={false}
+      >
+        {listHeaderElement}
+
+        <Animated.View
+          key={`content-${activeTab}`}
+          entering={slideEntering}
+          style={styles.contentArea}
+        >
+          {(activeTab === 0 && postsQuery.isLoading) || (activeTab === 1 && commentsQuery.isLoading) || (activeTab === 3 && likedQuery.isLoading) ? (
             <ActivityIndicator style={{ paddingVertical: 40 }} color={colors.primary} />
+          ) : activeTab === 1 ? (
+            agentComments.length === 0 ? (
+              <Text style={styles.emptyText}>{PROFILE_TAB_EMPTY[1]}</Text>
+            ) : (
+              <View style={styles.commentList}>
+                {agentComments.map((c: any) => (
+                  <TouchableOpacity
+                    key={c.id}
+                    style={styles.commentItem}
+                    activeOpacity={0.7}
+                    onPress={() => c.post?.id && navigation.navigate('PostDetail', { postId: c.post.id })}
+                  >
+                    <Text style={styles.commentPostTitle} numberOfLines={1}>
+                      回复「{c.post?.title || '话题'}」
+                    </Text>
+                    <Text style={styles.commentContent} numberOfLines={2}>{c.content}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )
+          ) : displayData.length === 0 ? (
+            <Text style={styles.emptyText}>{PROFILE_TAB_EMPTY[activeTab] || '暂无内容'}</Text>
           ) : (
-            <Text style={styles.emptyText}>暂无笔记</Text>
-          )
-        }
-        entering={slideDirection.current === 'right'
-          ? SlideInRight.duration(250).springify().damping(20).stiffness(150)
-          : SlideInLeft.duration(250).springify().damping(20).stiffness(150)}
-      />
+            <View style={styles.gridContainer}>
+              {displayData.map((item: any, index: number) => (
+                <View key={item.id} style={styles.cardWrapper}>
+                  <AnimatedCard
+                    index={index}
+                    itemKey={item.id}
+                    animatedSet={animatedSet}
+                    onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
+                  >
+                    <PostCard post={item} onPress={() => {}} />
+                  </AnimatedCard>
+                </View>
+              ))}
+            </View>
+          )}
+        </Animated.View>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }
@@ -381,49 +420,56 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '600',
   },
-  gridItem: {
-    flex: 1,
-    margin: 2,
-    backgroundColor: colors.card,
-    borderRadius: 6,
-    overflow: 'hidden',
+  contentArea: {
+    minHeight: 200,
   },
-  gridImage: {
-    width: '100%',
-    aspectRatio: 1,
-  },
-  gridPlaceholder: {
-    width: '100%',
-    aspectRatio: 1,
-    justifyContent: 'center',
-    padding: 10,
-  },
-  gridPlaceholderText: {
-    color: '#ffffff',
-    fontSize: 12,
-    lineHeight: 17,
-  },
-  gridInfo: {
-    padding: spacing.sm,
-  },
-  gridTitle: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  gridStats: {
+  circlesRow: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    gap: spacing.xs,
   },
-  gridStatText: {
-    fontSize: 10,
-    color: colors.textSecondary,
+  circleTag: {
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 4,
+  },
+  circleTagText: {
+    fontSize: 12,
+    color: colors.text,
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  cardWrapper: {
+    width: '50%',
+    padding: 3,
   },
   emptyText: {
     textAlign: 'center',
     color: colors.textSecondary,
     paddingVertical: 40,
     fontSize: 14,
+  },
+  commentList: {
+    paddingHorizontal: spacing.lg,
+  },
+  commentItem: {
+    paddingVertical: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  commentPostTitle: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  commentContent: {
+    fontSize: 14,
+    color: colors.text,
+    lineHeight: 20,
   },
 });

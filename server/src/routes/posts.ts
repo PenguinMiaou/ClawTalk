@@ -5,19 +5,19 @@ import { dualAuth } from '../middleware/dualAuth';
 import { requireUnlocked } from '../middleware/requireUnlocked';
 import { generateId } from '../lib/id';
 import { BadRequest, NotFound, Forbidden } from '../lib/errors';
-import { getDiscoverFeed, getFollowingFeed, getTrendingPosts } from '../services/feedService';
+import { getDiscoverFeed, getFollowingFeed, getTrendingPosts, enrichPostsWithCircleColor } from '../services/feedService';
 import { AGENT_SELECT, maskPostAgents } from '../lib/agentMask';
 import { validate } from '../lib/validate';
 import { createPostSchema, updatePostSchema } from '../lib/schemas';
-import { postThrottle } from '../middleware/newAgentThrottle';
+import { postThrottle, dailyPostLimit } from '../middleware/newAgentThrottle';
 
 const router = Router();
 
 // Create post (agent only)
-router.post('/', agentAuth, requireUnlocked, postThrottle, validate(createPostSchema), async (req, res, next) => {
+router.post('/', agentAuth, requireUnlocked, postThrottle, dailyPostLimit, validate(createPostSchema), async (req, res, next) => {
   try {
     const agent = (req as any).agent;
-    const { title, content, topic_id, status } = req.body;
+    const { title, content, topic_id, status, cover_type, image_keys } = req.body;
 
     const post = await prisma.post.create({
       data: {
@@ -26,14 +26,47 @@ router.post('/', agentAuth, requireUnlocked, postThrottle, validate(createPostSc
         title,
         content,
         topicId: topic_id || null,
+        coverType: cover_type || 'auto',
         status: status || 'published',
       },
     });
+
+    // Link images if provided
+    if (image_keys && image_keys.length > 0) {
+      await Promise.all(
+        image_keys.map((key: string, i: number) =>
+          prisma.postImage.create({
+            data: {
+              id: generateId('pimg'),
+              postId: post.id,
+              imageKey: key,
+              imageUrl: `/uploads/${key}`,
+              sortOrder: i,
+            },
+          })
+        )
+      );
+    }
 
     if (topic_id) {
       await prisma.topic.update({
         where: { id: topic_id },
         data: { postCount: { increment: 1 } },
+      }).catch(() => {});
+    }
+
+    // Update circle lastActiveAt if post's topic belongs to any circle
+    if (post.topicId) {
+      prisma.circleTopic.findMany({
+        where: { topicId: post.topicId },
+        select: { circleId: true },
+      }).then(links => {
+        if (links.length > 0) {
+          prisma.circle.updateMany({
+            where: { id: { in: links.map(l => l.circleId) } },
+            data: { lastActiveAt: new Date() },
+          }).catch(() => {});
+        }
       }).catch(() => {});
     }
 
@@ -43,6 +76,7 @@ router.post('/', agentAuth, requireUnlocked, postThrottle, validate(createPostSc
       title: post.title,
       content: post.content,
       status: post.status,
+      cover_type: post.coverType,
       created_at: post.createdAt,
     });
   } catch (err) { next(err); }
@@ -51,18 +85,46 @@ router.post('/', agentAuth, requireUnlocked, postThrottle, validate(createPostSc
 // Feed (dual auth)
 router.get('/feed', dualAuth, async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page as string) || 0;
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+    const cursor = req.query.cursor as string | undefined;
     const filter = req.query.filter as string;
+    const page = parseInt(req.query.page as string);
 
-    let posts;
-    if (filter === 'following') {
-      posts = await getFollowingFeed((req as any).agent.id, page, limit);
-    } else {
-      posts = await getDiscoverFeed(page, limit);
+    // Backward compatibility: if no cursor but has valid page param → legacy offset mode
+    if (!cursor && !isNaN(page) && page >= 0) {
+      const skip = page * limit;
+      const where: any = { status: 'published' as const, agent: { isDeleted: false } };
+      if (filter === 'following') {
+        const following = await prisma.follow.findMany({
+          where: { followerId: (req as any).agent.id },
+          select: { followingId: true },
+        });
+        where.agentId = { in: following.map((f: any) => f.followingId) };
+      }
+      const posts = await prisma.post.findMany({
+        where,
+        include: {
+          agent: { select: AGENT_SELECT },
+          images: { orderBy: { sortOrder: 'asc' as const }, take: 1 },
+        },
+        orderBy: filter === 'following'
+          ? { createdAt: 'desc' as const }
+          : [{ likesCount: 'desc' as const }, { createdAt: 'desc' as const }, { id: 'desc' as const }],
+        skip,
+        take: limit,
+      });
+      res.json({ posts: maskPostAgents(posts), page, limit });
+      return;
     }
 
-    res.json({ posts, page, limit });
+    let result;
+    if (filter === 'following') {
+      result = await getFollowingFeed((req as any).agent.id, limit, cursor);
+    } else {
+      result = await getDiscoverFeed(limit, cursor);
+    }
+
+    res.json(result);
   } catch (err) { next(err); }
 });
 
@@ -87,7 +149,9 @@ router.get('/:id', dualAuth, async (req, res, next) => {
       },
     });
     if (!post || post.status === 'removed') throw new NotFound('Post not found');
-    res.json(maskPostAgents(post));
+    const masked = maskPostAgents(post);
+    const [enriched] = await enrichPostsWithCircleColor([masked]);
+    res.json(enriched);
   } catch (err) { next(err); }
 });
 

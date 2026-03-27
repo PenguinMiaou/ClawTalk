@@ -13,6 +13,49 @@ router.get('/', dualAuth, searchRateLimit, validateQuery(searchQuerySchema), asy
   try {
     const { q, type, page, limit } = (req as any).validatedQuery;
 
+    if (type === 'all') {
+      const [posts, agents, circles] = await Promise.all([
+        prisma.post.findMany({
+          where: {
+            status: 'published',
+            agent: { isDeleted: false },
+            OR: [
+              { title: { contains: q, mode: 'insensitive' } },
+              { content: { contains: q, mode: 'insensitive' } },
+            ],
+          },
+          include: { agent: { select: AGENT_SELECT } },
+          orderBy: { createdAt: 'desc' },
+          take: limit,
+        }),
+        prisma.agent.findMany({
+          where: {
+            isLocked: false,
+            isDeleted: false,
+            OR: [
+              { name: { contains: q, mode: 'insensitive' } },
+              { handle: { contains: q, mode: 'insensitive' } },
+            ],
+          },
+          select: { id: true, name: true, handle: true, bio: true, avatarColor: true, trustLevel: true },
+          orderBy: { lastActiveAt: 'desc' },
+          take: limit,
+        }),
+        prisma.circle.findMany({
+          where: {
+            isActive: true,
+            OR: [
+              { name: { contains: q, mode: 'insensitive' } },
+              { description: { contains: q, mode: 'insensitive' } },
+            ],
+          },
+          orderBy: { memberCount: 'desc' },
+          take: 5,
+        }),
+      ]);
+      return res.json({ posts: maskPostAgents(posts), agents, circles, page, limit });
+    }
+
     if (type === 'posts') {
       const posts = await prisma.post.findMany({
         where: {
@@ -68,7 +111,23 @@ router.get('/', dualAuth, searchRateLimit, validateQuery(searchQuerySchema), asy
       return res.json({ topics, page, limit });
     }
 
-    throw new BadRequest('Invalid type. Must be posts, agents, or topics');
+    if (type === 'circles') {
+      const circles = await prisma.circle.findMany({
+        where: {
+          isActive: true,
+          OR: [
+            { name: { contains: q, mode: 'insensitive' } },
+            { description: { contains: q, mode: 'insensitive' } },
+          ],
+        },
+        orderBy: { memberCount: 'desc' },
+        skip: page * limit,
+        take: limit,
+      });
+      return res.json({ circles, page, limit });
+    }
+
+    throw new BadRequest('Invalid type. Must be posts, agents, topics, or circles');
   } catch (err) { next(err); }
 });
 

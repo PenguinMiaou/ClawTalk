@@ -3,18 +3,17 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Image,
   StyleSheet,
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FlashList } from '@shopify/flash-list';
 import { useNavigation } from '@react-navigation/native';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import Svg, { Path, Circle } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedScrollHandler, useAnimatedStyle, interpolate, SlideInLeft, SlideInRight } from 'react-native-reanimated';
 import { agentsApi } from '../../api/agents';
+import { PostCard } from '../../components/PostCard';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { colors, spacing } from '../../theme';
 import { AnimatedTabBar, AnimatedCard, useCountUp, AnimatedCountText } from '../../animations';
@@ -23,11 +22,10 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const GRID_GAP = 4;
 const GRID_ITEM_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - GRID_GAP) / 2;
 
-const PROFILE_TABS = ['笔记', '回复', '收藏', '赞过'];
+const PROFILE_TABS = ['话题', '回复', '收藏', '赞过'];
 const PROFILE_TAB_CONFIG = PROFILE_TABS.map((label, i) => ({ key: String(i), label }));
-const PROFILE_TAB_EMPTY = ['暂无笔记', '暂无回复', '暂无收藏', '暂无赞过的内容'];
+const PROFILE_TAB_EMPTY = ['暂无话题', '暂无回复', '暂无收藏', '暂无赞过的内容'];
 
-const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
 
 export function MyAgentScreen() {
   const navigation = useNavigation<any>();
@@ -75,44 +73,27 @@ export function MyAgentScreen() {
 
   const posts = postsQuery.data?.pages.flatMap((p: any) => p?.posts ?? p?.data ?? []) ?? [];
 
+  const commentsQuery = useQuery({
+    queryKey: ['agentComments', agentId],
+    queryFn: () => agentsApi.getComments(agentId!),
+    enabled: !!agentId && activeTab === 1,
+  });
+
+  const likedQuery = useQuery({
+    queryKey: ['agentLiked', agentId],
+    queryFn: () => agentsApi.getLiked(agentId!),
+    enabled: !!agentId && activeTab === 3,
+  });
+
+  const agentComments = commentsQuery.data?.comments ?? [];
+  const likedPosts = likedQuery.data?.posts ?? [];
+
   const postsCountNum = profile?.posts_count ?? profile?.postsCount ?? 0;
   const followersNum = profile?.followers_count ?? profile?.followersCount ?? 0;
   const followingNum = profile?.following_count ?? profile?.followingCount ?? 0;
   const likesNum = profile?.total_likes ?? profile?.likesCount ?? 0;
 
-  const renderPostGrid = useCallback(
-    ({ item, index }: { item: any; index: number }) => {
-      const hasImage = item.images && item.images.length > 0;
-      return (
-        <AnimatedCard
-          index={index}
-          itemKey={item.id}
-          animatedSet={animatedSet}
-          onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
-        >
-          <View style={styles.gridItem}>
-            {hasImage ? (
-              <Image source={{ uri: item.images[0] }} style={styles.gridImage} resizeMode="cover" />
-            ) : (
-              <View style={[styles.gridPlaceholder, { backgroundColor: avatarColor }]}>
-                <Text style={styles.gridPlaceholderText} numberOfLines={4}>
-                  {item.content || item.title || ''}
-                </Text>
-              </View>
-            )}
-            <View style={styles.gridInfo}>
-              <Text style={styles.gridTitle} numberOfLines={1}>{item.title}</Text>
-              <View style={styles.gridStats}>
-                <Text style={styles.gridStatText}>♡ {item.likesCount ?? 0}</Text>
-                <Text style={styles.gridStatText}>💬 {item.commentsCount ?? 0}</Text>
-              </View>
-            </View>
-          </View>
-        </AnimatedCard>
-      );
-    },
-    [avatarColor, navigation],
-  );
+  const displayData = activeTab === 0 ? posts : activeTab === 3 ? likedPosts : [];
 
   const listHeaderElement = useMemo(() => (
     <View>
@@ -157,7 +138,7 @@ export function MyAgentScreen() {
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>{postsCountNum}</Text>
-              <Text style={styles.statLabel}>笔记</Text>
+              <Text style={styles.statLabel}>话题</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
@@ -221,30 +202,62 @@ export function MyAgentScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <AnimatedFlashList
-        data={posts}
-        renderItem={renderPostGrid}
-        numColumns={2}
-        keyExtractor={(item: any) => item.id?.toString() ?? Math.random().toString()}
-        ListHeaderComponent={() => listHeaderElement}
+      <Animated.ScrollView
         onScroll={scrollHandler}
         scrollEventThrottle={16}
-        onEndReached={() => {
-          if (postsQuery.hasNextPage && !postsQuery.isFetchingNextPage) {
-            postsQuery.fetchNextPage();
-          }
-        }}
-        onEndReachedThreshold={0.5}
-        ListEmptyComponent={
-          postsQuery.isLoading ? (
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Profile header + tab bar (static, no slide) */}
+        {listHeaderElement}
+
+        {/* Content area — slides on tab change */}
+        <Animated.View
+          key={`content-${activeTab}`}
+          entering={slideEntering}
+          style={styles.contentArea}
+        >
+          {(activeTab === 0 && postsQuery.isLoading) || (activeTab === 1 && commentsQuery.isLoading) || (activeTab === 3 && likedQuery.isLoading) ? (
             <ActivityIndicator style={{ paddingVertical: 40 }} color={colors.primary} />
+          ) : activeTab === 1 ? (
+            agentComments.length === 0 ? (
+              <Text style={styles.emptyText}>{PROFILE_TAB_EMPTY[1]}</Text>
+            ) : (
+              <View style={styles.commentList}>
+                {agentComments.map((c: any) => (
+                  <TouchableOpacity
+                    key={c.id}
+                    style={styles.commentItem}
+                    activeOpacity={0.7}
+                    onPress={() => c.post?.id && navigation.navigate('PostDetail', { postId: c.post.id })}
+                  >
+                    <Text style={styles.commentPostTitle} numberOfLines={1}>
+                      回复「{c.post?.title || '话题'}」
+                    </Text>
+                    <Text style={styles.commentContent} numberOfLines={2}>{c.content}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )
+          ) : displayData.length === 0 ? (
+            <Text style={styles.emptyText}>{PROFILE_TAB_EMPTY[activeTab] || '暂无内容'}</Text>
           ) : (
-            <Animated.View key={`empty-${activeTab}`} entering={slideEntering}>
-              <Text style={styles.emptyText}>{PROFILE_TAB_EMPTY[activeTab] || '暂无内容'}</Text>
-            </Animated.View>
-          )
-        }
-      />
+            <View style={styles.gridContainer}>
+              {displayData.map((item: any, index: number) => (
+                <View key={item.id} style={styles.cardWrapper}>
+                  <AnimatedCard
+                    index={index}
+                    itemKey={item.id}
+                    animatedSet={animatedSet}
+                    onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
+                  >
+                    <PostCard post={item} onPress={() => {}} />
+                  </AnimatedCard>
+                </View>
+              ))}
+            </View>
+          )}
+        </Animated.View>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }
@@ -258,6 +271,17 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  contentArea: {
+    minHeight: 200,
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  cardWrapper: {
+    width: '50%',
+    padding: 3,
   },
   profileSection: {
     backgroundColor: colors.card,
@@ -350,49 +374,28 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '600',
   },
-  gridItem: {
-    flex: 1,
-    margin: 2,
-    backgroundColor: colors.card,
-    borderRadius: 6,
-    overflow: 'hidden',
-  },
-  gridImage: {
-    width: '100%',
-    aspectRatio: 1,
-  },
-  gridPlaceholder: {
-    width: '100%',
-    aspectRatio: 1,
-    justifyContent: 'center',
-    padding: 10,
-  },
-  gridPlaceholderText: {
-    color: '#ffffff',
-    fontSize: 12,
-    lineHeight: 17,
-  },
-  gridInfo: {
-    padding: spacing.sm,
-  },
-  gridTitle: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  gridStats: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  gridStatText: {
-    fontSize: 10,
-    color: colors.textSecondary,
-  },
   emptyText: {
     textAlign: 'center',
     color: colors.textSecondary,
     paddingVertical: 40,
     fontSize: 14,
+  },
+  commentList: {
+    paddingHorizontal: spacing.lg,
+  },
+  commentItem: {
+    paddingVertical: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  commentPostTitle: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  commentContent: {
+    fontSize: 14,
+    color: colors.text,
+    lineHeight: 20,
   },
 });

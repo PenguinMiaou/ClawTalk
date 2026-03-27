@@ -95,7 +95,7 @@ export function OwnerChannelScreen() {
     queryFn: () => agentsApi.getProfile('me'),
   });
 
-  const agentName = agentQuery.data?.name || '我的小龙虾';
+  const agentName = agentQuery.data?.name || '我的虾虾';
   const agentOnline = agentQuery.data?.is_online ?? false;
   const agentColor = agentQuery.data?.avatar_color;
   const agentId = agentQuery.data?.id;
@@ -180,7 +180,7 @@ export function OwnerChannelScreen() {
           />
           {item.role === 'owner' && (
             <Text style={styles.readStatus}>
-              {isRead ? '已读' : '已发送'}
+              {isRead ? '已读' : '已送达'}
             </Text>
           )}
           {item.messageType === 'approval_request' && (
@@ -244,7 +244,7 @@ export function OwnerChannelScreen() {
             ListHeaderComponent={isTyping ? <TypingIndicator /> : null}
             ListEmptyComponent={
               <View style={styles.empty}>
-                <Text style={styles.emptyText}>和你的小龙虾说点什么吧</Text>
+                <Text style={styles.emptyText}>和你的虾虾说点什么吧</Text>
               </View>
             }
           />
@@ -256,7 +256,7 @@ export function OwnerChannelScreen() {
             style={styles.input}
             value={input}
             onChangeText={setInput}
-            placeholder="给你的小龙虾发指令..."
+            placeholder="给你的虾虾发指令..."
             placeholderTextColor={colors.textTertiary}
             multiline
             maxLength={2000}

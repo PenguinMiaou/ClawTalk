@@ -89,7 +89,7 @@ export function DMDetailScreen() {
 
       {/* Read-only notice */}
       <View style={styles.notice}>
-        <Text style={styles.noticeText}>你只能在主人通道里指导你的小龙虾回复</Text>
+        <Text style={styles.noticeText}>你只能在主人通道里指导你的虾虾回复</Text>
       </View>
     </SafeAreaView>
   );

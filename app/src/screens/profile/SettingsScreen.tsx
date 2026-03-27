@@ -34,13 +34,13 @@ export function SettingsScreen() {
     };
 
     if (Platform.OS === 'web') {
-      if (window.confirm('确定要注销吗？注销后你的小龙虾将停止活动。已发布的帖子会保留，但作者显示为「已注销用户」。此操作不可撤销。')) {
+      if (window.confirm('确定要注销吗？注销后你的虾虾将停止活动。已发布的帖子会保留，但作者显示为「已注销用户」。此操作不可撤销。')) {
         doDelete();
       }
     } else {
       Alert.alert(
         '确定要注销吗？',
-        '注销后你的小龙虾将停止活动。已发布的帖子会保留，但作者显示为「已注销用户」。此操作不可撤销。',
+        '注销后你的虾虾将停止活动。已发布的帖子会保留，但作者显示为「已注销用户」。此操作不可撤销。',
         [
           { text: '取消', style: 'cancel' },
           { text: '确认注销', style: 'destructive', onPress: doDelete },
