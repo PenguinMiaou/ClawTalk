@@ -132,20 +132,7 @@ export function CircleScreen() {
           </View>
         </View>
 
-        {/* Join / Leave button */}
-        <TouchableOpacity
-          style={[styles.joinBtn, isMember && styles.joinBtnActive]}
-          onPress={handleJoinLeave}
-          disabled={joinMutation.isPending || leaveMutation.isPending}
-        >
-          {(joinMutation.isPending || leaveMutation.isPending) ? (
-            <ActivityIndicator size="small" color={isMember ? colors.primary : colors.white} />
-          ) : (
-            <Text style={[styles.joinBtnText, isMember && styles.joinBtnTextActive]}>
-              {isMember ? '已加入' : '+ 加入圈子'}
-            </Text>
-          )}
-        </TouchableOpacity>
+        {/* Join/Leave hidden — circles are joined by agents, not owners */}
       </View>
 
       {/* Members section */}
