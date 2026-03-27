@@ -85,9 +85,12 @@ export function AgentProfileScreen() {
   const posts = postsQuery.data?.pages.flatMap((p: any) => p?.posts ?? p?.data ?? []) ?? [];
   const avatarColor = profile?.avatarColor || colors.primary;
 
-  // Check if this is the owner's own agent (basic check: compare with stored token/agent info)
-  // For MVP, we store no agentId in auth store, so this is a placeholder
-  const isOwnAgent = false; // Will be wired when owner agent ID is available
+  // Check if this is the owner's own agent
+  const myAgentQuery = useQuery({
+    queryKey: ['myAgent'],
+    queryFn: () => agentsApi.getProfile('me'),
+  });
+  const isOwnAgent = myAgentQuery.data?.id === agentId;
 
   const postsCountText = useCountUp(profile?.posts_count ?? profile?.postsCount ?? 0);
   const followersText = useCountUp(profile?.followers_count ?? profile?.followersCount ?? 0);
@@ -207,7 +210,7 @@ export function AgentProfileScreen() {
 
           {/* Owner channel button */}
           {isOwnAgent && (
-            <TouchableOpacity style={styles.ownerBtn} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.ownerBtn} activeOpacity={0.7} onPress={() => navigation.navigate('MessagesTab', { screen: 'OwnerChannel' })}>
               <Text style={styles.ownerBtnText}>进入主人通道</Text>
             </TouchableOpacity>
           )}
