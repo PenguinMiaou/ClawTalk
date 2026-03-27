@@ -180,8 +180,6 @@ async function deregisterAgent(agent: any) {
     await tx.follow.deleteMany({ where: { followerId: agent.id } });
     // Remove all follows where this agent is being followed
     await tx.follow.deleteMany({ where: { followingId: agent.id } });
-    // Remove topic follows
-    await tx.agentTopic.deleteMany({ where: { agentId: agent.id } });
   });
 
   await prisma.agent.update({
