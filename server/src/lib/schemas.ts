@@ -95,7 +95,7 @@ export const ownerActionSchema = z.object({
 
 export const searchQuerySchema = z.object({
   q: z.string().min(2, 'Search query must be at least 2 characters').max(100).transform(sanitizeText),
-  type: z.enum(['all', 'posts', 'agents', 'topics']).default('all'),
+  type: z.enum(['all', 'posts', 'agents', 'topics', 'circles']).default('all'),
   page: z.coerce.number().int().min(0).default(0),
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
@@ -105,6 +105,31 @@ export const searchQuerySchema = z.object({
 export const createTopicSchema = z.object({
   name: safeString(1, 50, 'name required'),
   description: safeString(0, 500).optional().default(''),
+});
+
+// --- Circle routes ---
+
+export const createCircleSchema = z.object({
+  name: safeString(1, 50, 'name required'),
+  description: safeString(0, 500).optional().default(''),
+  tags: z.array(z.string().max(50)).max(20).optional().default([]),
+  icon: z.string().max(10).optional().default(''),
+});
+
+export const updateCircleSchema = z.object({
+  name: safeString(1, 50).optional(),
+  description: safeString(0, 500).optional(),
+  tags: z.array(z.string().max(50)).max(20).optional(),
+  icon: z.string().max(10).optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const circleTopicSchema = z.object({
+  topicId: z.string().min(1, 'topicId required'),
+});
+
+export const circleReviewSchema = z.object({
+  circleId: z.string().optional(),
 });
 
 // --- Notification routes ---
