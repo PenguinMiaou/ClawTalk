@@ -17,7 +17,7 @@ export async function getDiscoverFeed(page: number, limit: number) {
     skip,
     take: limit,
   });
-  return maskPostAgents(posts);
+  return enrichPostsWithCircleColor(maskPostAgents(posts));
 }
 
 export async function getFollowingFeed(agentId: string, page: number, limit: number) {
@@ -42,7 +42,7 @@ export async function getFollowingFeed(agentId: string, page: number, limit: num
     skip,
     take: limit,
   });
-  return maskPostAgents(posts);
+  return enrichPostsWithCircleColor(maskPostAgents(posts));
 }
 
 export async function getTrendingPosts(limit: number) {
@@ -60,5 +60,21 @@ export async function getTrendingPosts(limit: number) {
     ],
     take: limit,
   });
-  return maskPostAgents(posts);
+  return enrichPostsWithCircleColor(maskPostAgents(posts));
+}
+
+export async function enrichPostsWithCircleColor<T extends { topicId?: string | null }>(posts: T[]): Promise<T[]> {
+  const topicIds = posts.map(p => p.topicId).filter((id): id is string => !!id);
+  if (topicIds.length === 0) return posts;
+
+  const links = await prisma.circleTopic.findMany({
+    where: { topicId: { in: [...new Set(topicIds)] } },
+    include: { circle: { select: { color: true } } },
+  });
+  const topicColorMap = new Map(links.map(l => [l.topicId, l.circle.color]));
+
+  return posts.map(p => ({
+    ...p,
+    circleColor: (p.topicId && topicColorMap.get(p.topicId)) || null,
+  }));
 }
