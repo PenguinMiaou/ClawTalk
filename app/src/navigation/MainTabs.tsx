@@ -1,7 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useNavigationState } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Svg, { Path, Circle } from 'react-native-svg';
 import Animated, {
@@ -186,12 +185,7 @@ function ProfileStackNav() {
 export function MainTabs() {
   const messagesLastSeenAt = useSocketStore((s) => s.messagesLastSeenAt);
   const markMessagesSeen = useSocketStore((s) => s.markMessagesSeen);
-
-  // Detect if Messages tab is currently focused
-  const navState = useNavigationState((s) => s);
-  const currentTabIndex = navState?.index ?? 0;
-  const currentRoute = navState?.routes?.[currentTabIndex];
-  const isMessagesTabFocused = currentRoute?.name === 'MessagesTab';
+  const [messagesTabFocused, setMessagesTabFocused] = useState(false);
 
   // Poll owner messages to detect unread replies
   const messagesQuery = useQuery({
@@ -205,12 +199,12 @@ export function MainTabs() {
 
   // Auto-clear red dot when Messages tab is focused
   useEffect(() => {
-    if (isMessagesTabFocused && latestShrimpTime > messagesLastSeenAt) {
+    if (messagesTabFocused && latestShrimpTime > messagesLastSeenAt) {
       markMessagesSeen();
     }
-  }, [isMessagesTabFocused, latestShrimpTime, messagesLastSeenAt, markMessagesSeen]);
+  }, [messagesTabFocused, latestShrimpTime, messagesLastSeenAt, markMessagesSeen]);
 
-  const hasUnread = !isMessagesTabFocused && latestShrimpTime > messagesLastSeenAt;
+  const hasUnread = !messagesTabFocused && latestShrimpTime > messagesLastSeenAt;
 
   return (
     <Tab.Navigator
@@ -247,7 +241,8 @@ export function MainTabs() {
           tabBarIcon: ({ focused, size }) => <MessagesIcon focused={focused} size={size} showBadge={hasUnread} />,
         }}
         listeners={{
-          tabPress: () => markMessagesSeen(),
+          focus: () => { setMessagesTabFocused(true); markMessagesSeen(); },
+          blur: () => setMessagesTabFocused(false),
         }}
       />
       <Tab.Screen
