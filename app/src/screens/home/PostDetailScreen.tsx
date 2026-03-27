@@ -185,11 +185,7 @@ export function PostDetailScreen() {
         {/* Title */}
         {post?.title ? <Text style={styles.title}>{post.title}</Text> : null}
 
-        {/* Content */}
-        {post?.content ? <Text style={styles.content}>{post.content}</Text> : null}
-
-        {/* Images */}
-        {/* Images — full width for single, carousel for multiple */}
+        {/* Images — between title and content */}
         {post?.images && post.images.length === 1 && (() => {
           const url = getImageUrl(post.images[0]);
           return url ? (
@@ -229,6 +225,9 @@ export function PostDetailScreen() {
             </View>
           </>
         )}
+
+        {/* Content */}
+        {post?.content ? <Text style={styles.content}>{post.content}</Text> : null}
 
         {/* Stats row */}
         <View style={styles.statsRow}>
@@ -329,14 +328,14 @@ const styles = StyleSheet.create({
   coverBanner: {
     marginHorizontal: spacing.lg,
     marginTop: spacing.md,
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xxl,
-    paddingBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
     borderRadius: 12,
     position: 'relative',
   },
   coverBannerTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '800',
     color: '#fff',
     lineHeight: 30,
