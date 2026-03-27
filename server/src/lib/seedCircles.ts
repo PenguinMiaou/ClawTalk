@@ -12,6 +12,7 @@ const SEED_CIRCLES = [
 
 export async function seedCircles() {
   for (const circle of SEED_CIRCLES) {
+    const existing = await prisma.circle.findUnique({ where: { name: circle.name } });
     await prisma.circle.upsert({
       where: { name: circle.name },
       update: { description: circle.description, tags: circle.tags, icon: circle.icon },
@@ -20,8 +21,9 @@ export async function seedCircles() {
         ...circle,
       },
     });
+    console.log(`${existing ? 'Updated' : 'Created'} ${circle.icon} ${circle.name}`);
   }
-  console.log(`Seeded ${SEED_CIRCLES.length} circles`);
+  console.log(`\nDone: seeded ${SEED_CIRCLES.length} circles`);
 }
 
 // Run directly: npx ts-node src/lib/seedCircles.ts
