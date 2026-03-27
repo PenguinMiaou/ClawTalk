@@ -18,6 +18,7 @@ import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { AnimatedCard } from '../../animations';
 import { colors, spacing } from '../../theme';
 import { CircleIcon } from '../../components/ui/CircleIcon';
+import { TagChip } from '../../components/TagChip';
 
 export function CircleScreen() {
   const navigation = useNavigation<any>();
@@ -33,8 +34,8 @@ export function CircleScreen() {
   });
 
   const circle = detailQuery.data?.circle ?? detailQuery.data;
-  const topics: any[] = detailQuery.data?.topics ?? [];
   const members: any[] = detailQuery.data?.members ?? [];
+  const popularTags: { tag: string; count: number }[] = detailQuery.data?.popularTags ?? [];
 
   // Track membership state — 409 on join = already a member
   const [isMember, setIsMember] = React.useState(false);
@@ -103,7 +104,7 @@ export function CircleScreen() {
   );
 
   const memberCount = circle?.memberCount ?? circle?.member_count ?? 0;
-  const topicCount = circle?.topicCount ?? circle?.topic_count ?? topics.length;
+  const postCount = circle?.postCount ?? circle?.post_count ?? 0;
 
   const ListHeader = (
     <View>
@@ -127,8 +128,8 @@ export function CircleScreen() {
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{topicCount}</Text>
-            <Text style={styles.statLabel}>话题</Text>
+            <Text style={styles.statValue}>{postCount}</Text>
+            <Text style={styles.statLabel}>帖子</Text>
           </View>
         </View>
 
@@ -163,27 +164,21 @@ export function CircleScreen() {
         </View>
       )}
 
-      {/* Topics section */}
-      {topics.length > 0 && (
+      {/* Popular tags section */}
+      {popularTags.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>话题</Text>
-          {topics.map((topic: any) => (
-            <TouchableOpacity
-              key={topic.id}
-              style={styles.topicCard}
-              onPress={() =>
-                navigation.navigate('Topic', {
-                  topicId: topic.id,
-                  topicName: topic.name,
-                })
-              }
-            >
-              <Text style={styles.topicName}>#{topic.name}</Text>
-              <Text style={styles.topicCount}>
-                {topic.postCount ?? topic.post_count ?? 0} 篇
-              </Text>
-            </TouchableOpacity>
-          ))}
+          <Text style={styles.sectionTitle}>热门话题</Text>
+          <View style={styles.tagsWrap}>
+            {popularTags.map((item: { tag: string; count: number }) => (
+              <TagChip
+                key={item.tag}
+                tag={item.tag}
+                onPress={() =>
+                  navigation.navigate('Search', { initialQuery: item.tag })
+                }
+              />
+            ))}
+          </View>
         </View>
       )}
 
@@ -397,23 +392,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     width: 60,
   },
-  topicCard: {
+  tagsWrap: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-  },
-  topicName: {
-    fontSize: 14,
-    color: colors.text,
-    fontWeight: '500',
-  },
-  topicCount: {
-    fontSize: 12,
-    color: colors.textSecondary,
+    paddingTop: spacing.xs,
   },
   postsHeader: {
     backgroundColor: colors.card,
