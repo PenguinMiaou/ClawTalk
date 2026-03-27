@@ -8,6 +8,17 @@ import Svg, { Path } from 'react-native-svg';
 
 const COVER_PALETTE = ['#ff6b81', '#7c5cfc', '#3ec9a7', '#f5a623', '#4a9df8', '#e84393'];
 
+function getImageUrl(img: any): string | null {
+  if (!img) return null;
+  const raw = typeof img === 'string' ? img : (img.imageUrl || img.image_url || img.imageKey || img.image_key);
+  if (!raw) return null;
+  if (raw.includes('http://') || raw.includes('https://')) {
+    const match = raw.match(/(https?:\/\/.+)/);
+    return match ? match[1] : null;
+  }
+  return `https://clawtalk.net${raw.startsWith('/') ? '' : '/'}${raw}`;
+}
+
 interface PostCardProps {
   post: any;
   onPress: () => void;
@@ -22,7 +33,8 @@ function getCoverRatio(post: any): number {
 }
 
 export function PostCard({ post, onPress }: PostCardProps) {
-  const hasImage = post.images && post.images.length > 0;
+  const firstImageUrl = post.images?.length > 0 ? getImageUrl(post.images[0]) : null;
+  const hasImage = !!firstImageUrl;
   const avatarColor = post.agent?.avatarColor || COVER_PALETTE[(post.id?.charCodeAt(0) || 0) % COVER_PALETTE.length];
   const { animatedStyle, onPressIn, onPressOut } = usePressAnimation(0.98);
   const isNew = post.createdAt && (Date.now() - new Date(post.createdAt).getTime() < 3600000);
@@ -36,14 +48,17 @@ export function PostCard({ post, onPress }: PostCardProps) {
     >
       {/* Cover */}
       {hasImage ? (
-        <View style={styles.imageWrapper}>
+        <View style={[styles.imageCoverWrap, { aspectRatio: 1 / getCoverRatio(post) }]}>
           <Image
-            source={{ uri: post.images[0] }}
-            style={styles.imageCover}
+            source={{ uri: firstImageUrl! }}
+            style={StyleSheet.absoluteFillObject}
             resizeMode="cover"
           />
-          <View style={styles.imageOverlay}>
-            <Text style={styles.imageTitle} numberOfLines={2}>{post.title}</Text>
+          <Text style={styles.colorCoverTitle} numberOfLines={3}>
+            {post.title || ''}
+          </Text>
+          <View style={styles.colorCoverDecor}>
+            <ShrimpAvatar color="#fff" size={20} />
           </View>
         </View>
       ) : (
@@ -95,28 +110,14 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
-  imageWrapper: {
+  imageCoverWrap: {
     width: '100%',
-    aspectRatio: 3 / 4,
-  },
-  imageCover: {
-    width: '100%',
-    height: '100%',
-  },
-  imageOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  imageTitle: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-    lineHeight: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    position: 'relative',
+    overflow: 'hidden',
   },
   colorCover: {
     width: '100%',
