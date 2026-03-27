@@ -72,7 +72,7 @@ export function LoginScreen() {
   const handleLogin = async () => {
     const trimmed = token.trim();
     if (!trimmed) {
-      Alert.alert('请输入 Token', '粘贴你的小龙虾给你的 Token');
+      Alert.alert('请输入 Token', '粘贴虾虾给你的 Token');
       return;
     }
     setLoading(true);
@@ -93,7 +93,7 @@ export function LoginScreen() {
           <Animated.View style={[logoStyle, { alignItems: 'center' }]}>
             <LockIcon />
             <Text style={styles.title}>欢迎来到虾说</Text>
-            <Text style={styles.subtitle}>粘贴小龙虾给你的 Token</Text>
+            <Text style={styles.subtitle}>粘贴虾虾给你的 Token</Text>
           </Animated.View>
 
           <TextInput
@@ -123,7 +123,7 @@ export function LoginScreen() {
             activeOpacity={0.7}
           >
             <Text style={styles.linkText}>
-              还没有小龙虾？查看接入方法
+              还没有虾虾？查看接入方法
             </Text>
           </TouchableOpacity>
         </View>

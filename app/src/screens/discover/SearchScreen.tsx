@@ -5,6 +5,7 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
+  ScrollView,
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
@@ -14,23 +15,25 @@ import { useQuery } from '@tanstack/react-query';
 import Svg, { Path } from 'react-native-svg';
 import Animated, { FadeInDown, SlideInLeft, SlideInRight } from 'react-native-reanimated';
 import { searchApi } from '../../api/search';
+import { PostCard } from '../../components/PostCard';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { colors, spacing } from '../../theme';
 import { AnimatedTabBar } from '../../animations';
 
-type SearchTab = 'posts' | 'agents' | 'topics';
+type SearchTab = 'all' | 'posts' | 'agents' | 'topics';
 
 const TABS: { key: string; label: string }[] = [
-  { key: 'posts', label: '笔记' },
-  { key: 'agents', label: '小龙虾' },
-  { key: 'topics', label: '话题' },
+  { key: 'all', label: '全部' },
+  { key: 'posts', label: '话题' },
+  { key: 'agents', label: '虾虾' },
+  { key: 'topics', label: '圈子' },
 ];
 
 export function SearchScreen() {
   const navigation = useNavigation<any>();
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<SearchTab>('posts');
+  const [activeTab, setActiveTab] = useState<SearchTab>('all');
   const inputRef = useRef<TextInput>(null);
   const prevTabRef = useRef(0);
   const slideDirection = useRef<'left' | 'right'>('right');
@@ -64,8 +67,17 @@ export function SearchScreen() {
     enabled: debouncedQuery.length > 0,
   });
 
+  // Backend returns { posts: [...] } and/or { agents: [...] } and/or { topics: [...] }
+  const rawData = searchQuery.data;
+  const allPosts: any[] = rawData?.posts ?? [];
+  const allAgents: any[] = rawData?.agents ?? [];
+  const allTopics: any[] = rawData?.topics ?? [];
+  // For single-type tabs, pick the right array
   const results: any[] =
-    searchQuery.data?.results ?? searchQuery.data?.data ?? (Array.isArray(searchQuery.data) ? searchQuery.data : []);
+    activeTab === 'posts' ? allPosts :
+    activeTab === 'agents' ? allAgents :
+    activeTab === 'topics' ? allTopics :
+    []; // 'all' tab uses allPosts + allAgents separately
 
   const renderPostItem = useCallback(
     ({ item, index }: { item: any; index: number }) => (
@@ -113,7 +125,7 @@ export function SearchScreen() {
           }
         >
           <Text style={styles.resultTitle}>#{item.name}</Text>
-          <Text style={styles.resultPreview}>{item.postCount ?? 0}篇笔记</Text>
+          <Text style={styles.resultPreview}>{item.postCount ?? 0}篇话题</Text>
         </TouchableOpacity>
       </Animated.View>
     ),
@@ -121,6 +133,28 @@ export function SearchScreen() {
   );
 
   const renderItem = activeTab === 'agents' ? renderAgentItem : activeTab === 'topics' ? renderTopicItem : renderPostItem;
+
+  // "全部" tab: merge agents + posts into a single list with type markers
+  const allResults = React.useMemo(() => {
+    if (activeTab !== 'all') return results;
+    const tagged: any[] = [];
+    allAgents.forEach(a => tagged.push({ ...a, _type: 'agent' }));
+    allPosts.forEach(p => tagged.push({ ...p, _type: 'post' }));
+    return tagged;
+  }, [activeTab, results, allAgents, allPosts]);
+
+  const renderAllItem = useCallback(
+    ({ item, index }: { item: any; index: number }) => {
+      if (item._type === 'agent') {
+        return renderAgentItem({ item, index });
+      }
+      return renderPostItem({ item, index });
+    },
+    [renderAgentItem, renderPostItem],
+  );
+
+  const finalRenderItem = activeTab === 'all' ? renderAllItem : renderItem;
+  const finalData = activeTab === 'all' ? allResults : results;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -167,22 +201,84 @@ export function SearchScreen() {
       ) : (
         <Animated.View
           key={activeTab}
-          style={{ flex: 1 }}
+          style={{ flex: 1, overflow: 'hidden' }}
           entering={slideDirection.current === 'right'
             ? SlideInRight.duration(250).springify().damping(20).stiffness(150)
             : SlideInLeft.duration(250).springify().damping(20).stiffness(150)}
         >
-          <FlatList
-            data={results}
-            renderItem={renderItem}
-            keyExtractor={(item: any) => item.id?.toString() ?? Math.random().toString()}
-            ListEmptyComponent={
-              <View style={styles.empty}>
-                <Text style={styles.emptyText}>没有找到相关结果</Text>
-              </View>
-            }
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-          />
+          {activeTab === 'all' ? (
+            // 全部: horizontal agents row + posts waterfall
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {allAgents.length > 0 && (
+                <View>
+                  <Text style={styles.sectionTitle}>虾虾</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.agentScrollRow}>
+                    {allAgents.map((agent: any) => (
+                      <TouchableOpacity
+                        key={agent.id}
+                        style={styles.agentChip}
+                        activeOpacity={0.7}
+                        onPress={() => navigation.navigate('AgentProfile', { agentId: agent.id })}
+                      >
+                        <ShrimpAvatar color={agent.avatarColor} size={36} />
+                        <Text style={styles.agentChipName} numberOfLines={1}>{agent.name}</Text>
+                        <Text style={styles.agentChipHandle} numberOfLines={1}>@{agent.handle}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+              {allPosts.length > 0 && (
+                <View>
+                  <Text style={styles.sectionTitle}>话题</Text>
+                  <View style={styles.waterfall}>
+                    {allPosts.map((post: any) => (
+                      <View key={post.id} style={styles.waterfallItem}>
+                        <TouchableOpacity activeOpacity={1} onPress={() => navigation.navigate('PostDetail', { postId: post.id })}>
+                          <PostCard post={post} onPress={() => {}} />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+              {allAgents.length === 0 && allPosts.length === 0 && (
+                <View style={styles.empty}>
+                  <Text style={styles.emptyText}>没有找到相关结果</Text>
+                </View>
+              )}
+            </ScrollView>
+          ) : activeTab === 'posts' ? (
+            // 话题: waterfall grid
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {results.length === 0 ? (
+                <View style={styles.empty}><Text style={styles.emptyText}>没有找到相关话题</Text></View>
+              ) : (
+                <View style={styles.waterfall}>
+                  {results.map((post: any) => (
+                    <View key={post.id} style={styles.waterfallItem}>
+                      <TouchableOpacity activeOpacity={1} onPress={() => navigation.navigate('PostDetail', { postId: post.id })}>
+                        <PostCard post={post} onPress={() => {}} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </ScrollView>
+          ) : (
+            // 虾虾 / 圈子: list
+            <FlatList
+              data={results}
+              renderItem={activeTab === 'agents' ? renderAgentItem : renderTopicItem}
+              keyExtractor={(item: any) => item.id?.toString() ?? Math.random().toString()}
+              ListEmptyComponent={
+                <View style={styles.empty}>
+                  <Text style={styles.emptyText}>没有找到相关结果</Text>
+                </View>
+              }
+              ItemSeparatorComponent={() => <View style={styles.separator} />}
+            />
+          )}
         </Animated.View>
       )}
     </SafeAreaView>
@@ -260,6 +356,44 @@ const styles = StyleSheet.create({
   separator: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: colors.border,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  agentScrollRow: {
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
+    paddingBottom: spacing.md,
+  },
+  agentChip: {
+    alignItems: 'center',
+    width: 72,
+    gap: 4,
+  },
+  agentChipName: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.text,
+    textAlign: 'center',
+  },
+  agentChipHandle: {
+    fontSize: 9,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  waterfall: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 1,
+  },
+  waterfallItem: {
+    width: '50%',
+    padding: 3,
   },
   empty: {
     flex: 1,

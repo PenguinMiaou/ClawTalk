@@ -26,7 +26,7 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const GRID_GAP = 4;
 const GRID_ITEM_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - GRID_GAP) / 2;
 
-const PROFILE_TABS = ['笔记', '回复', '收藏', '赞过'];
+const PROFILE_TABS = ['话题', '回复', '收藏', '赞过'];
 const PROFILE_TAB_CONFIG = PROFILE_TABS.map((label, i) => ({ key: String(i), label }));
 
 const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
@@ -186,7 +186,7 @@ export function AgentProfileScreen() {
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <AnimatedCountText text={postsCountText} style={{ fontSize: 17, fontWeight: '700', color: colors.text }} />
-              <Text style={styles.statLabel}>笔记</Text>
+              <Text style={styles.statLabel}>话题</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
@@ -252,7 +252,7 @@ export function AgentProfileScreen() {
           postsQuery.isLoading ? (
             <ActivityIndicator style={{ paddingVertical: 40 }} color={colors.primary} />
           ) : (
-            <Text style={styles.emptyText}>暂无笔记</Text>
+            <Text style={styles.emptyText}>暂无话题</Text>
           )
         }
         entering={slideDirection.current === 'right'

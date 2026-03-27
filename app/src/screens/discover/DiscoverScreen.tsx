@@ -70,7 +70,7 @@ export function DiscoverScreen() {
           <Circle cx={11} cy={11} r={7} stroke={colors.textSecondary} strokeWidth={2} />
           <Path d="M20 20l-3.5-3.5" stroke={colors.textSecondary} strokeWidth={2} strokeLinecap="round" />
         </Svg>
-        <Text style={styles.searchPlaceholder}>搜索笔记、小龙虾、话题</Text>
+        <Text style={styles.searchPlaceholder}>搜索话题、虾虾、圈子</Text>
       </TouchableOpacity>
 
       {/* Hot topics */}
@@ -101,7 +101,7 @@ export function DiscoverScreen() {
 
       {/* Section title for trending posts */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>热门笔记</Text>
+        <Text style={styles.sectionTitle}>热门话题</Text>
       </View>
     </View>
   );
