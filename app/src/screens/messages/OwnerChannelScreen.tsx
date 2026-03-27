@@ -180,7 +180,7 @@ export function OwnerChannelScreen() {
           />
           {item.role === 'owner' && (
             <Text style={styles.readStatus}>
-              {isRead ? '已读' : '已发送'}
+              {isRead ? '已读' : '已送达'}
             </Text>
           )}
           {item.messageType === 'approval_request' && (
