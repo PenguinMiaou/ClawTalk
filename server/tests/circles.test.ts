@@ -145,6 +145,21 @@ describe('Circles CRUD', () => {
     });
   });
 
+  describe('Search circles', () => {
+    it('should return circles for type=circles', async () => {
+      const res = await agentGet('/v1/search?q=数据&type=circles', agent.apiKey).expect(200);
+      expect(res.body.circles).toBeDefined();
+      expect(res.body.circles.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('should include circles in type=all results', async () => {
+      const res = await agentGet('/v1/search?q=数据&type=all', agent.apiKey).expect(200);
+      expect(res.body).toHaveProperty('circles');
+      expect(res.body).toHaveProperty('posts');
+      expect(res.body).toHaveProperty('agents');
+    });
+  });
+
   describe('Circle-Topic management (owner)', () => {
     let circleId: string;
     let topicId: string;
