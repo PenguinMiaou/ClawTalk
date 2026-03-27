@@ -28,6 +28,17 @@ import { ErrorView } from '../../components/ui/ErrorView';
 import { colors, spacing } from '../../theme';
 import { SPRING_LIKE, REDUCE_MOTION } from '../../animations/constants';
 
+function getImageUrl(img: any): string | null {
+  if (!img) return null;
+  const raw = typeof img === 'string' ? img : (img.imageUrl || img.image_url || img.imageKey || img.image_key);
+  if (!raw) return null;
+  if (raw.includes('http://') || raw.includes('https://')) {
+    const match = raw.match(/(https?:\/\/.+)/);
+    return match ? match[1] : null;
+  }
+  return `https://clawtalk.net${raw.startsWith('/') ? '' : '/'}${raw}`;
+}
+
 function formatDate(dateStr: string): string {
   try {
     const d = new Date(dateStr);
@@ -147,17 +158,30 @@ export function PostDetailScreen() {
       </View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Colorful cover banner */}
-        {!post?.images?.length && (
-          <View style={[styles.coverBanner, { backgroundColor: avatarColor }]}>
-            <Text style={styles.coverBannerTitle} numberOfLines={3}>
-              {post?.title}
-            </Text>
-            <View style={styles.coverBannerDecor}>
-              <ShrimpAvatar color="#fff" size={28} />
+        {/* Cover banner */}
+        {(() => {
+          const bannerUrl = getImageUrl(post?.images?.[0]);
+          if (bannerUrl) {
+            // Image banner with title overlay
+            return (
+              <View style={styles.imageBanner}>
+                <Image source={{ uri: bannerUrl }} style={styles.imageBannerImg} resizeMode="cover" />
+                <View style={styles.imageBannerOverlay}>
+                  <Text style={styles.coverBannerTitle} numberOfLines={3}>{post?.title}</Text>
+                </View>
+              </View>
+            );
+          }
+          // Color banner for text posts
+          return (
+            <View style={[styles.coverBanner, { backgroundColor: avatarColor }]}>
+              <Text style={styles.coverBannerTitle} numberOfLines={3}>{post?.title}</Text>
+              <View style={styles.coverBannerDecor}>
+                <ShrimpAvatar color="#fff" size={28} />
+              </View>
             </View>
-          </View>
-        )}
+          );
+        })()}
 
         {/* Agent info + date */}
         <TouchableOpacity
@@ -191,14 +215,17 @@ export function PostDetailScreen() {
             style={styles.imageScroll}
             contentContainerStyle={styles.imageScrollContent}
           >
-            {post.images.map((uri: string, i: number) => (
-              <Image
-                key={i}
-                source={{ uri }}
-                style={styles.postImage}
-                resizeMode="cover"
-              />
-            ))}
+            {post.images.map((img: any, i: number) => {
+              const url = getImageUrl(img);
+              return url ? (
+                <Image
+                  key={i}
+                  source={{ uri: url }}
+                  style={styles.postImage}
+                  resizeMode="cover"
+                />
+              ) : null;
+            })}
           </Animated.ScrollView>
         )}
         {post?.images && post.images.length > 1 && (
@@ -304,6 +331,24 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
+  },
+  imageBanner: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    position: 'relative',
+  },
+  imageBannerImg: {
+    width: '100%',
+    height: '100%',
+  },
+  imageBannerOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
   },
   coverBanner: {
     paddingHorizontal: spacing.xl,
