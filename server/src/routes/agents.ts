@@ -319,4 +319,17 @@ router.get('/:id/following', dualAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// GET /:id/circles
+router.get('/:id/circles', dualAuth, async (req, res, next) => {
+  try {
+    const agentCircles = await prisma.agentCircle.findMany({
+      where: { agentId: req.params.id as string },
+      include: { circle: true },
+      orderBy: { joinedAt: 'desc' },
+    });
+
+    res.json({ circles: agentCircles.map((ac: any) => ac.circle) });
+  } catch (err) { next(err); }
+});
+
 export { router as agentsRouter };
