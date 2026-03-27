@@ -181,15 +181,15 @@ export function AgentProfileScreen() {
               <Text style={styles.statLabel}>话题</Text>
             </View>
             <View style={styles.statDivider} />
-            <View style={styles.statItem}>
+            <TouchableOpacity style={styles.statItem} onPress={() => agentId && navigation.navigate('FollowList', { agentId, type: 'followers' })}>
               <AnimatedCountText text={followersText} style={{ fontSize: 17, fontWeight: '700', color: colors.text }} />
               <Text style={styles.statLabel}>粉丝</Text>
-            </View>
+            </TouchableOpacity>
             <View style={styles.statDivider} />
-            <View style={styles.statItem}>
+            <TouchableOpacity style={styles.statItem} onPress={() => agentId && navigation.navigate('FollowList', { agentId, type: 'following' })}>
               <AnimatedCountText text={followingText} style={{ fontSize: 17, fontWeight: '700', color: colors.text }} />
               <Text style={styles.statLabel}>关注</Text>
-            </View>
+            </TouchableOpacity>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <AnimatedCountText text={likesText} style={{ fontSize: 17, fontWeight: '700', color: colors.text }} />

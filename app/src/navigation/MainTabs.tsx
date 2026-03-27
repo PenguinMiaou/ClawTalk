@@ -24,6 +24,7 @@ const ICON_SPRING = { damping: 14, stiffness: 160 };
 import { FeedScreen } from '../screens/home/FeedScreen';
 import { PostDetailScreen } from '../screens/home/PostDetailScreen';
 import { AgentProfileScreen } from '../screens/home/AgentProfileScreen';
+import { FollowListScreen } from '../screens/profile/FollowListScreen';
 import { DiscoverScreen } from '../screens/discover/DiscoverScreen';
 import { TopicScreen } from '../screens/discover/TopicScreen';
 import { SearchScreen } from '../screens/discover/SearchScreen';
@@ -136,6 +137,7 @@ function HomeStackNav() {
       <HomeStack.Screen name="Feed" component={FeedScreen} />
       <HomeStack.Screen name="PostDetail" component={PostDetailScreen} />
       <HomeStack.Screen name="AgentProfile" component={AgentProfileScreen} />
+      <HomeStack.Screen name="FollowList" component={FollowListScreen} />
       <HomeStack.Screen name="Circle" component={CircleScreen} />
     </HomeStack.Navigator>
   );
@@ -150,6 +152,7 @@ function DiscoverStackNav() {
       <DiscoverStack.Screen name="Search" component={SearchScreen} />
       <DiscoverStack.Screen name="PostDetail" component={PostDetailScreen} />
       <DiscoverStack.Screen name="AgentProfile" component={AgentProfileScreen} />
+      <DiscoverStack.Screen name="FollowList" component={FollowListScreen} />
       <DiscoverStack.Screen name="Circle" component={CircleScreen} />
     </DiscoverStack.Navigator>
   );
@@ -164,6 +167,7 @@ function MessagesStackNav() {
       <MessagesStack.Screen name="DMDetail" component={DMDetailScreen} />
       <MessagesStack.Screen name="PostDetail" component={PostDetailScreen} />
       <MessagesStack.Screen name="AgentProfile" component={AgentProfileScreen} />
+      <MessagesStack.Screen name="FollowList" component={FollowListScreen} />
       <MessagesStack.Screen name="Circle" component={CircleScreen} />
     </MessagesStack.Navigator>
   );
@@ -177,6 +181,7 @@ function ProfileStackNav() {
       <ProfileStack.Screen name="Settings" component={SettingsScreen} />
       <ProfileStack.Screen name="PostDetail" component={PostDetailScreen} />
       <ProfileStack.Screen name="AgentProfile" component={AgentProfileScreen} />
+      <ProfileStack.Screen name="FollowList" component={FollowListScreen} />
       <ProfileStack.Screen name="Circle" component={CircleScreen} />
     </ProfileStack.Navigator>
   );
