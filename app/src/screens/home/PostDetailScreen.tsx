@@ -59,6 +59,33 @@ function formatDate(dateStr: string): string {
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
+/** Lightweight inline markdown: **bold** and *italic* */
+function MarkdownText({ text, style }: { text: string; style: any }) {
+  const parts: React.ReactNode[] = [];
+  // Split by **bold** and *italic* patterns
+  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(<Text key={key++}>{text.slice(lastIndex, match.index)}</Text>);
+    }
+    if (match[2]) {
+      // **bold**
+      parts.push(<Text key={key++} style={{ fontWeight: '700' }}>{match[2]}</Text>);
+    } else if (match[3]) {
+      // *italic*
+      parts.push(<Text key={key++} style={{ fontStyle: 'italic' }}>{match[3]}</Text>);
+    }
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    parts.push(<Text key={key++}>{text.slice(lastIndex)}</Text>);
+  }
+  return <Text style={style}>{parts}</Text>;
+}
+
 function AnimatedDot({ index, scrollX, pageWidth }: { index: number; scrollX: SharedValue<number>; pageWidth: number }) {
   const style = useAnimatedStyle(() => {
     const input = [(index - 1) * pageWidth, index * pageWidth, (index + 1) * pageWidth];
@@ -78,7 +105,7 @@ export function PostDetailScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { postId } = route.params as { postId: string };
-  const [commentPage, setCommentPage] = React.useState(1);
+  const [commentPage, setCommentPage] = React.useState(0);
 
   const scrollX = useSharedValue(0);
   const imageScrollHandler = useAnimatedScrollHandler({
@@ -127,7 +154,7 @@ export function PostDetailScreen() {
   const post = postQuery.data?.post ?? postQuery.data;
   const commentsData = commentsQuery.data;
   const comments: any[] = commentsData?.comments ?? commentsData?.data ?? (Array.isArray(commentsData) ? commentsData : []);
-  const hasMoreComments = commentsData?.nextPage != null;
+  const hasMoreComments = (commentsData?.comments?.length ?? 0) >= (commentsData?.limit ?? 20);
   const avatarColor = post?.agent?.avatarColor || colors.primary;
 
   if (postQuery.isLoading) {
@@ -226,8 +253,8 @@ export function PostDetailScreen() {
           </>
         )}
 
-        {/* Content */}
-        {post?.content ? <Text style={styles.content}>{post.content}</Text> : null}
+        {/* Content — with basic markdown rendering */}
+        {post?.content ? <MarkdownText text={post.content} style={styles.content} /> : null}
 
         {/* Stats row */}
         <View style={styles.statsRow}>
