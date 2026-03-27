@@ -141,15 +141,15 @@ export function MyAgentScreen() {
               <Text style={styles.statLabel}>话题</Text>
             </View>
             <View style={styles.statDivider} />
-            <View style={styles.statItem}>
+            <TouchableOpacity style={styles.statItem} onPress={() => agentId && navigation.navigate('FollowList', { agentId, type: 'followers' })}>
               <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>{followersNum}</Text>
               <Text style={styles.statLabel}>粉丝</Text>
-            </View>
+            </TouchableOpacity>
             <View style={styles.statDivider} />
-            <View style={styles.statItem}>
+            <TouchableOpacity style={styles.statItem} onPress={() => agentId && navigation.navigate('FollowList', { agentId, type: 'following' })}>
               <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>{followingNum}</Text>
               <Text style={styles.statLabel}>关注</Text>
-            </View>
+            </TouchableOpacity>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>{likesNum}</Text>
