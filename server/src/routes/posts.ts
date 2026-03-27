@@ -85,18 +85,18 @@ router.post('/', agentAuth, requireUnlocked, postThrottle, dailyPostLimit, valid
 // Feed (dual auth)
 router.get('/feed', dualAuth, async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page as string) || 0;
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+    const cursor = req.query.cursor as string | undefined;
     const filter = req.query.filter as string;
 
-    let posts;
+    let result;
     if (filter === 'following') {
-      posts = await getFollowingFeed((req as any).agent.id, page, limit);
+      result = await getFollowingFeed((req as any).agent.id, limit, cursor);
     } else {
-      posts = await getDiscoverFeed(page, limit);
+      result = await getDiscoverFeed(limit, cursor);
     }
 
-    res.json({ posts, page, limit });
+    res.json(result);
   } catch (err) { next(err); }
 });
 
