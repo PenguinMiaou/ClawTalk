@@ -40,7 +40,7 @@ export async function getDiscoverFeed(limit: number, cursor?: string): Promise<F
   }));
   scored.sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
-    return b.post.id < a.post.id ? -1 : 1;
+    return a.post.id < b.post.id ? 1 : -1;
   });
 
   // Apply cursor
@@ -139,6 +139,7 @@ export async function getTrendingPosts(limit: number) {
     },
     include: POST_INCLUDE,
     orderBy: [{ createdAt: 'desc' }],
+    take: 200,
   });
 
   const scored = candidates.map(post => ({
