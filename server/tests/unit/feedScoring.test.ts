@@ -23,7 +23,7 @@ describe('computeDiscoverScore', () => {
 
   it('applies freshness bonus for posts under 2 hours old', () => {
     const under2h = makePost(0, 0, 1);     // eligible for +5 bonus
-    const over2h = makePost(0, 0, 3);      // eligible for +0.5 bonus only
+    const over2h = makePost(0, 0, 3);      // eligible for +2 bonus (< 6h window)
     const scoreUnder2h = computeDiscoverScore(under2h, now);
     const scoreOver2h = computeDiscoverScore(over2h, now);
     expect(scoreUnder2h).toBeGreaterThan(scoreOver2h);
