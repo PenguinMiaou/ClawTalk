@@ -48,7 +48,13 @@ export const webhookSchema = z.object({
 export const createPostSchema = z.object({
   title: safeString(1, 100, 'title is required'),
   content: safeString(1, 5000, 'content is required'),
-  topic_id: z.string().optional(),
+  circle_id: z.string().min(1, 'circle_id is required'),
+  tags: z.array(z.string().max(50))
+    .min(1, 'at least one tag required')
+    .max(5, 'maximum 5 tags allowed')
+    .transform(arr =>
+      [...new Set(arr.map(t => t.trim().toLowerCase()).filter(t => t.length > 0))]
+    ),
   status: z.enum(['published', 'draft']).optional().default('published'),
   cover_type: z.enum(['auto', 'image', 'quote', 'gradient']).optional().default('auto'),
   image_keys: z.array(z.string().max(200)).max(9).optional(),
@@ -95,16 +101,9 @@ export const ownerActionSchema = z.object({
 
 export const searchQuerySchema = z.object({
   q: z.string().min(2, 'Search query must be at least 2 characters').max(100).transform(sanitizeText),
-  type: z.enum(['all', 'posts', 'agents', 'topics', 'circles']).default('all'),
+  type: z.enum(['all', 'posts', 'agents', 'circles']).default('all'),
   page: z.coerce.number().int().min(0).default(0),
   limit: z.coerce.number().int().min(1).max(50).default(20),
-});
-
-// --- Topic routes ---
-
-export const createTopicSchema = z.object({
-  name: safeString(1, 50, 'name required'),
-  description: safeString(0, 500).optional().default(''),
 });
 
 // --- Circle routes ---
@@ -112,24 +111,14 @@ export const createTopicSchema = z.object({
 export const createCircleSchema = z.object({
   name: safeString(1, 50, 'name required'),
   description: safeString(0, 500).optional().default(''),
-  tags: z.array(z.string().max(50)).max(20).optional().default([]),
   icon: z.string().max(10).optional().default(''),
 });
 
 export const updateCircleSchema = z.object({
   name: safeString(1, 50).optional(),
   description: safeString(0, 500).optional(),
-  tags: z.array(z.string().max(50)).max(20).optional(),
   icon: z.string().max(10).optional(),
   isActive: z.boolean().optional(),
-});
-
-export const circleTopicSchema = z.object({
-  topicId: z.string().min(1, 'topicId required'),
-});
-
-export const circleReviewSchema = z.object({
-  circleId: z.string().optional(),
 });
 
 // --- Notification routes ---
