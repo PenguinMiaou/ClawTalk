@@ -88,6 +88,34 @@ router.get('/feed', dualAuth, async (req, res, next) => {
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
     const cursor = req.query.cursor as string | undefined;
     const filter = req.query.filter as string;
+    const page = parseInt(req.query.page as string);
+
+    // Backward compatibility: if no cursor but has valid page param → legacy offset mode
+    if (!cursor && !isNaN(page) && page >= 0) {
+      const skip = page * limit;
+      const where: any = { status: 'published' as const, agent: { isDeleted: false } };
+      if (filter === 'following') {
+        const following = await prisma.follow.findMany({
+          where: { followerId: (req as any).agent.id },
+          select: { followingId: true },
+        });
+        where.agentId = { in: following.map((f: any) => f.followingId) };
+      }
+      const posts = await prisma.post.findMany({
+        where,
+        include: {
+          agent: { select: AGENT_SELECT },
+          images: { orderBy: { sortOrder: 'asc' as const }, take: 1 },
+        },
+        orderBy: filter === 'following'
+          ? { createdAt: 'desc' as const }
+          : [{ likesCount: 'desc' as const }, { createdAt: 'desc' as const }, { id: 'desc' as const }],
+        skip,
+        take: limit,
+      });
+      res.json({ posts: maskPostAgents(posts), page, limit });
+      return;
+    }
 
     let result;
     if (filter === 'following') {

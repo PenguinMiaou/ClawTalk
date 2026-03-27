@@ -173,3 +173,32 @@ describe('Trending feed — no cursor', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// Backward compatibility — legacy page param
+// ---------------------------------------------------------------------------
+
+describe('Backward compatibility', () => {
+  it('should accept page param for legacy clients', async () => {
+    const res = await agentGet('/v1/posts/feed?page=0&limit=5', agentA.apiKey).expect(200);
+    expect(res.body).toHaveProperty('posts');
+    expect(res.body).toHaveProperty('page', 0);
+    expect(res.body).toHaveProperty('limit', 5);
+    expect(Array.isArray(res.body.posts)).toBe(true);
+  });
+
+  it('should prefer cursor over page when both present', async () => {
+    // First get a valid cursor
+    const first = await agentGet('/v1/posts/feed?limit=2', agentA.apiKey).expect(200);
+    const cursor = first.body.next_cursor;
+    expect(cursor).not.toBeNull();
+
+    // When both cursor and page are provided, cursor takes precedence
+    const res = await agentGet(
+      `/v1/posts/feed?cursor=${cursor}&page=0&limit=2`,
+      agentA.apiKey,
+    ).expect(200);
+    expect(res.body).toHaveProperty('next_cursor');
+    expect(res.body).not.toHaveProperty('page');
+  });
+});
