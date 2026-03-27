@@ -3,18 +3,17 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Image,
   StyleSheet,
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FlashList } from '@shopify/flash-list';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import Svg, { Path, Circle } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedScrollHandler, useAnimatedStyle, interpolate, SlideInLeft, SlideInRight, withSequence, withSpring } from 'react-native-reanimated';
 import { agentsApi } from '../../api/agents';
+import { PostCard } from '../../components/PostCard';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { useAuthStore } from '../../store/authStore';
 import { LoadingView } from '../../components/ui/LoadingView';
@@ -29,7 +28,7 @@ const GRID_ITEM_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - GRID_GAP) / 2;
 const PROFILE_TABS = ['话题', '回复', '收藏', '赞过'];
 const PROFILE_TAB_CONFIG = PROFILE_TABS.map((label, i) => ({ key: String(i), label }));
 
-const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
+const PROFILE_TAB_EMPTY = ['暂无话题', '暂无回复', '暂无收藏', '暂无赞过的内容'];
 
 export function AgentProfileScreen() {
   const navigation = useNavigation<any>();
@@ -97,39 +96,8 @@ export function AgentProfileScreen() {
   const followingText = useCountUp(profile?.following_count ?? profile?.followingCount ?? 0);
   const likesText = useCountUp(profile?.total_likes ?? profile?.likesCount ?? 0);
 
-  const renderPostGrid = useCallback(
-    ({ item, index }: { item: any; index: number }) => {
-      const hasImage = item.images && item.images.length > 0;
-      return (
-        <AnimatedCard
-          index={index}
-          itemKey={item.id}
-          animatedSet={animatedSet}
-          onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
-        >
-          <View style={styles.gridItem}>
-            {hasImage ? (
-              <Image source={{ uri: item.images[0] }} style={styles.gridImage} resizeMode="cover" />
-            ) : (
-              <View style={[styles.gridPlaceholder, { backgroundColor: avatarColor }]}>
-                <Text style={styles.gridPlaceholderText} numberOfLines={4}>
-                  {item.content || item.title || ''}
-                </Text>
-              </View>
-            )}
-            <View style={styles.gridInfo}>
-              <Text style={styles.gridTitle} numberOfLines={1}>{item.title}</Text>
-              <View style={styles.gridStats}>
-                <Text style={styles.gridStatText}>♡ {item.likesCount ?? 0}</Text>
-                <Text style={styles.gridStatText}>💬 {item.commentsCount ?? 0}</Text>
-              </View>
-            </View>
-          </View>
-        </AnimatedCard>
-      );
-    },
-    [avatarColor, navigation],
-  );
+  // Only show posts for "话题" tab
+  const displayData = activeTab === 0 ? posts : [];
 
   const listHeaderElement = useMemo(() => (
     <View>
@@ -234,34 +202,46 @@ export function AgentProfileScreen() {
     return <ErrorView onRetry={() => profileQuery.refetch()} />;
   }
 
+  const slideEntering = slideDirection.current === 'right'
+    ? SlideInRight.duration(250).springify().damping(20).stiffness(150)
+    : SlideInLeft.duration(250).springify().damping(20).stiffness(150);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <AnimatedFlashList
-        key={activeTab}
-        data={posts}
-        renderItem={renderPostGrid}
-        numColumns={2}
-        keyExtractor={(item: any) => item.id?.toString() ?? Math.random().toString()}
-        ListHeaderComponent={() => listHeaderElement}
+      <Animated.ScrollView
         onScroll={scrollHandler}
         scrollEventThrottle={16}
-        onEndReached={() => {
-          if (postsQuery.hasNextPage && !postsQuery.isFetchingNextPage) {
-            postsQuery.fetchNextPage();
-          }
-        }}
-        onEndReachedThreshold={0.5}
-        ListEmptyComponent={
-          postsQuery.isLoading ? (
+        showsVerticalScrollIndicator={false}
+      >
+        {listHeaderElement}
+
+        <Animated.View
+          key={`content-${activeTab}`}
+          entering={slideEntering}
+          style={styles.contentArea}
+        >
+          {postsQuery.isLoading && activeTab === 0 ? (
             <ActivityIndicator style={{ paddingVertical: 40 }} color={colors.primary} />
+          ) : displayData.length === 0 ? (
+            <Text style={styles.emptyText}>{PROFILE_TAB_EMPTY[activeTab] || '暂无内容'}</Text>
           ) : (
-            <Text style={styles.emptyText}>暂无话题</Text>
-          )
-        }
-        entering={slideDirection.current === 'right'
-          ? SlideInRight.duration(250).springify().damping(20).stiffness(150)
-          : SlideInLeft.duration(250).springify().damping(20).stiffness(150)}
-      />
+            <View style={styles.gridContainer}>
+              {displayData.map((item: any, index: number) => (
+                <View key={item.id} style={styles.cardWrapper}>
+                  <AnimatedCard
+                    index={index}
+                    itemKey={item.id}
+                    animatedSet={animatedSet}
+                    onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
+                  >
+                    <PostCard post={item} onPress={() => {}} />
+                  </AnimatedCard>
+                </View>
+              ))}
+            </View>
+          )}
+        </Animated.View>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }
@@ -384,44 +364,16 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '600',
   },
-  gridItem: {
-    flex: 1,
-    margin: 2,
-    backgroundColor: colors.card,
-    borderRadius: 6,
-    overflow: 'hidden',
+  contentArea: {
+    minHeight: 200,
   },
-  gridImage: {
-    width: '100%',
-    aspectRatio: 1,
-  },
-  gridPlaceholder: {
-    width: '100%',
-    aspectRatio: 1,
-    justifyContent: 'center',
-    padding: 10,
-  },
-  gridPlaceholderText: {
-    color: '#ffffff',
-    fontSize: 12,
-    lineHeight: 17,
-  },
-  gridInfo: {
-    padding: spacing.sm,
-  },
-  gridTitle: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  gridStats: {
+  gridContainer: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    flexWrap: 'wrap',
   },
-  gridStatText: {
-    fontSize: 10,
-    color: colors.textSecondary,
+  cardWrapper: {
+    width: '50%',
+    padding: 3,
   },
   emptyText: {
     textAlign: 'center',

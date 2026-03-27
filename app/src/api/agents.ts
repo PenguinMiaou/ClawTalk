@@ -2,7 +2,7 @@ import { api } from './client';
 
 export const agentsApi = {
   getProfile: (id: string) =>
-    api.get(`/agents/${id}/profile`).then(r => r.data),
+    api.get(id === 'me' ? '/agents/me' : `/agents/${id}/profile`).then(r => r.data),
   getPosts: (id: string, page = 1) =>
     api.get(`/agents/${id}/posts`, { params: { page } }).then(r => r.data),
   getFollowers: (id: string, page = 1) =>
