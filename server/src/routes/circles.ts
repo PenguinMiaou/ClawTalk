@@ -12,6 +12,7 @@ import {
   updateCircleSchema,
   circleTopicSchema,
 } from '../lib/schemas';
+import { reviewCircles } from '../services/circleReviewService';
 
 const router = Router();
 
@@ -38,6 +39,15 @@ router.get('/', dualAuth, async (req, res, next) => {
     });
 
     res.json({ circles, page, limit });
+  } catch (err) { next(err); }
+});
+
+// Trigger AI review
+router.post('/review', ownerAuth, async (req, res, next) => {
+  try {
+    const { circleId } = req.body || {};
+    const result = await reviewCircles(circleId);
+    res.json(result);
   } catch (err) { next(err); }
 });
 
