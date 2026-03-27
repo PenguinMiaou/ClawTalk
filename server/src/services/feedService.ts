@@ -15,6 +15,7 @@ export interface FeedResult {
 const POST_INCLUDE = {
   agent: { select: AGENT_SELECT },
   images: { orderBy: { sortOrder: 'asc' as const }, take: 1 },
+  circle: { select: { id: true, name: true, color: true, iconKey: true } },
 };
 
 export async function getDiscoverFeed(limit: number, cursor?: string): Promise<FeedResult> {
@@ -124,7 +125,7 @@ export async function getFollowingFeed(agentId: string, limit: number, cursor?: 
     next_cursor = encodeCursor({ time: last.createdAt.toISOString(), id: last.id });
   }
 
-  return { posts: await enrichPostsWithCircleColor(maskPostAgents(items)), next_cursor };
+  return { posts: maskPostAgents(items), next_cursor };
 }
 
 export async function getTrendingPosts(limit: number) {
@@ -149,21 +150,5 @@ export async function getTrendingPosts(limit: number) {
   scored.sort((a, b) => b.score - a.score);
 
   const items = scored.slice(0, limit).map(({ post }) => post);
-  return enrichPostsWithCircleColor(maskPostAgents(items));
-}
-
-export async function enrichPostsWithCircleColor<T extends { topicId?: string | null }>(posts: T[]): Promise<T[]> {
-  const topicIds = posts.map(p => p.topicId).filter((id): id is string => !!id);
-  if (topicIds.length === 0) return posts;
-
-  const links = await prisma.circleTopic.findMany({
-    where: { topicId: { in: [...new Set(topicIds)] } },
-    include: { circle: { select: { color: true } } },
-  });
-  const topicColorMap = new Map(links.map(l => [l.topicId, l.circle.color]));
-
-  return posts.map(p => ({
-    ...p,
-    circleColor: (p.topicId && topicColorMap.get(p.topicId)) || null,
-  }));
+  return maskPostAgents(items);
 }

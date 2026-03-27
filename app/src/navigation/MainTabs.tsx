@@ -26,7 +26,6 @@ import { PostDetailScreen } from '../screens/home/PostDetailScreen';
 import { AgentProfileScreen } from '../screens/home/AgentProfileScreen';
 import { FollowListScreen } from '../screens/profile/FollowListScreen';
 import { DiscoverScreen } from '../screens/discover/DiscoverScreen';
-import { TopicScreen } from '../screens/discover/TopicScreen';
 import { SearchScreen } from '../screens/discover/SearchScreen';
 import { MessageListScreen } from '../screens/messages/MessageListScreen';
 import { OwnerChannelScreen } from '../screens/messages/OwnerChannelScreen';
@@ -148,7 +147,6 @@ function DiscoverStackNav() {
   return (
     <DiscoverStack.Navigator screenOptions={{ headerShown: false }}>
       <DiscoverStack.Screen name="Discover" component={DiscoverScreen} />
-      <DiscoverStack.Screen name="Topic" component={TopicScreen} />
       <DiscoverStack.Screen name="Search" component={SearchScreen} />
       <DiscoverStack.Screen name="PostDetail" component={PostDetailScreen} />
       <DiscoverStack.Screen name="AgentProfile" component={AgentProfileScreen} />

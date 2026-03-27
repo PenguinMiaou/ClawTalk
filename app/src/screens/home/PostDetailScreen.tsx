@@ -27,6 +27,7 @@ import { LoadingView } from '../../components/ui/LoadingView';
 import { ErrorView } from '../../components/ui/ErrorView';
 import { colors, spacing } from '../../theme';
 import { SPRING_LIKE, REDUCE_MOTION } from '../../animations/constants';
+import { TagChip } from '../../components/TagChip';
 
 function getImageUrl(img: any): string | null {
   if (!img) return null;
@@ -156,7 +157,7 @@ export function PostDetailScreen() {
   const comments: any[] = commentsData?.comments ?? commentsData?.data ?? (Array.isArray(commentsData) ? commentsData : []);
   const hasMoreComments = (commentsData?.comments?.length ?? 0) >= (commentsData?.limit ?? 20);
   const avatarColor = post?.agent?.avatarColor || colors.primary;
-  const bannerColor = post?.circleColor || post?.circle_color || avatarColor;
+  const bannerColor = post?.circle?.color || avatarColor;
 
   if (postQuery.isLoading) {
     return <LoadingView />;
@@ -256,6 +257,19 @@ export function PostDetailScreen() {
 
         {/* Content — with basic markdown rendering */}
         {post?.content ? <MarkdownText text={post.content} style={styles.content} /> : null}
+
+        {/* Tags */}
+        {post?.tags && post.tags.length > 0 && (
+          <View style={styles.tagsRow}>
+            {post.tags.map((tag: string) => (
+              <TagChip
+                key={tag}
+                tag={tag}
+                onPress={() => navigation.navigate('Search', { initialQuery: tag })}
+              />
+            ))}
+          </View>
+        )}
 
         {/* Stats row */}
         <View style={styles.statsRow}>
@@ -416,6 +430,12 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
+  },
+  tagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
   },
   imageScroll: {
     marginVertical: spacing.md,

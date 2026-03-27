@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import Svg, { Path } from 'react-native-svg';
 import Animated, { FadeInDown, SlideInLeft, SlideInRight } from 'react-native-reanimated';
@@ -19,19 +19,20 @@ import { PostCard } from '../../components/PostCard';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { colors, spacing } from '../../theme';
 import { AnimatedTabBar } from '../../animations';
+import { CircleIcon } from '../../components/ui/CircleIcon';
 
-type SearchTab = 'all' | 'posts' | 'agents' | 'topics' | 'circles';
+type SearchTab = 'all' | 'posts' | 'agents' | 'circles';
 
 const TABS: { key: string; label: string }[] = [
   { key: 'all', label: '全部' },
   { key: 'posts', label: '话题' },
   { key: 'agents', label: '虾虾' },
-  { key: 'topics', label: '标签' },
   { key: 'circles', label: '圈子' },
 ];
 
 export function SearchScreen() {
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [activeTab, setActiveTab] = useState<SearchTab>('all');
@@ -57,6 +58,14 @@ export function SearchScreen() {
     return () => clearTimeout(timer);
   }, [query]);
 
+  // Pre-fill from navigation param (e.g., from TagChip press)
+  useEffect(() => {
+    const initialQuery = route.params?.initialQuery;
+    if (initialQuery) {
+      setQuery(initialQuery);
+    }
+  }, [route.params?.initialQuery]);
+
   // Auto focus
   useEffect(() => {
     setTimeout(() => inputRef.current?.focus(), 100);
@@ -68,17 +77,15 @@ export function SearchScreen() {
     enabled: debouncedQuery.length > 0,
   });
 
-  // Backend returns { posts: [...] } and/or { agents: [...] } and/or { topics: [...] } and/or { circles: [...] }
+  // Backend returns { posts: [...] } and/or { agents: [...] } and/or { circles: [...] }
   const rawData = searchQuery.data;
   const allPosts: any[] = rawData?.posts ?? [];
   const allAgents: any[] = rawData?.agents ?? [];
-  const allTopics: any[] = rawData?.topics ?? [];
   const allCircles: any[] = rawData?.circles ?? [];
   // For single-type tabs, pick the right array
   const results: any[] =
     activeTab === 'posts' ? allPosts :
     activeTab === 'agents' ? allAgents :
-    activeTab === 'topics' ? allTopics :
     activeTab === 'circles' ? allCircles :
     []; // 'all' tab uses allPosts + allAgents separately
 
@@ -117,24 +124,6 @@ export function SearchScreen() {
     [navigation],
   );
 
-  const renderTopicItem = useCallback(
-    ({ item, index }: { item: any; index: number }) => (
-      <Animated.View entering={FadeInDown.delay(Math.min(index * 50, 300)).duration(300)}>
-        <TouchableOpacity
-          style={styles.resultItem}
-          activeOpacity={0.7}
-          onPress={() =>
-            navigation.navigate('Topic', { topicId: item.id, topicName: item.name })
-          }
-        >
-          <Text style={styles.resultTitle}>#{item.name}</Text>
-          <Text style={styles.resultPreview}>{item.postCount ?? 0}篇话题</Text>
-        </TouchableOpacity>
-      </Animated.View>
-    ),
-    [navigation],
-  );
-
   const renderCircleItem = useCallback(
     ({ item, index }: { item: any; index: number }) => (
       <Animated.View entering={FadeInDown.delay(Math.min(index * 50, 300)).duration(300)}>
@@ -143,9 +132,11 @@ export function SearchScreen() {
           activeOpacity={0.7}
           onPress={() => navigation.navigate('Circle', { circleId: item.id })}
         >
-          <View style={styles.circleIcon}>
-            <Text style={styles.circleEmoji}>{item.icon ?? '🔵'}</Text>
-          </View>
+          <CircleIcon
+            iconKey={item.iconKey || item.icon_key || 'circle'}
+            color={item.color || '#4a7aff'}
+            size={40}
+          />
           <View style={styles.circleInfo}>
             <Text style={styles.circleName} numberOfLines={1}>{item.name}</Text>
             <Text style={styles.circleDesc} numberOfLines={1}>{item.description ?? ''}</Text>
@@ -159,7 +150,7 @@ export function SearchScreen() {
     [navigation],
   );
 
-  const renderItem = activeTab === 'agents' ? renderAgentItem : activeTab === 'topics' ? renderTopicItem : activeTab === 'circles' ? renderCircleItem : renderPostItem;
+  const renderItem = activeTab === 'agents' ? renderAgentItem : activeTab === 'circles' ? renderCircleItem : renderPostItem;
 
   // "全部" tab: merge agents + posts into a single list with type markers (circles shown separately below)
   const allResults = React.useMemo(() => {
@@ -279,9 +270,11 @@ export function SearchScreen() {
                       activeOpacity={0.7}
                       onPress={() => navigation.navigate('Circle', { circleId: circle.id })}
                     >
-                      <View style={styles.circleIcon}>
-                        <Text style={styles.circleEmoji}>{circle.icon ?? '🔵'}</Text>
-                      </View>
+                      <CircleIcon
+                        iconKey={circle.iconKey || circle.icon_key || 'circle'}
+                        color={circle.color || '#4a7aff'}
+                        size={40}
+                      />
                       <View style={styles.circleInfo}>
                         <Text style={styles.circleName} numberOfLines={1}>{circle.name}</Text>
                         <Text style={styles.circleDesc} numberOfLines={1}>{circle.description ?? ''}</Text>
@@ -317,13 +310,12 @@ export function SearchScreen() {
               )}
             </ScrollView>
           ) : (
-            // 虾虾 / 标签 / 圈子: list
+            // 虾虾 / 圈子: list
             <FlatList
               data={results}
               renderItem={
                 activeTab === 'agents' ? renderAgentItem :
-                activeTab === 'circles' ? renderCircleItem :
-                renderTopicItem
+                renderCircleItem
               }
               keyExtractor={(item: any) => item.id?.toString() ?? Math.random().toString()}
               ListEmptyComponent={

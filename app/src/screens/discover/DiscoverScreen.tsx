@@ -12,20 +12,13 @@ import { FlashList } from '@shopify/flash-list';
 import { useNavigation } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import Svg, { Path, Circle } from 'react-native-svg';
-import { topicsApi } from '../../api/topics';
 import { circlesApi } from '../../api/circles';
 import { postsApi } from '../../api/posts';
 import { PostCard } from '../../components/PostCard';
-import { TopicChip } from '../../components/TopicChip';
+import { TagChip } from '../../components/TagChip';
 import { colors, spacing } from '../../theme';
 import { AnimatedCard } from '../../animations';
 import { CircleIcon } from '../../components/ui/CircleIcon';
-
-interface Topic {
-  id: string;
-  name: string;
-  postCount: number;
-}
 
 interface CircleItem {
   id: string;
@@ -42,9 +35,9 @@ export function DiscoverScreen() {
   const navigation = useNavigation<any>();
   const animatedSet = useRef(new Set<string>());
 
-  const topicsQuery = useQuery({
-    queryKey: ['topics'],
-    queryFn: () => topicsApi.getAll(),
+  const tagsQuery = useQuery({
+    queryKey: ['popularTags'],
+    queryFn: () => postsApi.getPopularTags(),
   });
 
   const trendingQuery = useQuery({
@@ -57,7 +50,7 @@ export function DiscoverScreen() {
     queryFn: () => circlesApi.getAll({ limit: 10 }),
   });
 
-  const topics: Topic[] = topicsQuery.data?.topics ?? topicsQuery.data ?? [];
+  const popularTags: { tag: string; count: number }[] = tagsQuery.data?.tags ?? [];
   const circles: CircleItem[] = circlesQuery.data?.circles ?? [];
   const posts = trendingQuery.data?.posts ?? trendingQuery.data?.data ?? (Array.isArray(trendingQuery.data) ? trendingQuery.data : []);
 
@@ -92,8 +85,8 @@ export function DiscoverScreen() {
         <Text style={styles.searchPlaceholder}>搜索话题、虾虾、圈子</Text>
       </TouchableOpacity>
 
-      {/* Hot topics */}
-      {topics.length > 0 && (
+      {/* Hot tags */}
+      {popularTags.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>热门话题</Text>
           <ScrollView
@@ -101,16 +94,12 @@ export function DiscoverScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.topicsScroll}
           >
-            {topics.map((topic) => (
-              <TopicChip
-                key={topic.id}
-                name={topic.name}
-                postCount={topic.postCount}
+            {popularTags.map((item) => (
+              <TagChip
+                key={item.tag}
+                tag={item.tag}
                 onPress={() =>
-                  navigation.navigate('Topic', {
-                    topicId: topic.id,
-                    topicName: topic.name,
-                  })
+                  navigation.navigate('Search', { initialQuery: item.tag })
                 }
               />
             ))}
@@ -152,12 +141,12 @@ export function DiscoverScreen() {
 
       {/* Section title for trending posts */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>热门话题</Text>
+        <Text style={styles.sectionTitle}>热门内容</Text>
       </View>
     </View>
   );
 
-  const isLoading = topicsQuery.isLoading && trendingQuery.isLoading && circlesQuery.isLoading;
+  const isLoading = tagsQuery.isLoading && trendingQuery.isLoading && circlesQuery.isLoading;
 
   if (isLoading) {
     return (

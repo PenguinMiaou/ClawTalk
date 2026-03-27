@@ -7,14 +7,19 @@ import { requireUnlocked } from '../middleware/requireUnlocked';
 import { generateId } from '../lib/id';
 import { NotFound, Forbidden, Conflict } from '../lib/errors';
 import { validate } from '../lib/validate';
+import { AGENT_SELECT, maskPostAgents } from '../lib/agentMask';
 import {
   createCircleSchema,
   updateCircleSchema,
-  circleTopicSchema,
 } from '../lib/schemas';
-import { reviewCircles } from '../services/circleReviewService';
 
 const router = Router();
+
+const POST_INCLUDE = {
+  agent: { select: AGENT_SELECT },
+  circle: { select: { id: true, name: true, color: true, iconKey: true } },
+  images: { orderBy: { sortOrder: 'asc' as const }, take: 1 },
+};
 
 // List circles (with optional search)
 router.get('/', dualAuth, async (req, res, next) => {
@@ -42,15 +47,6 @@ router.get('/', dualAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Trigger AI review
-router.post('/review', ownerAuth, async (req, res, next) => {
-  try {
-    const { circleId } = req.body || {};
-    const result = await reviewCircles(circleId);
-    res.json(result);
-  } catch (err) { next(err); }
-});
-
 // Circle detail
 router.get('/:id', dualAuth, async (req, res, next) => {
   try {
@@ -58,12 +54,7 @@ router.get('/:id', dualAuth, async (req, res, next) => {
     const circle = await prisma.circle.findUnique({ where: { id } });
     if (!circle || !circle.isActive) throw new NotFound('Circle not found');
 
-    const [topics, members] = await Promise.all([
-      prisma.circleTopic.findMany({
-        where: { circleId: circle.id },
-        include: { topic: true },
-        orderBy: { topic: { postCount: 'desc' } },
-      }),
+    const [members, popularTags] = await Promise.all([
       prisma.agentCircle.findMany({
         where: { circleId: circle.id },
         include: {
@@ -74,17 +65,25 @@ router.get('/:id', dualAuth, async (req, res, next) => {
         orderBy: { joinedAt: 'desc' },
         take: 20,
       }),
+      prisma.$queryRaw<{ tag: string; count: bigint }[]>`
+        SELECT unnest(tags) AS tag, COUNT(*) AS count
+        FROM posts
+        WHERE circle_id = ${circle.id} AND status = 'published'
+        GROUP BY tag
+        ORDER BY count DESC
+        LIMIT 20
+      `,
     ]);
 
     res.json({
       circle,
-      topics: topics.map((ct: any) => ct.topic),
       members: members.map((ac: any) => ac.agent),
+      popularTags: popularTags.map(t => ({ tag: t.tag, count: Number(t.count) })),
     });
   } catch (err) { next(err); }
 });
 
-// Circle posts (aggregated from linked topics)
+// Circle posts (direct query via circleId)
 router.get('/:id/posts', dualAuth, async (req, res, next) => {
   try {
     const id = req.params.id as string;
@@ -94,27 +93,15 @@ router.get('/:id/posts', dualAuth, async (req, res, next) => {
     const page = Math.max(0, parseInt(req.query.page as string) || 0);
     const limit = Math.min(Math.max(1, parseInt(req.query.limit as string) || 20), 50);
 
-    const topicLinks = await prisma.circleTopic.findMany({
-      where: { circleId: circle.id },
-      select: { topicId: true },
+    const posts = await prisma.post.findMany({
+      where: { circleId: circle.id, status: 'published' },
+      include: POST_INCLUDE,
+      orderBy: { createdAt: 'desc' },
+      skip: page * limit,
+      take: limit,
     });
-    const topicIds = topicLinks.map((tl: any) => tl.topicId);
 
-    const posts = topicIds.length > 0
-      ? await prisma.post.findMany({
-          where: { topicId: { in: topicIds }, status: 'published' },
-          include: {
-            agent: {
-              select: { id: true, name: true, handle: true, avatarColor: true, isDeleted: true },
-            },
-          },
-          orderBy: { createdAt: 'desc' },
-          skip: page * limit,
-          take: limit,
-        })
-      : [];
-
-    res.json({ posts, page, limit });
+    res.json({ posts: maskPostAgents(posts), page, limit });
   } catch (err) { next(err); }
 });
 
@@ -124,14 +111,13 @@ router.post('/', agentAuth, requireUnlocked, validate(createCircleSchema), async
     const agent = (req as any).agent;
     if (agent.trustLevel < 2) throw new Forbidden('Insufficient trust level');
 
-    const { name, description, tags, icon } = req.body;
+    const { name, description, icon } = req.body;
 
     const circle = await prisma.circle.create({
       data: {
         id: generateId('circle'),
         name,
         description,
-        tags,
         icon,
         createdBy: agent.id,
       },
@@ -206,63 +192,6 @@ router.patch('/:id', ownerAuth, validate(updateCircleSchema), async (req, res, n
     });
 
     res.json(updated);
-  } catch (err) { next(err); }
-});
-
-// Add topic to circle (manual)
-router.post('/:id/topics', ownerAuth, validate(circleTopicSchema), async (req, res, next) => {
-  try {
-    const { topicId } = req.body;
-    const id = req.params.id as string;
-    const circle = await prisma.circle.findUnique({ where: { id } });
-    if (!circle) throw new NotFound('Circle not found');
-
-    const agent = (req as any).agent;
-    if (circle.createdBy !== agent.id) throw new Forbidden('Only circle creator can manage topics');
-
-    const topic = await prisma.topic.findUnique({ where: { id: topicId as string } });
-    if (!topic) throw new NotFound('Topic not found');
-
-    const existing = await prisma.circleTopic.findUnique({
-      where: { circleId_topicId: { circleId: circle.id, topicId } },
-    });
-    if (existing) throw new Conflict('Topic already linked');
-
-    await prisma.circleTopic.create({
-      data: { circleId: circle.id, topicId, isManual: true },
-    });
-    await prisma.circle.update({
-      where: { id: circle.id },
-      data: { topicCount: { increment: 1 } },
-    });
-
-    res.status(201).json({ message: 'Topic linked to circle' });
-  } catch (err) { next(err); }
-});
-
-// Remove topic from circle
-router.delete('/:id/topics/:topicId', ownerAuth, async (req, res, next) => {
-  try {
-    const agent = (req as any).agent;
-    const circleId = req.params.id as string;
-    const topicId = req.params.topicId as string;
-
-    const circle = await prisma.circle.findUnique({ where: { id: circleId } });
-    if (!circle) throw new NotFound('Circle not found');
-    if (circle.createdBy !== agent.id) throw new Forbidden('Only circle creator can manage topics');
-
-    await prisma.circleTopic.delete({
-      where: {
-        circleId_topicId: { circleId, topicId },
-      },
-    }).catch(() => { throw new NotFound('Link not found'); });
-
-    await prisma.circle.update({
-      where: { id: circleId },
-      data: { topicCount: { decrement: 1 } },
-    });
-
-    res.json({ message: 'Topic unlinked from circle' });
   } catch (err) { next(err); }
 });
 

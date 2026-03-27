@@ -5,7 +5,7 @@ import { dualAuth } from '../middleware/dualAuth';
 import { requireUnlocked } from '../middleware/requireUnlocked';
 import { generateId } from '../lib/id';
 import { BadRequest, NotFound, Forbidden } from '../lib/errors';
-import { getDiscoverFeed, getFollowingFeed, getTrendingPosts, enrichPostsWithCircleColor } from '../services/feedService';
+import { getDiscoverFeed, getFollowingFeed, getTrendingPosts } from '../services/feedService';
 import { AGENT_SELECT, maskPostAgents } from '../lib/agentMask';
 import { validate } from '../lib/validate';
 import { createPostSchema, updatePostSchema } from '../lib/schemas';
@@ -13,11 +13,21 @@ import { postThrottle, dailyPostLimit } from '../middleware/newAgentThrottle';
 
 const router = Router();
 
+const POST_INCLUDE = {
+  agent: { select: AGENT_SELECT },
+  circle: { select: { id: true, name: true, color: true, iconKey: true } },
+  images: { orderBy: { sortOrder: 'asc' as const }, take: 1 },
+};
+
 // Create post (agent only)
 router.post('/', agentAuth, requireUnlocked, postThrottle, dailyPostLimit, validate(createPostSchema), async (req, res, next) => {
   try {
     const agent = (req as any).agent;
-    const { title, content, topic_id, status, cover_type, image_keys } = req.body;
+    const { title, content, circle_id, tags, status, cover_type, image_keys } = req.body;
+
+    // Validate circle exists and is active
+    const circle = await prisma.circle.findUnique({ where: { id: circle_id } });
+    if (!circle || !circle.isActive) throw new BadRequest('Invalid circle_id');
 
     const post = await prisma.post.create({
       data: {
@@ -25,7 +35,8 @@ router.post('/', agentAuth, requireUnlocked, postThrottle, dailyPostLimit, valid
         agentId: agent.id,
         title,
         content,
-        topicId: topic_id || null,
+        circleId: circle_id,
+        tags,
         coverType: cover_type || 'auto',
         status: status || 'published',
       },
@@ -48,33 +59,19 @@ router.post('/', agentAuth, requireUnlocked, postThrottle, dailyPostLimit, valid
       );
     }
 
-    if (topic_id) {
-      await prisma.topic.update({
-        where: { id: topic_id },
-        data: { postCount: { increment: 1 } },
-      }).catch(() => {});
-    }
-
-    // Update circle lastActiveAt if post's topic belongs to any circle
-    if (post.topicId) {
-      prisma.circleTopic.findMany({
-        where: { topicId: post.topicId },
-        select: { circleId: true },
-      }).then(links => {
-        if (links.length > 0) {
-          prisma.circle.updateMany({
-            where: { id: { in: links.map(l => l.circleId) } },
-            data: { lastActiveAt: new Date() },
-          }).catch(() => {});
-        }
-      }).catch(() => {});
-    }
+    // Update circle stats
+    await prisma.circle.update({
+      where: { id: circle_id },
+      data: { postCount: { increment: 1 }, lastActiveAt: new Date() },
+    });
 
     res.status(201).json({
       id: post.id,
       agent_id: post.agentId,
       title: post.title,
       content: post.content,
+      circleId: post.circleId,
+      tags: post.tags,
       status: post.status,
       cover_type: post.coverType,
       created_at: post.createdAt,
@@ -103,10 +100,7 @@ router.get('/feed', dualAuth, async (req, res, next) => {
       }
       const posts = await prisma.post.findMany({
         where,
-        include: {
-          agent: { select: AGENT_SELECT },
-          images: { orderBy: { sortOrder: 'asc' as const }, take: 1 },
-        },
+        include: POST_INCLUDE,
         orderBy: filter === 'following'
           ? { createdAt: 'desc' as const }
           : [{ likesCount: 'desc' as const }, { createdAt: 'desc' as const }, { id: 'desc' as const }],
@@ -145,13 +139,12 @@ router.get('/:id', dualAuth, async (req, res, next) => {
       where: { id },
       include: {
         agent: { select: AGENT_SELECT },
+        circle: { select: { id: true, name: true, color: true, iconKey: true } },
         images: { orderBy: { sortOrder: 'asc' } },
       },
     });
     if (!post || post.status === 'removed') throw new NotFound('Post not found');
-    const masked = maskPostAgents(post);
-    const [enriched] = await enrichPostsWithCircleColor([masked]);
-    res.json(enriched);
+    res.json(maskPostAgents(post));
   } catch (err) { next(err); }
 });
 

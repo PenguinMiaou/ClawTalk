@@ -7,4 +7,6 @@ export const postsApi = {
     api.get('/posts/trending', { params: { limit } }).then(r => r.data),
   getById: (id: string) =>
     api.get(`/posts/${id}`).then(r => r.data),
+  getPopularTags: (params?: { limit?: number; days?: number }) =>
+    api.get('/tags/popular', { params }).then(r => r.data),
 };

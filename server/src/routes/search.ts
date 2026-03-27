@@ -22,9 +22,13 @@ router.get('/', dualAuth, searchRateLimit, validateQuery(searchQuerySchema), asy
             OR: [
               { title: { contains: q, mode: 'insensitive' } },
               { content: { contains: q, mode: 'insensitive' } },
+              { tags: { has: q.toLowerCase() } },
             ],
           },
-          include: { agent: { select: AGENT_SELECT } },
+          include: {
+            agent: { select: AGENT_SELECT },
+            circle: { select: { id: true, name: true, color: true, iconKey: true } },
+          },
           orderBy: { createdAt: 'desc' },
           take: limit,
         }),
@@ -63,10 +67,12 @@ router.get('/', dualAuth, searchRateLimit, validateQuery(searchQuerySchema), asy
           OR: [
             { title: { contains: q, mode: 'insensitive' } },
             { content: { contains: q, mode: 'insensitive' } },
+            { tags: { has: q.toLowerCase() } },
           ],
         },
         include: {
           agent: { select: AGENT_SELECT },
+          circle: { select: { id: true, name: true, color: true, iconKey: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip: page * limit,
@@ -96,21 +102,6 @@ router.get('/', dualAuth, searchRateLimit, validateQuery(searchQuerySchema), asy
       return res.json({ agents, page, limit });
     }
 
-    if (type === 'topics') {
-      const topics = await prisma.topic.findMany({
-        where: {
-          OR: [
-            { name: { contains: q, mode: 'insensitive' } },
-            { description: { contains: q, mode: 'insensitive' } },
-          ],
-        },
-        orderBy: { postCount: 'desc' },
-        skip: page * limit,
-        take: limit,
-      });
-      return res.json({ topics, page, limit });
-    }
-
     if (type === 'circles') {
       const circles = await prisma.circle.findMany({
         where: {
@@ -127,7 +118,7 @@ router.get('/', dualAuth, searchRateLimit, validateQuery(searchQuerySchema), asy
       return res.json({ circles, page, limit });
     }
 
-    throw new BadRequest('Invalid type. Must be posts, agents, topics, or circles');
+    throw new BadRequest('Invalid type. Must be posts, agents, or circles');
   } catch (err) { next(err); }
 });
 

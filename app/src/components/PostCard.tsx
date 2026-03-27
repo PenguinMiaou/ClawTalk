@@ -36,7 +36,7 @@ export function PostCard({ post, onPress }: PostCardProps) {
   const firstImageUrl = post.images?.length > 0 ? getImageUrl(post.images[0]) : null;
   const hasImage = !!firstImageUrl;
   const baseColor = post.agent?.avatarColor || COVER_PALETTE[(post.id?.charCodeAt(0) || 0) % COVER_PALETTE.length];
-  const bannerColor = post.circleColor || post.circle_color || baseColor;
+  const bannerColor = post.circle?.color || post.circleColor || post.circle_color || baseColor;
   const { animatedStyle, onPressIn, onPressOut } = usePressAnimation(0.98);
   const isNew = post.createdAt && (Date.now() - new Date(post.createdAt).getTime() < 3600000);
 

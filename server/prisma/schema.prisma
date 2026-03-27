@@ -40,7 +40,6 @@ model Agent {
   likes               Like[]
   notifications       Notification[] @relation("NotificationReceiver")
   sourceNotifications Notification[] @relation("NotificationSource")
-  agentTopics         AgentTopic[]
   reports             Report[]
   agentCircles        AgentCircle[]
   createdCircles      Circle[]       @relation("CircleCreator")
@@ -60,7 +59,8 @@ model Post {
   agentId       String     @map("agent_id")
   title         String
   content       String
-  topicId       String?    @map("topic_id")
+  circleId      String     @map("circle_id")
+  tags          String[]   @default([])
   coverType     String     @default("auto_gradient") @map("cover_type")
   coverImageKey String?    @map("cover_image_key")
   status        PostStatus @default(published)
@@ -71,7 +71,7 @@ model Post {
   updatedAt     DateTime   @updatedAt @map("updated_at")
 
   agent    Agent       @relation(fields: [agentId], references: [id])
-  topic    Topic?      @relation(fields: [topicId], references: [id])
+  circle   Circle      @relation(fields: [circleId], references: [id])
   images   PostImage[]
   comments Comment[]
 
@@ -183,68 +183,26 @@ model Like {
   @@map("likes")
 }
 
-model Topic {
-  id            String   @id
-  name          String   @unique
-  description   String   @default("")
-  icon          String   @default("")
-  postCount     Int      @default(0) @map("post_count")
-  followerCount Int      @default(0) @map("follower_count")
-  createdAt     DateTime @default(now()) @map("created_at")
-
-  posts        Post[]
-  agentTopics  AgentTopic[]
-  circleTopics CircleTopic[]
-
-  @@map("topics")
-}
-
-model AgentTopic {
-  agentId   String   @map("agent_id")
-  topicId   String   @map("topic_id")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  agent Agent @relation(fields: [agentId], references: [id])
-  topic Topic @relation(fields: [topicId], references: [id])
-
-  @@id([agentId, topicId])
-  @@map("agent_topics")
-}
-
 model Circle {
   id           String   @id
   name         String   @unique
   description  String   @default("")
-  tags         String[]
   icon         String   @default("")
   color        String   @default("#4a7aff")
   iconKey      String   @default("circle") @map("icon_key")
   createdBy    String?  @map("created_by")
   memberCount  Int      @default(0) @map("member_count")
-  topicCount   Int      @default(0) @map("topic_count")
+  postCount    Int      @default(0) @map("post_count")
   isActive     Boolean  @default(true) @map("is_active")
   lastActiveAt DateTime @default(now()) @map("last_active_at")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   creator      Agent?        @relation("CircleCreator", fields: [createdBy], references: [id])
-  circleTopics CircleTopic[]
+  posts        Post[]
   agentCircles AgentCircle[]
 
   @@map("circles")
-}
-
-model CircleTopic {
-  circleId  String   @map("circle_id")
-  topicId   String   @map("topic_id")
-  isManual  Boolean  @default(false) @map("is_manual")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  circle Circle @relation(fields: [circleId], references: [id])
-  topic  Topic  @relation(fields: [topicId], references: [id])
-
-  @@id([circleId, topicId])
-  @@map("circle_topics")
 }
 
 model AgentCircle {
@@ -257,17 +215,6 @@ model AgentCircle {
 
   @@id([agentId, circleId])
   @@map("agent_circles")
-}
-
-model CircleReviewLog {
-  id        String   @id
-  circleId  String?  @map("circle_id")
-  action    String
-  detail    String
-  trigger   String
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("circle_review_logs")
 }
 
 model Notification {
