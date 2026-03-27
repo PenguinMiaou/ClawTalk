@@ -59,6 +59,33 @@ function formatDate(dateStr: string): string {
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
+/** Lightweight inline markdown: **bold** and *italic* */
+function MarkdownText({ text, style }: { text: string; style: any }) {
+  const parts: React.ReactNode[] = [];
+  // Split by **bold** and *italic* patterns
+  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(<Text key={key++}>{text.slice(lastIndex, match.index)}</Text>);
+    }
+    if (match[2]) {
+      // **bold**
+      parts.push(<Text key={key++} style={{ fontWeight: '700' }}>{match[2]}</Text>);
+    } else if (match[3]) {
+      // *italic*
+      parts.push(<Text key={key++} style={{ fontStyle: 'italic' }}>{match[3]}</Text>);
+    }
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    parts.push(<Text key={key++}>{text.slice(lastIndex)}</Text>);
+  }
+  return <Text style={style}>{parts}</Text>;
+}
+
 function AnimatedDot({ index, scrollX, pageWidth }: { index: number; scrollX: SharedValue<number>; pageWidth: number }) {
   const style = useAnimatedStyle(() => {
     const input = [(index - 1) * pageWidth, index * pageWidth, (index + 1) * pageWidth];
@@ -78,7 +105,7 @@ export function PostDetailScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { postId } = route.params as { postId: string };
-  const [commentPage, setCommentPage] = React.useState(1);
+  const [commentPage, setCommentPage] = React.useState(0);
 
   const scrollX = useSharedValue(0);
   const imageScrollHandler = useAnimatedScrollHandler({
@@ -127,7 +154,7 @@ export function PostDetailScreen() {
   const post = postQuery.data?.post ?? postQuery.data;
   const commentsData = commentsQuery.data;
   const comments: any[] = commentsData?.comments ?? commentsData?.data ?? (Array.isArray(commentsData) ? commentsData : []);
-  const hasMoreComments = commentsData?.nextPage != null;
+  const hasMoreComments = (commentsData?.comments?.length ?? 0) >= (commentsData?.limit ?? 20);
   const avatarColor = post?.agent?.avatarColor || colors.primary;
 
   if (postQuery.isLoading) {
@@ -158,30 +185,13 @@ export function PostDetailScreen() {
       </View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Cover banner */}
-        {(() => {
-          const bannerUrl = getImageUrl(post?.images?.[0]);
-          if (bannerUrl) {
-            // Image banner with title overlay
-            return (
-              <View style={styles.imageBanner}>
-                <Image source={{ uri: bannerUrl }} style={styles.imageBannerImg} resizeMode="cover" />
-                <View style={styles.imageBannerOverlay}>
-                  <Text style={styles.coverBannerTitle} numberOfLines={3}>{post?.title}</Text>
-                </View>
-              </View>
-            );
-          }
-          // Color banner for text posts
-          return (
-            <View style={[styles.coverBanner, { backgroundColor: avatarColor }]}>
-              <Text style={styles.coverBannerTitle} numberOfLines={3}>{post?.title}</Text>
-              <View style={styles.coverBannerDecor}>
-                <ShrimpAvatar color="#fff" size={28} />
-              </View>
-            </View>
-          );
-        })()}
+        {/* Color banner — always shown, same width as content */}
+        <View style={[styles.coverBanner, { backgroundColor: avatarColor }]}>
+          <Text style={styles.coverBannerTitle} numberOfLines={3}>{post?.title}</Text>
+          <View style={styles.coverBannerDecor}>
+            <ShrimpAvatar color="#fff" size={28} />
+          </View>
+        </View>
 
         {/* Agent info + date */}
         <TouchableOpacity
@@ -202,39 +212,49 @@ export function PostDetailScreen() {
         {/* Title */}
         {post?.title ? <Text style={styles.title}>{post.title}</Text> : null}
 
-        {/* Content */}
-        {post?.content ? <Text style={styles.content}>{post.content}</Text> : null}
-
-        {/* Images */}
-        {post?.images && post.images.length > 0 && (
-          <Animated.ScrollView
-            horizontal
-            onScroll={imageScrollHandler}
-            scrollEventThrottle={16}
-            showsHorizontalScrollIndicator={false}
-            style={styles.imageScroll}
-            contentContainerStyle={styles.imageScrollContent}
-          >
-            {post.images.map((img: any, i: number) => {
-              const url = getImageUrl(img);
-              return url ? (
-                <Image
-                  key={i}
-                  source={{ uri: url }}
-                  style={styles.postImage}
-                  resizeMode="cover"
-                />
-              ) : null;
-            })}
-          </Animated.ScrollView>
-        )}
+        {/* Images — between title and content */}
+        {post?.images && post.images.length === 1 && (() => {
+          const url = getImageUrl(post.images[0]);
+          return url ? (
+            <Image
+              source={{ uri: url }}
+              style={styles.singleImage}
+              resizeMode="cover"
+            />
+          ) : null;
+        })()}
         {post?.images && post.images.length > 1 && (
-          <View style={{ flexDirection: 'row', justifyContent: 'center', paddingVertical: 8 }}>
-            {post.images.map((_: any, i: number) => (
-              <AnimatedDot key={i} index={i} scrollX={scrollX} pageWidth={SCREEN_WIDTH * 0.75} />
-            ))}
-          </View>
+          <>
+            <Animated.ScrollView
+              horizontal
+              onScroll={imageScrollHandler}
+              scrollEventThrottle={16}
+              showsHorizontalScrollIndicator={false}
+              style={styles.imageScroll}
+              contentContainerStyle={styles.imageScrollContent}
+            >
+              {post.images.map((img: any, i: number) => {
+                const url = getImageUrl(img);
+                return url ? (
+                  <Image
+                    key={i}
+                    source={{ uri: url }}
+                    style={styles.postImage}
+                    resizeMode="cover"
+                  />
+                ) : null;
+              })}
+            </Animated.ScrollView>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', paddingVertical: 8 }}>
+              {post.images.map((_: any, i: number) => (
+                <AnimatedDot key={i} index={i} scrollX={scrollX} pageWidth={SCREEN_WIDTH * 0.75} />
+              ))}
+            </View>
+          </>
         )}
+
+        {/* Content — with basic markdown rendering */}
+        {post?.content ? <MarkdownText text={post.content} style={styles.content} /> : null}
 
         {/* Stats row */}
         <View style={styles.statsRow}>
@@ -332,32 +352,17 @@ const styles = StyleSheet.create({
   scroll: {
     flex: 1,
   },
-  imageBanner: {
-    width: '100%',
-    aspectRatio: 16 / 9,
-    position: 'relative',
-  },
-  imageBannerImg: {
-    width: '100%',
-    height: '100%',
-  },
-  imageBannerOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-  },
   coverBanner: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xxl,
-    paddingBottom: spacing.xl,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+    borderRadius: 12,
     position: 'relative',
   },
   coverBannerTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '800',
     color: '#fff',
     lineHeight: 30,
@@ -370,6 +375,13 @@ const styles = StyleSheet.create({
     bottom: 12,
     right: 16,
     opacity: 0.3,
+  },
+  singleImage: {
+    width: SCREEN_WIDTH - spacing.lg * 2,
+    aspectRatio: 4 / 3,
+    borderRadius: 10,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
   },
   agentRow: {
     flexDirection: 'row',
