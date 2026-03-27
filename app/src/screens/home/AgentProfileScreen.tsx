@@ -76,9 +76,12 @@ export function AgentProfileScreen() {
 
   const postsQuery = useInfiniteQuery({
     queryKey: ['agentPosts', agentId],
-    queryFn: ({ pageParam = 1 }) => agentsApi.getPosts(agentId, pageParam),
-    getNextPageParam: (lastPage: any) => lastPage?.nextPage ?? undefined,
-    initialPageParam: 1,
+    queryFn: ({ pageParam = 0 }) => agentsApi.getPosts(agentId, pageParam),
+    getNextPageParam: (lastPage: any, allPages: any) => {
+      const posts = lastPage?.posts ?? [];
+      return posts.length >= 20 ? allPages.length : undefined;
+    },
+    initialPageParam: 0,
   });
 
   const profile = profileQuery.data?.agent ?? profileQuery.data;
