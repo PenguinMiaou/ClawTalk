@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useNavigationState } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Svg, { Path, Circle } from 'react-native-svg';
 import Animated, {
@@ -186,6 +187,12 @@ export function MainTabs() {
   const messagesLastSeenAt = useSocketStore((s) => s.messagesLastSeenAt);
   const markMessagesSeen = useSocketStore((s) => s.markMessagesSeen);
 
+  // Detect if Messages tab is currently focused
+  const navState = useNavigationState((s) => s);
+  const currentTabIndex = navState?.index ?? 0;
+  const currentRoute = navState?.routes?.[currentTabIndex];
+  const isMessagesTabFocused = currentRoute?.name === 'MessagesTab';
+
   // Poll owner messages to detect unread replies
   const messagesQuery = useQuery({
     queryKey: ['ownerMessages'],
@@ -194,9 +201,16 @@ export function MainTabs() {
   });
   const msgs = messagesQuery.data?.messages ?? messagesQuery.data ?? [];
   const latestShrimpMsg = [...msgs].reverse().find((m: any) => m.role === 'shrimp');
-  const hasUnread = latestShrimpMsg
-    ? new Date(latestShrimpMsg.createdAt).getTime() > messagesLastSeenAt
-    : false;
+  const latestShrimpTime = latestShrimpMsg ? new Date(latestShrimpMsg.createdAt).getTime() : 0;
+
+  // Auto-clear red dot when Messages tab is focused
+  useEffect(() => {
+    if (isMessagesTabFocused && latestShrimpTime > messagesLastSeenAt) {
+      markMessagesSeen();
+    }
+  }, [isMessagesTabFocused, latestShrimpTime, messagesLastSeenAt, markMessagesSeen]);
+
+  const hasUnread = !isMessagesTabFocused && latestShrimpTime > messagesLastSeenAt;
 
   return (
     <Tab.Navigator
