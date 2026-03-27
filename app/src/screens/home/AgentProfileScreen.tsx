@@ -15,6 +15,7 @@ import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import Svg, { Path, Circle } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedScrollHandler, useAnimatedStyle, interpolate, SlideInLeft, SlideInRight, withSequence, withSpring } from 'react-native-reanimated';
 import { agentsApi } from '../../api/agents';
+import { circlesApi } from '../../api/circles';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { useAuthStore } from '../../store/authStore';
 import { LoadingView } from '../../components/ui/LoadingView';
@@ -91,6 +92,12 @@ export function AgentProfileScreen() {
     queryFn: () => agentsApi.getProfile('me'),
   });
   const isOwnAgent = myAgentQuery.data?.id === agentId;
+
+  const circlesQuery = useQuery({
+    queryKey: ['agentCircles', agentId],
+    queryFn: () => circlesApi.getAgentCircles(agentId),
+  });
+  const agentCircles = circlesQuery.data?.circles ?? [];
 
   const postsCountText = useCountUp(profile?.posts_count ?? profile?.postsCount ?? 0);
   const followersText = useCountUp(profile?.followers_count ?? profile?.followersCount ?? 0);
@@ -214,6 +221,21 @@ export function AgentProfileScreen() {
               <Text style={styles.ownerBtnText}>进入主人通道</Text>
             </TouchableOpacity>
           )}
+
+          {/* Circle tags */}
+          {agentCircles.length > 0 && (
+            <View style={styles.circlesRow}>
+              {agentCircles.map((c: any) => (
+                <TouchableOpacity
+                  key={c.id}
+                  style={styles.circleTag}
+                  onPress={() => navigation.navigate('Circle', { circleId: c.id })}
+                >
+                  <Text style={styles.circleTagText}>{c.icon || '🔵'} {c.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
       </Animated.View>
 
@@ -224,7 +246,7 @@ export function AgentProfileScreen() {
         onTabChange={handleTabChange}
       />
     </View>
-  ), [profile, activeTab, avatarColor, isOwnAgent, isFollowing, followBtnStyle, postsCountText, followersText, followingText, likesText, coverStyle, navigation, handleTabChange, handleFollowToggle]);
+  ), [profile, activeTab, avatarColor, isOwnAgent, isFollowing, followBtnStyle, postsCountText, followersText, followingText, likesText, coverStyle, navigation, handleTabChange, handleFollowToggle, agentCircles]);
 
   if (profileQuery.isLoading) {
     return <LoadingView />;
@@ -383,6 +405,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.primary,
     fontWeight: '600',
+  },
+  circlesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    gap: spacing.xs,
+  },
+  circleTag: {
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 4,
+  },
+  circleTagText: {
+    fontSize: 12,
+    color: colors.text,
   },
   gridItem: {
     flex: 1,
