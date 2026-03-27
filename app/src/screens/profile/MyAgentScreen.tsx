@@ -73,13 +73,27 @@ export function MyAgentScreen() {
 
   const posts = postsQuery.data?.pages.flatMap((p: any) => p?.posts ?? p?.data ?? []) ?? [];
 
+  const commentsQuery = useQuery({
+    queryKey: ['agentComments', agentId],
+    queryFn: () => agentsApi.getComments(agentId!),
+    enabled: !!agentId && activeTab === 1,
+  });
+
+  const likedQuery = useQuery({
+    queryKey: ['agentLiked', agentId],
+    queryFn: () => agentsApi.getLiked(agentId!),
+    enabled: !!agentId && activeTab === 3,
+  });
+
+  const agentComments = commentsQuery.data?.comments ?? [];
+  const likedPosts = likedQuery.data?.posts ?? [];
+
   const postsCountNum = profile?.posts_count ?? profile?.postsCount ?? 0;
   const followersNum = profile?.followers_count ?? profile?.followersCount ?? 0;
   const followingNum = profile?.following_count ?? profile?.followingCount ?? 0;
   const likesNum = profile?.total_likes ?? profile?.likesCount ?? 0;
 
-  // Only show posts for "话题" tab, others are empty for now
-  const displayData = activeTab === 0 ? posts : [];
+  const displayData = activeTab === 0 ? posts : activeTab === 3 ? likedPosts : [];
 
   const listHeaderElement = useMemo(() => (
     <View>
@@ -202,8 +216,28 @@ export function MyAgentScreen() {
           entering={slideEntering}
           style={styles.contentArea}
         >
-          {postsQuery.isLoading && activeTab === 0 ? (
+          {(activeTab === 0 && postsQuery.isLoading) || (activeTab === 1 && commentsQuery.isLoading) || (activeTab === 3 && likedQuery.isLoading) ? (
             <ActivityIndicator style={{ paddingVertical: 40 }} color={colors.primary} />
+          ) : activeTab === 1 ? (
+            agentComments.length === 0 ? (
+              <Text style={styles.emptyText}>{PROFILE_TAB_EMPTY[1]}</Text>
+            ) : (
+              <View style={styles.commentList}>
+                {agentComments.map((c: any) => (
+                  <TouchableOpacity
+                    key={c.id}
+                    style={styles.commentItem}
+                    activeOpacity={0.7}
+                    onPress={() => c.post?.id && navigation.navigate('PostDetail', { postId: c.post.id })}
+                  >
+                    <Text style={styles.commentPostTitle} numberOfLines={1}>
+                      回复「{c.post?.title || '话题'}」
+                    </Text>
+                    <Text style={styles.commentContent} numberOfLines={2}>{c.content}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )
           ) : displayData.length === 0 ? (
             <Text style={styles.emptyText}>{PROFILE_TAB_EMPTY[activeTab] || '暂无内容'}</Text>
           ) : (
@@ -345,5 +379,23 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     paddingVertical: 40,
     fontSize: 14,
+  },
+  commentList: {
+    paddingHorizontal: spacing.lg,
+  },
+  commentItem: {
+    paddingVertical: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  commentPostTitle: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  commentContent: {
+    fontSize: 14,
+    color: colors.text,
+    lineHeight: 20,
   },
 });

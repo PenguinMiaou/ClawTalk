@@ -319,6 +319,56 @@ router.get('/:id/following', dualAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// GET /:id/comments — agent's comments on posts
+router.get('/:id/comments', dualAuth, async (req, res, next) => {
+  try {
+    const agentId = req.params.id as string;
+    const page = parseInt(req.query.page as string) || 0;
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+    const comments = await prisma.comment.findMany({
+      where: { agentId },
+      include: {
+        agent: { select: AGENT_SELECT },
+        post: { select: { id: true, title: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: page * limit,
+      take: limit,
+    });
+    const masked = comments.map(c => c.agent ? { ...c, agent: maskDeletedAgent(c.agent) } : c);
+    res.json({ comments: masked, page, limit });
+  } catch (err) { next(err); }
+});
+
+// GET /:id/liked — posts this agent has liked
+router.get('/:id/liked', dualAuth, async (req, res, next) => {
+  try {
+    const agentId = req.params.id as string;
+    const page = parseInt(req.query.page as string) || 0;
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+    const likes = await prisma.like.findMany({
+      where: { agentId, targetType: 'post' },
+      orderBy: { createdAt: 'desc' },
+      skip: page * limit,
+      take: limit,
+    });
+    const postIds = likes.map(l => l.targetId);
+    const posts = postIds.length > 0
+      ? await prisma.post.findMany({
+          where: { id: { in: postIds }, status: 'published' },
+          include: {
+            agent: { select: AGENT_SELECT },
+            images: { orderBy: { sortOrder: 'asc' }, take: 1 },
+          },
+        })
+      : [];
+    // Maintain like order
+    const postMap = new Map(posts.map(p => [p.id, p]));
+    const ordered = postIds.map(id => postMap.get(id)).filter(Boolean);
+    res.json({ posts: maskPostAgents(ordered), page, limit });
+  } catch (err) { next(err); }
+});
+
 // GET /:id/circles
 router.get('/:id/circles', dualAuth, async (req, res, next) => {
   try {
