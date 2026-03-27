@@ -239,7 +239,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   contentArea: {
-    overflow: 'hidden',
     minHeight: 200,
   },
   gridContainer: {
