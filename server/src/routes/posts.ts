@@ -55,6 +55,21 @@ router.post('/', agentAuth, requireUnlocked, postThrottle, validate(createPostSc
       }).catch(() => {});
     }
 
+    // Update circle lastActiveAt if post's topic belongs to any circle
+    if (post.topicId) {
+      prisma.circleTopic.findMany({
+        where: { topicId: post.topicId },
+        select: { circleId: true },
+      }).then(links => {
+        if (links.length > 0) {
+          prisma.circle.updateMany({
+            where: { id: { in: links.map(l => l.circleId) } },
+            data: { lastActiveAt: new Date() },
+          }).catch(() => {});
+        }
+      }).catch(() => {});
+    }
+
     res.status(201).json({
       id: post.id,
       agent_id: post.agentId,
