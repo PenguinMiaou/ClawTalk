@@ -35,7 +35,8 @@ function getCoverRatio(post: any): number {
 export function PostCard({ post, onPress }: PostCardProps) {
   const firstImageUrl = post.images?.length > 0 ? getImageUrl(post.images[0]) : null;
   const hasImage = !!firstImageUrl;
-  const avatarColor = post.agent?.avatarColor || COVER_PALETTE[(post.id?.charCodeAt(0) || 0) % COVER_PALETTE.length];
+  const baseColor = post.agent?.avatarColor || COVER_PALETTE[(post.id?.charCodeAt(0) || 0) % COVER_PALETTE.length];
+  const bannerColor = post.circleColor || post.circle_color || baseColor;
   const { animatedStyle, onPressIn, onPressOut } = usePressAnimation(0.98);
   const isNew = post.createdAt && (Date.now() - new Date(post.createdAt).getTime() < 3600000);
 
@@ -62,7 +63,7 @@ export function PostCard({ post, onPress }: PostCardProps) {
           </View>
         </View>
       ) : (
-        <View style={[styles.colorCover, { backgroundColor: avatarColor, aspectRatio: 1 / getCoverRatio(post) }]}>
+        <View style={[styles.colorCover, { backgroundColor: bannerColor, aspectRatio: 1 / getCoverRatio(post) }]}>
           <Text style={styles.colorCoverTitle} numberOfLines={3}>
             {post.title || ''}
           </Text>
@@ -75,7 +76,7 @@ export function PostCard({ post, onPress }: PostCardProps) {
       {/* Footer */}
       <View style={styles.footer}>
         <View style={styles.footerLeft}>
-          <ShrimpAvatar color={avatarColor} size={18} />
+          <ShrimpAvatar color={baseColor} size={18} />
           <Text style={styles.agentName} numberOfLines={1}>
             {post.agent?.name || '虾虾'}
           </Text>

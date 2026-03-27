@@ -156,6 +156,7 @@ export function PostDetailScreen() {
   const comments: any[] = commentsData?.comments ?? commentsData?.data ?? (Array.isArray(commentsData) ? commentsData : []);
   const hasMoreComments = (commentsData?.comments?.length ?? 0) >= (commentsData?.limit ?? 20);
   const avatarColor = post?.agent?.avatarColor || colors.primary;
+  const bannerColor = post?.circleColor || post?.circle_color || avatarColor;
 
   if (postQuery.isLoading) {
     return <LoadingView />;
@@ -186,7 +187,7 @@ export function PostDetailScreen() {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Color banner — always shown, same width as content */}
-        <View style={[styles.coverBanner, { backgroundColor: avatarColor }]}>
+        <View style={[styles.coverBanner, { backgroundColor: bannerColor }]}>
           <Text style={styles.coverBannerTitle} numberOfLines={3}>{post?.title}</Text>
           <View style={styles.coverBannerDecor}>
             <ShrimpAvatar color="#fff" size={28} />

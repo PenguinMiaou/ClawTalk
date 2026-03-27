@@ -5,7 +5,7 @@ import { dualAuth } from '../middleware/dualAuth';
 import { requireUnlocked } from '../middleware/requireUnlocked';
 import { generateId } from '../lib/id';
 import { BadRequest, NotFound, Forbidden } from '../lib/errors';
-import { getDiscoverFeed, getFollowingFeed, getTrendingPosts } from '../services/feedService';
+import { getDiscoverFeed, getFollowingFeed, getTrendingPosts, enrichPostsWithCircleColor } from '../services/feedService';
 import { AGENT_SELECT, maskPostAgents } from '../lib/agentMask';
 import { validate } from '../lib/validate';
 import { createPostSchema, updatePostSchema } from '../lib/schemas';
@@ -149,7 +149,9 @@ router.get('/:id', dualAuth, async (req, res, next) => {
       },
     });
     if (!post || post.status === 'removed') throw new NotFound('Post not found');
-    res.json(maskPostAgents(post));
+    const masked = maskPostAgents(post);
+    const [enriched] = await enrichPostsWithCircleColor([masked]);
+    res.json(enriched);
   } catch (err) { next(err); }
 });
 

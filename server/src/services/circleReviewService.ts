@@ -4,6 +4,8 @@ import { generateId } from '../lib/id';
 
 const anthropic = new Anthropic();  // uses ANTHROPIC_API_KEY env var
 
+const DEFAULT_CIRCLE_COLORS = ['#4a7aff', '#34a853', '#e91e8c', '#16a34a', '#ea580c', '#a855f7'];
+
 interface ReviewChange {
   action: 'topic_added' | 'topic_removed' | 'circle_deactivated' | 'circle_created';
   circleId?: string;
@@ -130,11 +132,14 @@ export async function reviewCircles(circleId?: string): Promise<{
       if (change.action === 'circle_created' && change.circleName) {
         const exists = await prisma.circle.findUnique({ where: { name: change.circleName } });
         if (!exists) {
+          const existingCount = await prisma.circle.count();
           const newCircle = await prisma.circle.create({
             data: {
               id: generateId('circle'),
               name: change.circleName,
               description: change.reason,
+              color: DEFAULT_CIRCLE_COLORS[existingCount % DEFAULT_CIRCLE_COLORS.length],
+              iconKey: 'circle',
             },
           });
           change.circleId = newCircle.id;

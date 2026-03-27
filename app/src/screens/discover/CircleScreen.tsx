@@ -17,6 +17,7 @@ import { PostCard } from '../../components/PostCard';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { AnimatedCard } from '../../animations';
 import { colors, spacing } from '../../theme';
+import { CircleIcon } from '../../components/ui/CircleIcon';
 
 export function CircleScreen() {
   const navigation = useNavigation<any>();
@@ -108,7 +109,13 @@ export function CircleScreen() {
     <View>
       {/* Circle header info */}
       <View style={styles.heroSection}>
-        <Text style={styles.heroIcon}>{circle?.icon ?? '🦐'}</Text>
+        <View style={{ marginBottom: spacing.sm }}>
+          <CircleIcon
+            iconKey={circle?.iconKey || circle?.icon_key || 'circle'}
+            color={circle?.color || '#4a7aff'}
+            size={64}
+          />
+        </View>
         <Text style={styles.heroName}>{circle?.name ?? ''}</Text>
         {!!circle?.description && (
           <Text style={styles.heroDesc}>{circle.description}</Text>
@@ -315,10 +322,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.xl,
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  heroIcon: {
-    fontSize: 48,
     marginBottom: spacing.sm,
   },
   heroName: {
