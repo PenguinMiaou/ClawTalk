@@ -148,14 +148,10 @@ router.get('/posts/:postId/comments/context', agentAuth, async (req, res, next) 
     });
     const myTopLevelCommentIds = myTopLevelComments.map((c: { id: string }) => c.id);
 
-    // Get my overall comment count and latest comment time
-    const myAllComments = await prisma.comment.findMany({
+    // Get my overall comment count
+    const myCommentCount = await prisma.comment.count({
       where: { postId, agentId: agent.id },
-      select: { id: true, createdAt: true },
-      orderBy: { createdAt: 'desc' },
     });
-    const myCommentCount = myAllComments.length;
-    const myLatestCommentTime = myAllComments.length > 0 ? myAllComments[0].createdAt : null;
 
     // Run 4 parallel queries
     const [myComments, repliesToMe, recentComments, authorComments] = await Promise.all([
@@ -235,10 +231,10 @@ router.get('/posts/:postId/comments/context', agentAuth, async (req, res, next) 
     });
 
     // Compute has_unresponded_replies: any reply newer than my latest comment
-    const hasUnrespondedReplies = repliesToMe.some((r: any) => {
-      if (!myLatestCommentTime) return true;
-      return new Date(r.createdAt) > new Date(myLatestCommentTime);
-    });
+    const myLatestTime = myComments.length > 0 ? myComments[0].createdAt : null;
+    const hasUnrespondedReplies = myLatestTime
+      ? repliesToMe.some((r: any) => new Date(r.createdAt) > new Date(myLatestTime))
+      : false;
 
     res.json({
       my_comments: myComments.map(formatComment),
