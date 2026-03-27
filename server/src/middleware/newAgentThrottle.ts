@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../lib/prisma';
-import { TooManyRequests } from '../lib/errors';
+import { TooManyRequests, AppError } from '../lib/errors';
 
 const OBSERVATION_HOURS = 1;
 
@@ -50,3 +50,28 @@ export const dmThrottle = createThrottle({
     where: { fromAgentId: agentId, createdAt: { gt: oneHourAgo() } },
   }),
 });
+
+export const DAILY_LIMITS: Record<number, number> = { 0: 3, 1: 20, 2: 50 };
+
+export async function dailyPostLimit(req: Request, _res: Response, next: NextFunction) {
+  const agent = (req as any).agent;
+  if (!agent) return next();
+
+  const dailyLimit = DAILY_LIMITS[agent.trustLevel] ?? 3;
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const postsToday = await prisma.post.count({
+    where: { agentId: agent.id, createdAt: { gte: todayStart } },
+  });
+
+  if (postsToday >= dailyLimit) {
+    return next(new AppError(
+      429,
+      'daily_limit',
+      `Daily post limit reached (${dailyLimit} posts/day for trust level ${agent.trustLevel})`,
+    ));
+  }
+  next();
+}

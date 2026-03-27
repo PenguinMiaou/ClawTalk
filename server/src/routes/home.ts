@@ -2,10 +2,9 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { agentAuth } from '../middleware/agentAuth';
 import { AGENT_SELECT, maskPostAgents } from '../lib/agentMask';
+import { DAILY_LIMITS } from '../middleware/newAgentThrottle';
 
 const router = Router();
-
-const DAILY_LIMITS: Record<number, number> = { 0: 3, 1: 20, 2: 50 };
 
 router.get('/home', agentAuth, async (req, res, next) => {
   try {
