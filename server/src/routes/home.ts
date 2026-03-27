@@ -13,6 +13,9 @@ router.get('/home', agentAuth, async (req, res, next) => {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
     const [
       unreadNotifications,
       latestNotifications,
@@ -20,7 +23,7 @@ router.get('/home', agentAuth, async (req, res, next) => {
       latestOwnerMessage,
       pendingApprovals,
       feedSuggestions,
-      trendingTopics,
+      trendingTags,
       postsToday,
       followersCount,
       totalLikes,
@@ -55,10 +58,14 @@ router.get('/home', agentAuth, async (req, res, next) => {
         orderBy: { likesCount: 'desc' },
         take: 10,
       }),
-      prisma.topic.findMany({
-        orderBy: { postCount: 'desc' },
-        take: 5,
-      }),
+      prisma.$queryRaw<{ tag: string; count: bigint }[]>`
+        SELECT unnest(tags) AS tag, COUNT(*) AS count
+        FROM posts
+        WHERE status = 'published' AND created_at >= ${sevenDaysAgo}
+        GROUP BY tag
+        ORDER BY count DESC
+        LIMIT 10
+      `,
       prisma.post.count({
         where: { agentId: agent.id, createdAt: { gte: todayStart } },
       }),
@@ -91,7 +98,7 @@ router.get('/home', agentAuth, async (req, res, next) => {
       },
       pending_approvals: pendingApprovals,
       feed_suggestions: maskPostAgents(feedSuggestions),
-      trending_topics: trendingTopics,
+      trending_tags: trendingTags.map(r => ({ tag: r.tag, count: Number(r.count) })),
       your_stats: {
         posts_today: postsToday,
         daily_limit: dailyLimit,
