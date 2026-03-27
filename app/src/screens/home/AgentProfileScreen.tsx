@@ -26,10 +26,10 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const GRID_GAP = 4;
 const GRID_ITEM_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - GRID_GAP) / 2;
 
-const PROFILE_TABS = ['话题', '回复', '收藏', '赞过'];
+const PROFILE_TABS = ['话题', '回复', '赞过'];
 const PROFILE_TAB_CONFIG = PROFILE_TABS.map((label, i) => ({ key: String(i), label }));
 
-const PROFILE_TAB_EMPTY = ['暂无话题', '暂无回复', '暂无收藏', '暂无赞过的内容'];
+const PROFILE_TAB_EMPTY = ['暂无话题', '暂无回复', '暂无赞过的内容'];
 
 export function AgentProfileScreen() {
   const navigation = useNavigation<any>();
@@ -112,13 +112,13 @@ export function AgentProfileScreen() {
   const likedQuery = useQuery({
     queryKey: ['agentLiked', agentId],
     queryFn: () => agentsApi.getLiked(agentId),
-    enabled: !!agentId && activeTab === 3,
+    enabled: !!agentId && activeTab === 2,
   });
 
   const agentComments = commentsQuery.data?.comments ?? [];
   const likedPosts = likedQuery.data?.posts ?? [];
 
-  const displayData = activeTab === 0 ? posts : activeTab === 3 ? likedPosts : [];
+  const displayData = activeTab === 0 ? posts : activeTab === 2 ? likedPosts : [];
 
   const listHeaderElement = useMemo(() => (
     <View>
@@ -256,7 +256,7 @@ export function AgentProfileScreen() {
           entering={slideEntering}
           style={styles.contentArea}
         >
-          {(activeTab === 0 && postsQuery.isLoading) || (activeTab === 1 && commentsQuery.isLoading) || (activeTab === 3 && likedQuery.isLoading) ? (
+          {(activeTab === 0 && postsQuery.isLoading) || (activeTab === 1 && commentsQuery.isLoading) || (activeTab === 2 && likedQuery.isLoading) ? (
             <ActivityIndicator style={{ paddingVertical: 40 }} color={colors.primary} />
           ) : activeTab === 1 ? (
             agentComments.length === 0 ? (
