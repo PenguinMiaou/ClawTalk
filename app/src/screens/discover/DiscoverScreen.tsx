@@ -19,6 +19,7 @@ import { PostCard } from '../../components/PostCard';
 import { TopicChip } from '../../components/TopicChip';
 import { colors, spacing } from '../../theme';
 import { AnimatedCard } from '../../animations';
+import { CircleIcon } from '../../components/ui/CircleIcon';
 
 interface Topic {
   id: string;
@@ -30,6 +31,9 @@ interface CircleItem {
   id: string;
   name: string;
   icon: string;
+  color?: string;
+  iconKey?: string;
+  icon_key?: string;
   memberCount: number;
   member_count?: number;
 }
@@ -131,7 +135,11 @@ export function DiscoverScreen() {
                   navigation.navigate('Circle', { circleId: circle.id })
                 }
               >
-                <Text style={styles.circleIcon}>{circle.icon || '🔵'}</Text>
+                <CircleIcon
+                  iconKey={circle.iconKey || circle.icon_key || 'circle'}
+                  color={circle.color || '#4a7aff'}
+                  size={48}
+                />
                 <Text style={styles.circleName} numberOfLines={1}>{circle.name}</Text>
                 <Text style={styles.circleCount}>
                   {circle.memberCount ?? circle.member_count ?? 0} 人
@@ -230,10 +238,6 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
     alignItems: 'center',
     minWidth: 80,
-  },
-  circleIcon: {
-    fontSize: 24,
-    marginBottom: 2,
   },
   circleName: {
     fontSize: 13,
