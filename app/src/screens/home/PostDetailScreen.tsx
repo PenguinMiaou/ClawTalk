@@ -158,30 +158,13 @@ export function PostDetailScreen() {
       </View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Cover banner */}
-        {(() => {
-          const bannerUrl = getImageUrl(post?.images?.[0]);
-          if (bannerUrl) {
-            // Image banner with title overlay
-            return (
-              <View style={styles.imageBanner}>
-                <Image source={{ uri: bannerUrl }} style={styles.imageBannerImg} resizeMode="cover" />
-                <View style={styles.imageBannerOverlay}>
-                  <Text style={styles.coverBannerTitle} numberOfLines={3}>{post?.title}</Text>
-                </View>
-              </View>
-            );
-          }
-          // Color banner for text posts
-          return (
-            <View style={[styles.coverBanner, { backgroundColor: avatarColor }]}>
-              <Text style={styles.coverBannerTitle} numberOfLines={3}>{post?.title}</Text>
-              <View style={styles.coverBannerDecor}>
-                <ShrimpAvatar color="#fff" size={28} />
-              </View>
-            </View>
-          );
-        })()}
+        {/* Color banner — always shown, same width as content */}
+        <View style={[styles.coverBanner, { backgroundColor: avatarColor }]}>
+          <Text style={styles.coverBannerTitle} numberOfLines={3}>{post?.title}</Text>
+          <View style={styles.coverBannerDecor}>
+            <ShrimpAvatar color="#fff" size={28} />
+          </View>
+        </View>
 
         {/* Agent info + date */}
         <TouchableOpacity
@@ -206,34 +189,45 @@ export function PostDetailScreen() {
         {post?.content ? <Text style={styles.content}>{post.content}</Text> : null}
 
         {/* Images */}
-        {post?.images && post.images.length > 0 && (
-          <Animated.ScrollView
-            horizontal
-            onScroll={imageScrollHandler}
-            scrollEventThrottle={16}
-            showsHorizontalScrollIndicator={false}
-            style={styles.imageScroll}
-            contentContainerStyle={styles.imageScrollContent}
-          >
-            {post.images.map((img: any, i: number) => {
-              const url = getImageUrl(img);
-              return url ? (
-                <Image
-                  key={i}
-                  source={{ uri: url }}
-                  style={styles.postImage}
-                  resizeMode="cover"
-                />
-              ) : null;
-            })}
-          </Animated.ScrollView>
-        )}
+        {/* Images — full width for single, carousel for multiple */}
+        {post?.images && post.images.length === 1 && (() => {
+          const url = getImageUrl(post.images[0]);
+          return url ? (
+            <Image
+              source={{ uri: url }}
+              style={styles.singleImage}
+              resizeMode="cover"
+            />
+          ) : null;
+        })()}
         {post?.images && post.images.length > 1 && (
-          <View style={{ flexDirection: 'row', justifyContent: 'center', paddingVertical: 8 }}>
-            {post.images.map((_: any, i: number) => (
-              <AnimatedDot key={i} index={i} scrollX={scrollX} pageWidth={SCREEN_WIDTH * 0.75} />
-            ))}
-          </View>
+          <>
+            <Animated.ScrollView
+              horizontal
+              onScroll={imageScrollHandler}
+              scrollEventThrottle={16}
+              showsHorizontalScrollIndicator={false}
+              style={styles.imageScroll}
+              contentContainerStyle={styles.imageScrollContent}
+            >
+              {post.images.map((img: any, i: number) => {
+                const url = getImageUrl(img);
+                return url ? (
+                  <Image
+                    key={i}
+                    source={{ uri: url }}
+                    style={styles.postImage}
+                    resizeMode="cover"
+                  />
+                ) : null;
+              })}
+            </Animated.ScrollView>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', paddingVertical: 8 }}>
+              {post.images.map((_: any, i: number) => (
+                <AnimatedDot key={i} index={i} scrollX={scrollX} pageWidth={SCREEN_WIDTH * 0.75} />
+              ))}
+            </View>
+          </>
         )}
 
         {/* Stats row */}
@@ -332,28 +326,13 @@ const styles = StyleSheet.create({
   scroll: {
     flex: 1,
   },
-  imageBanner: {
-    width: '100%',
-    aspectRatio: 16 / 9,
-    position: 'relative',
-  },
-  imageBannerImg: {
-    width: '100%',
-    height: '100%',
-  },
-  imageBannerOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-  },
   coverBanner: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.xxl,
     paddingBottom: spacing.xl,
+    borderRadius: 12,
     position: 'relative',
   },
   coverBannerTitle: {
@@ -370,6 +349,13 @@ const styles = StyleSheet.create({
     bottom: 12,
     right: 16,
     opacity: 0.3,
+  },
+  singleImage: {
+    width: SCREEN_WIDTH - spacing.lg * 2,
+    aspectRatio: 4 / 3,
+    borderRadius: 10,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
   },
   agentRow: {
     flexDirection: 'row',
