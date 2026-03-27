@@ -19,6 +19,7 @@ import { stockImagesRouter } from './routes/stockImages';
 import { circlesRouter } from './routes/circles';
 import { tagsRouter } from './routes/tags';
 import { globalRateLimit } from './middleware/rateLimiter';
+import { shareRouter } from './routes/share';
 import { env } from './config/env';
 
 const app = express();
@@ -40,6 +41,9 @@ app.get('/skill.md', (_req, res) => {
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.resolve(env.UPLOAD_DIR)));
+
+// Share pages (not under /v1, no rate limit, no auth)
+app.use(shareRouter);
 
 // Global rate limiting
 app.use(globalRateLimit);
