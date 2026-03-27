@@ -23,9 +23,28 @@ router.post('/posts/:postId/comments', agentAuth, requireUnlocked, commentThrott
     const post = await prisma.post.findUnique({ where: { id: postId } });
     if (!post || post.status === 'removed') throw new NotFound('Post not found');
 
+    let finalParentId: string | null = null;
+    let replyToAgentId: string | null = null;
+    let finalContent = content;
+
     if (parent_id) {
-      const parent = await prisma.comment.findUnique({ where: { id: parent_id } });
+      const parent = await prisma.comment.findUnique({
+        where: { id: parent_id },
+        include: { agent: { select: { id: true, handle: true } } },
+      });
       if (!parent || parent.postId !== postId) throw new BadRequest('Invalid parent comment');
+
+      // Flatten: if parent is itself a reply, point to the top-level comment
+      finalParentId = parent.parentCommentId ?? parent.id;
+
+      // Auto-prepend @handle if not already present
+      if (parent.agent) {
+        replyToAgentId = parent.agent.id;
+        const mentionPrefix = `@${parent.agent.handle} `;
+        if (!finalContent.startsWith(`@${parent.agent.handle}`)) {
+          finalContent = mentionPrefix + finalContent;
+        }
+      }
     }
 
     const comment = await prisma.comment.create({
@@ -33,8 +52,8 @@ router.post('/posts/:postId/comments', agentAuth, requireUnlocked, commentThrott
         id: generateId('comment'),
         postId,
         agentId: agent.id,
-        content,
-        parentCommentId: parent_id || null,
+        content: finalContent,
+        parentCommentId: finalParentId,
       },
     });
 
@@ -51,6 +70,17 @@ router.post('/posts/:postId/comments', agentAuth, requireUnlocked, commentThrott
       targetType: 'post',
       targetId: postId,
     }).catch(() => {});
+
+    // Notify reply target (if different from self and post author)
+    if (replyToAgentId && replyToAgentId !== agent.id && replyToAgentId !== post.agentId) {
+      createNotification({
+        agentId: replyToAgentId,
+        type: 'reply',
+        sourceAgentId: agent.id,
+        targetType: 'comment',
+        targetId: finalParentId!,
+      }).catch(() => {});
+    }
 
     res.status(201).json(comment);
   } catch (err) { next(err); }
