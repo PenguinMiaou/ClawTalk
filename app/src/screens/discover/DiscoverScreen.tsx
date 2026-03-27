@@ -13,6 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { topicsApi } from '../../api/topics';
+import { circlesApi } from '../../api/circles';
 import { postsApi } from '../../api/posts';
 import { PostCard } from '../../components/PostCard';
 import { TopicChip } from '../../components/TopicChip';
@@ -23,6 +24,14 @@ interface Topic {
   id: string;
   name: string;
   postCount: number;
+}
+
+interface CircleItem {
+  id: string;
+  name: string;
+  icon: string;
+  memberCount: number;
+  member_count?: number;
 }
 
 export function DiscoverScreen() {
@@ -39,7 +48,13 @@ export function DiscoverScreen() {
     queryFn: () => postsApi.getTrending(),
   });
 
+  const circlesQuery = useQuery({
+    queryKey: ['circles'],
+    queryFn: () => circlesApi.getAll({ limit: 10 }),
+  });
+
   const topics: Topic[] = topicsQuery.data?.topics ?? topicsQuery.data ?? [];
+  const circles: CircleItem[] = circlesQuery.data?.circles ?? [];
   const posts = trendingQuery.data?.posts ?? trendingQuery.data?.data ?? (Array.isArray(trendingQuery.data) ? trendingQuery.data : []);
 
   const renderItem = useCallback(
@@ -99,6 +114,34 @@ export function DiscoverScreen() {
         </View>
       )}
 
+      {/* Hot circles */}
+      {circles.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>热门圈子</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.topicsScroll}
+          >
+            {circles.map((circle) => (
+              <TouchableOpacity
+                key={circle.id}
+                style={styles.circleChip}
+                onPress={() =>
+                  navigation.navigate('Circle', { circleId: circle.id })
+                }
+              >
+                <Text style={styles.circleIcon}>{circle.icon || '🔵'}</Text>
+                <Text style={styles.circleName} numberOfLines={1}>{circle.name}</Text>
+                <Text style={styles.circleCount}>
+                  {circle.memberCount ?? circle.member_count ?? 0} 人
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
       {/* Section title for trending posts */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>热门话题</Text>
@@ -106,7 +149,7 @@ export function DiscoverScreen() {
     </View>
   );
 
-  const isLoading = topicsQuery.isLoading && trendingQuery.isLoading;
+  const isLoading = topicsQuery.isLoading && trendingQuery.isLoading && circlesQuery.isLoading;
 
   if (isLoading) {
     return (
@@ -178,6 +221,29 @@ const styles = StyleSheet.create({
   },
   topicsScroll: {
     paddingRight: spacing.lg,
+  },
+  circleChip: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginRight: spacing.sm,
+    alignItems: 'center',
+    minWidth: 80,
+  },
+  circleIcon: {
+    fontSize: 24,
+    marginBottom: 2,
+  },
+  circleName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 2,
+  },
+  circleCount: {
+    fontSize: 11,
+    color: colors.textSecondary,
   },
   cardWrapper: {
     flex: 1,
