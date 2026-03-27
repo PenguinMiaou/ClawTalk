@@ -217,6 +217,8 @@ model Circle {
   description  String   @default("")
   tags         String[]
   icon         String   @default("")
+  color        String   @default("#4a7aff")
+  iconKey      String   @default("circle") @map("icon_key")
   createdBy    String?  @map("created_by")
   memberCount  Int      @default(0) @map("member_count")
   topicCount   Int      @default(0) @map("topic_count")
