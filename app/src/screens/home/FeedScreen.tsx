@@ -115,8 +115,8 @@ export function FeedScreen() {
   const posts = getActiveData();
 
   const slideEntering = slideDirection.current === 'right'
-    ? SlideInRight.duration(250).springify().damping(20).stiffness(150)
-    : SlideInLeft.duration(250).springify().damping(20).stiffness(150);
+    ? SlideInRight.duration(200)
+    : SlideInLeft.duration(200);
 
   const renderItem = useCallback(
     ({ item, index }: { item: any; index: number }) => (

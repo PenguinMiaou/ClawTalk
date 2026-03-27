@@ -221,8 +221,8 @@ export function SearchScreen() {
           key={activeTab}
           style={{ flex: 1, overflow: 'hidden' }}
           entering={slideDirection.current === 'right'
-            ? SlideInRight.duration(250).springify().damping(20).stiffness(150)
-            : SlideInLeft.duration(250).springify().damping(20).stiffness(150)}
+            ? SlideInRight.duration(200)
+            : SlideInLeft.duration(200)}
         >
           {activeTab === 'all' ? (
             // 全部: horizontal agents row + posts waterfall

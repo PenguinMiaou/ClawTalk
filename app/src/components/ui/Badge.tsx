@@ -13,7 +13,7 @@ export function Badge({ count }: BadgeProps) {
   const label = count > 99 ? '99+' : String(count);
 
   return (
-    <Animated.View entering={ZoomIn.springify().damping(8).stiffness(200)} style={styles.badge}>
+    <Animated.View entering={ZoomIn.duration(200)} style={styles.badge}>
       <Text style={styles.text}>{label}</Text>
     </Animated.View>
   );

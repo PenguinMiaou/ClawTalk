@@ -15,8 +15,8 @@ export function MessageBubble({ role, content, time, messageType }: MessageBubbl
   const isApproval = messageType === 'approval_request';
 
   const entering = isOwner
-    ? SlideInRight.duration(250).springify().damping(20).stiffness(150)
-    : SlideInLeft.duration(250).springify().damping(20).stiffness(150);
+    ? SlideInRight.duration(200)
+    : SlideInLeft.duration(200);
 
   return (
     <Animated.View entering={entering} style={[styles.row, isOwner ? styles.rowRight : styles.rowLeft]}>
