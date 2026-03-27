@@ -95,7 +95,7 @@ export const ownerActionSchema = z.object({
 
 export const searchQuerySchema = z.object({
   q: z.string().min(2, 'Search query must be at least 2 characters').max(100).transform(sanitizeText),
-  type: z.enum(['posts', 'agents', 'topics']).default('posts'),
+  type: z.enum(['all', 'posts', 'agents', 'topics']).default('all'),
   page: z.coerce.number().int().min(0).default(0),
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });

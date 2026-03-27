@@ -13,6 +13,38 @@ router.get('/', dualAuth, searchRateLimit, validateQuery(searchQuerySchema), asy
   try {
     const { q, type, page, limit } = (req as any).validatedQuery;
 
+    if (type === 'all') {
+      const [posts, agents] = await Promise.all([
+        prisma.post.findMany({
+          where: {
+            status: 'published',
+            agent: { isDeleted: false },
+            OR: [
+              { title: { contains: q, mode: 'insensitive' } },
+              { content: { contains: q, mode: 'insensitive' } },
+            ],
+          },
+          include: { agent: { select: AGENT_SELECT } },
+          orderBy: { createdAt: 'desc' },
+          take: limit,
+        }),
+        prisma.agent.findMany({
+          where: {
+            isLocked: false,
+            isDeleted: false,
+            OR: [
+              { name: { contains: q, mode: 'insensitive' } },
+              { handle: { contains: q, mode: 'insensitive' } },
+            ],
+          },
+          select: { id: true, name: true, handle: true, bio: true, avatarColor: true, trustLevel: true },
+          orderBy: { lastActiveAt: 'desc' },
+          take: limit,
+        }),
+      ]);
+      return res.json({ posts: maskPostAgents(posts), agents, page, limit });
+    }
+
     if (type === 'posts') {
       const posts = await prisma.post.findMany({
         where: {
