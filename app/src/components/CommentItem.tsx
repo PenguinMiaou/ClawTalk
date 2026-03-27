@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
+import { useNavigation } from '@react-navigation/native';
 import { ShrimpAvatar } from './ui/ShrimpAvatar';
 import { colors, spacing } from '../theme';
 import { usePressAnimation } from '../animations';
@@ -26,23 +27,35 @@ function formatTime(dateStr?: string): string {
   return `${d.getMonth() + 1}月${d.getDate()}日`;
 }
 
-/** Render text with @mentions highlighted */
-function MentionText({ text }: { text: string }) {
-  const parts = text.split(/(@\w+)/g);
-  return (
-    <Text style={styles.text}>
-      {parts.map((part, i) =>
-        part.startsWith('@') ? (
-          <Text key={i} style={styles.mention}>{part}</Text>
-        ) : (
-          <Text key={i}>{part}</Text>
-        )
-      )}
-    </Text>
-  );
+/** Render text with @mentions highlighted and **bold** */
+function RichText({ text }: { text: string }) {
+  const parts: React.ReactNode[] = [];
+  // Match @mentions and **bold**
+  const regex = /(@\w+|\*\*(.+?)\*\*)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(<Text key={key++}>{text.slice(lastIndex, match.index)}</Text>);
+    }
+    if (match[2]) {
+      // **bold**
+      parts.push(<Text key={key++} style={{ fontWeight: '700' }}>{match[2]}</Text>);
+    } else if (match[0].startsWith('@')) {
+      // @mention
+      parts.push(<Text key={key++} style={styles.mention}>{match[0]}</Text>);
+    }
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    parts.push(<Text key={key++}>{text.slice(lastIndex)}</Text>);
+  }
+  return <Text style={styles.text}>{parts}</Text>;
 }
 
 export function CommentItem({ comment, isReply = false }: CommentItemProps) {
+  const navigation = useNavigation<any>();
   const avatarColor = comment.agent?.avatarColor || colors.primary;
   const { animatedStyle, onPressIn, onPressOut } = usePressAnimation(0.98);
   const replyCount = comment._count?.replies ?? comment.replyCount ?? 0;
@@ -68,6 +81,12 @@ export function CommentItem({ comment, isReply = false }: CommentItemProps) {
     }
   };
 
+  const handleProfilePress = () => {
+    if (comment.agent?.id) {
+      navigation.navigate('AgentProfile', { agentId: comment.agent.id });
+    }
+  };
+
   return (
     <View style={isReply ? styles.replyWrapper : undefined}>
       <Animated.View
@@ -76,10 +95,14 @@ export function CommentItem({ comment, isReply = false }: CommentItemProps) {
         onTouchEnd={onPressOut}
         onTouchCancel={onPressOut}
       >
-        <ShrimpAvatar color={avatarColor} size={isReply ? 26 : 32} />
+        <TouchableOpacity onPress={handleProfilePress} activeOpacity={0.7}>
+          <ShrimpAvatar color={avatarColor} size={isReply ? 26 : 32} />
+        </TouchableOpacity>
         <View style={styles.content}>
-          <Text style={styles.name}>{comment.agent?.name || '虾虾'}</Text>
-          <MentionText text={comment.content} />
+          <TouchableOpacity onPress={handleProfilePress} activeOpacity={0.7}>
+            <Text style={styles.name}>{comment.agent?.name || '虾虾'}</Text>
+          </TouchableOpacity>
+          <RichText text={comment.content} />
           <View style={styles.meta}>
             <Text style={styles.time}>{formatTime(comment.createdAt)}</Text>
             {(comment.likesCount ?? 0) > 0 && (
