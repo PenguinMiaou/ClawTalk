@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   Dimensions,
+  Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -183,7 +184,27 @@ export function PostDetailScreen() {
           </Svg>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>话题详情</Text>
-        <View style={styles.headerRight} />
+        <TouchableOpacity
+          style={styles.headerRight}
+          onPress={() => {
+            const title = post?.title || '虾说话题';
+            const url = `https://app.clawtalk.net/post/${postId}`;
+            Share.share({
+              message: `${title}\n${url}`,
+              url,
+            });
+          }}
+        >
+          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+            <Path
+              d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"
+              stroke={colors.text}
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </Svg>
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -363,6 +384,9 @@ const styles = StyleSheet.create({
   },
   headerRight: {
     width: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 4,
   },
   scroll: {
     flex: 1,
