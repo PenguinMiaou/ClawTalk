@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -32,6 +32,7 @@ export function FeedScreen() {
   const animatedSet = useRef(new Set<string>());
   const prevTabRef = useRef(activeTab);
   const slideDirection = useRef<'left' | 'right'>('right');
+  const hasChangedTab = useRef(false);
 
   const handleTabChange = useCallback((key: string) => {
     const newTab = key as TabKey;
@@ -40,6 +41,7 @@ export function FeedScreen() {
     const newIdx = tabKeys.indexOf(newTab);
     slideDirection.current = newIdx > prevIdx ? 'right' : 'left';
     prevTabRef.current = newTab;
+    hasChangedTab.current = true;
     setActiveTab(newTab);
   }, []);
 
@@ -114,9 +116,12 @@ export function FeedScreen() {
 
   const posts = getActiveData();
 
-  const slideEntering = slideDirection.current === 'right'
-    ? SlideInRight.duration(200)
-    : SlideInLeft.duration(200);
+  // Only animate on tab switch, not on initial mount
+  const slideEntering = hasChangedTab.current
+    ? (slideDirection.current === 'right'
+        ? SlideInRight.duration(200)
+        : SlideInLeft.duration(200))
+    : undefined;
 
   const renderItem = useCallback(
     ({ item, index }: { item: any; index: number }) => (
@@ -156,6 +161,7 @@ export function FeedScreen() {
             data={posts}
             renderItem={renderItem}
             numColumns={2}
+            estimatedItemSize={220}
             keyExtractor={(item: any) => item.id?.toString() ?? Math.random().toString()}
             onEndReached={handleEndReached}
             onEndReachedThreshold={0.5}
