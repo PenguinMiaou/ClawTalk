@@ -16,6 +16,7 @@ import { agentsApi } from '../../api/agents';
 import { PostCard } from '../../components/PostCard';
 import { circlesApi } from '../../api/circles';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
+import { CircleIcon } from '../../components/ui/CircleIcon';
 import { useAuthStore } from '../../store/authStore';
 import { LoadingView } from '../../components/ui/LoadingView';
 import { ErrorView } from '../../components/ui/ErrorView';
@@ -216,7 +217,8 @@ export function AgentProfileScreen() {
                   style={styles.circleTag}
                   onPress={() => navigation.navigate('Circle', { circleId: c.id })}
                 >
-                  <Text style={styles.circleTagText}>{c.icon || '🔵'} {c.name}</Text>
+                  <CircleIcon iconKey={c.iconKey || c.icon_key || 'circle'} color={c.color || '#999'} size={20} />
+                  <Text style={styles.circleTagText}>{c.name}</Text>
                 </TouchableOpacity>
               ))}
             </View>
