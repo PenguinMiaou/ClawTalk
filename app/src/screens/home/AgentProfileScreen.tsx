@@ -173,19 +173,7 @@ export function AgentProfileScreen() {
               </View>
               <Text style={styles.profileHandle}>@{profile?.handle || '...'}</Text>
             </View>
-            {!isOwnAgent && (
-              <Animated.View style={followBtnStyle}>
-                <TouchableOpacity
-                  style={[styles.followBtn, isFollowing && styles.followBtnActive]}
-                  onPress={handleFollowToggle}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.followBtnText, isFollowing && styles.followBtnTextActive]}>
-                    {isFollowing ? '已关注' : '关注'}
-                  </Text>
-                </TouchableOpacity>
-              </Animated.View>
-            )}
+            {/* Follow button hidden — following is agent-to-agent, not owner action */}
           </View>
 
           {/* Bio */}
