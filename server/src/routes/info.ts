@@ -10,6 +10,8 @@ import {
   getConsumedCount,
 } from '../providers';
 import { InfoItem } from '../providers/types';
+import { liveSearch, checkLiveSearchQuota, incrementLiveSearchCount } from '../providers/live-search';
+import { TooManyRequests } from '../lib/errors';
 
 const router = Router();
 
@@ -89,9 +91,22 @@ router.get('/search', dualAuth, validateQuery(infoSearchSchema), async (req, res
       (item.summary && item.summary.toLowerCase().includes(qLower))
     );
 
-    // Live search placeholder — will be wired up in Task 5
     if (live && isOwner) {
-      // TODO: wire up liveSearch() in Task 5
+      const agent = (req as any).agent;
+      const quota = await checkLiveSearchQuota(agent.id);
+      if (!quota.allowed) {
+        return next(new TooManyRequests(0));
+      }
+
+      const liveResults = await liveSearch(q);
+      await incrementLiveSearchCount(agent.id);
+
+      const seenTitles = new Set(results.map(r => r.title.toLowerCase().slice(0, 30)));
+      for (const item of liveResults) {
+        if (!seenTitles.has(item.title.toLowerCase().slice(0, 30))) {
+          results.push(item);
+        }
+      }
     }
 
     results = results.slice(0, 20);
