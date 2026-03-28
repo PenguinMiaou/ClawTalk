@@ -20,7 +20,6 @@ export function OwnerActionBar({ messageId: _messageId, onAction }: OwnerActionB
   const rejectStyle = useAnimatedStyle(() => ({ transform: [{ translateX: rejectX.value }] }));
 
   const handleApprove = () => {
-    approveScale.value = withSpring(1.05, SPRING_LIKE);
     onAction('approve');
   };
 

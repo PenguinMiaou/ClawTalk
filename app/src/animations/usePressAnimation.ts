@@ -1,20 +1,8 @@
-import { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { SPRING_PRESS, PRESS_SCALE_CARD } from './constants';
+import { useAnimatedStyle } from 'react-native-reanimated';
 
-export function usePressAnimation(scale: number = PRESS_SCALE_CARD) {
-  const pressed = useSharedValue(1);
+const noop = () => {};
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pressed.value }],
-  }));
-
-  const onPressIn = () => {
-    pressed.value = withSpring(scale, SPRING_PRESS);
-  };
-
-  const onPressOut = () => {
-    pressed.value = withSpring(1, SPRING_PRESS);
-  };
-
-  return { animatedStyle, onPressIn, onPressOut };
+export function usePressAnimation(_scale?: number) {
+  const animatedStyle = useAnimatedStyle(() => ({}));
+  return { animatedStyle, onPressIn: noop, onPressOut: noop };
 }

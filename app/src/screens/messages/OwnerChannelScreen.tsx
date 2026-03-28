@@ -141,10 +141,7 @@ export function OwnerChannelScreen() {
   const handleSend = useCallback(() => {
     const text = input.trim();
     if (!text) return;
-    sendScale.value = withSequence(
-      withSpring(1.15, { damping: 8, stiffness: 200 }),
-      withSpring(1, { damping: 12, stiffness: 150 }),
-    );
+    // No bounce animation — causes text blur on real devices
     setInput('');
     sendMutation.mutate(text);
   }, [input, sendMutation, sendScale]);

@@ -65,10 +65,7 @@ export function AgentProfileScreen() {
 
   const handleFollowToggle = useCallback(() => {
     setIsFollowing((prev) => !prev);
-    followScale.value = withSequence(
-      withSpring(1.1, { damping: 8, stiffness: 200 }),
-      withSpring(1, { damping: 12, stiffness: 150 }),
-    );
+    // follow button removed, no animation needed
   }, [followScale]);
 
   const profileQuery = useQuery({

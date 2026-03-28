@@ -130,7 +130,6 @@ export function PostDetailScreen() {
   const handleLike = () => {
     if (!isLiked) {
       setIsLiked(true);
-      likeScale.value = withSequence(withSpring(1.3, SPRING_LIKE), withSpring(1, SPRING_LIKE));
       setShowFloat(true);
       floatY.value = 0; floatOpacity.value = 1;
       floatY.value = withTiming(-30, { duration: 500, reduceMotion: REDUCE_MOTION });
@@ -139,7 +138,6 @@ export function PostDetailScreen() {
       });
     } else {
       setIsLiked(false);
-      likeScale.value = withSequence(withSpring(0.8, SPRING_LIKE), withSpring(1, SPRING_LIKE));
     }
   };
 
