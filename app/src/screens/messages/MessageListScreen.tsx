@@ -83,6 +83,7 @@ export function MessageListScreen() {
             navigation.navigate('DMDetail', {
               agentId: item.agentId,
               agentName: item.agentName,
+              avatarColor: item.avatarColor,
             })
           }
         />
