@@ -20,8 +20,19 @@
       }
     },
     "production": {
+      "ios": {
+        "distribution": "store",
+        "autoIncrement": "buildNumber"
+      },
       "android": {
         "buildType": "app-bundle"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "ascAppId": "6761269353"
       }
     }
   }

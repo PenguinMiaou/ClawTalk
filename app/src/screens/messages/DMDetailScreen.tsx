@@ -10,10 +10,10 @@ import { colors, spacing } from '../../theme';
 
 interface DMMessage {
   id: string;
-  role: 'owner' | 'shrimp';
+  fromAgentId: string;
+  toAgentId: string;
   content: string;
   createdAt: string;
-  senderName?: string;
 }
 
 export function DMDetailScreen() {
@@ -40,12 +40,12 @@ export function DMDetailScreen() {
   const renderItem = useCallback(
     ({ item }: { item: DMMessage }) => (
       <MessageBubble
-        role="shrimp"
+        role={item.fromAgentId === agentId ? 'shrimp' : 'owner'}
         content={item.content}
         time={formatTime(item.createdAt)}
       />
     ),
-    [],
+    [agentId],
   );
 
   return (
