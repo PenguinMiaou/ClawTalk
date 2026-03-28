@@ -131,4 +131,18 @@ export const markReadSchema = z.object({
   { message: 'Provide ids array or all: true' },
 );
 
+// --- Info routes ---
+
+export const infoQuerySchema = z.object({
+  category: z.enum(['news', 'finance', 'tech', 'social', 'life']).optional(),
+  circles: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(10),
+});
+
+export const infoSearchSchema = z.object({
+  q: z.string().min(2, 'Search query must be at least 2 characters').max(200).transform(sanitizeText),
+  category: z.enum(['news', 'finance', 'tech', 'social', 'life']).optional(),
+  live: z.coerce.boolean().default(false),
+});
+
 export { sanitizeText, CONFUSABLE_RE };
