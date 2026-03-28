@@ -44,8 +44,12 @@ async function fetchAndCache(provider: InfoProvider): Promise<void> {
 export async function getCachedItems(providerId: string): Promise<InfoItem[]> {
   const redis = getRedis();
   if (!redis) return [];
-  const raw = await redis.get(`info:${providerId}`);
-  return raw ? JSON.parse(raw) : [];
+  try {
+    const raw = await redis.get(`info:${providerId}`);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
 }
 
 export async function getAllCachedItems(categories?: string[]): Promise<InfoItem[]> {
@@ -60,7 +64,10 @@ export async function getAllCachedItems(categories?: string[]): Promise<InfoItem
 
 export async function getProvidersMeta(): Promise<ProviderMeta[]> {
   const redis = getRedis();
-  const metaRaw = redis ? await redis.get('info:providers:meta') : null;
+  let metaRaw: string | null = null;
+  if (redis) {
+    try { metaRaw = await redis.get('info:providers:meta'); } catch { /* redis unavailable */ }
+  }
   const meta: Record<string, { lastFetchAt: string; itemCount: number }> = metaRaw
     ? JSON.parse(metaRaw)
     : {};
@@ -78,16 +85,20 @@ export async function getProvidersMeta(): Promise<ProviderMeta[]> {
 export async function incrementConsumed(itemId: string, ttl: number): Promise<void> {
   const redis = getRedis();
   if (!redis) return;
-  const key = `info:consumed:${itemId}`;
-  await redis.incr(key);
-  await redis.expire(key, ttl);
+  try {
+    const key = `info:consumed:${itemId}`;
+    await redis.incr(key);
+    await redis.expire(key, ttl);
+  } catch { /* redis unavailable */ }
 }
 
 export async function getConsumedCount(itemId: string): Promise<number> {
   const redis = getRedis();
   if (!redis) return 0;
-  const val = await redis.get(`info:consumed:${itemId}`);
-  return val ? parseInt(val, 10) : 0;
+  try {
+    const val = await redis.get(`info:consumed:${itemId}`);
+    return val ? parseInt(val, 10) : 0;
+  } catch { return 0; }
 }
 
 function intervalToCron(seconds: number): string {
@@ -115,3 +126,32 @@ export function stopInfoCrons(): void {
   }
   cronJobs.length = 0;
 }
+
+// ---------------------------------------------------------------------------
+// Register all providers
+// ---------------------------------------------------------------------------
+import { hackerNewsProvider } from './hacker-news';
+import { cryptoProvider } from './crypto';
+import { weatherProvider } from './weather';
+import { baiduHotProvider } from './baidu-hot';
+import { reutersProvider } from './reuters';
+import { googleTrendsProvider } from './google-trends';
+import { weiboHotProvider } from './weibo-hot';
+import { aShareProvider } from './a-share';
+import { usMarketProvider } from './us-market';
+import { exchangeRatesProvider } from './exchange-rates';
+import { githubTrendingProvider } from './github-trending';
+import { productHuntProvider } from './product-hunt';
+
+registerProvider(hackerNewsProvider);
+registerProvider(cryptoProvider);
+registerProvider(weatherProvider);
+registerProvider(baiduHotProvider);
+registerProvider(reutersProvider);
+registerProvider(googleTrendsProvider);
+registerProvider(weiboHotProvider);
+registerProvider(aShareProvider);
+registerProvider(usMarketProvider);
+registerProvider(exchangeRatesProvider);
+registerProvider(githubTrendingProvider);
+registerProvider(productHuntProvider);
