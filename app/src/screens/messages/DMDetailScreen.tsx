@@ -1,11 +1,15 @@
 import React, { useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import Svg, { Path } from 'react-native-svg';
 import { messagesApi } from '../../api/messages';
+import { agentsApi } from '../../api/agents';
 import { MessageBubble } from '../../components/MessageBubble';
+import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
+import { LoadingView } from '../../components/ui/LoadingView';
+import { ErrorView } from '../../components/ui/ErrorView';
 import { colors, spacing } from '../../theme';
 
 interface DMMessage {
@@ -19,13 +23,28 @@ interface DMMessage {
 export function DMDetailScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { agentId, agentName } = route.params as { agentId: string; agentName: string };
+  const { agentId, agentName, avatarColor } = route.params as {
+    agentId: string;
+    agentName: string;
+    avatarColor?: string;
+  };
+
+  // Fetch partner agent profile for avatar + online status
+  const agentQuery = useQuery({
+    queryKey: ['agentProfile', agentId],
+    queryFn: () => agentsApi.getProfile(agentId),
+  });
+
+  const partnerColor = agentQuery.data?.avatar_color ?? avatarColor;
+  const partnerOnline = agentQuery.data?.is_online ?? false;
 
   const messagesQuery = useQuery({
     queryKey: ['dmMessages', agentId],
     queryFn: () => messagesApi.getConversation(agentId),
+    refetchInterval: 10000,
   });
 
+  // Backend returns desc (newest first) — pass directly to inverted FlatList
   const messages: DMMessage[] = messagesQuery.data?.messages ?? messagesQuery.data ?? [];
 
   const formatTime = (dateStr: string) => {
@@ -63,18 +82,27 @@ export function DMDetailScreen() {
             />
           </Svg>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{agentName}</Text>
-        <View style={styles.headerSpacer} />
+        <ShrimpAvatar size={36} color={partnerColor} />
+        <View style={styles.headerInfo}>
+          <Text style={styles.headerName}>{agentName}</Text>
+          <View style={styles.statusRow}>
+            <View style={[styles.statusDot, partnerOnline && styles.statusOnline]} />
+            <Text style={styles.statusText}>{partnerOnline ? '在线' : '离线'}</Text>
+          </View>
+        </View>
+        <View style={styles.dmBadge}>
+          <Text style={styles.dmBadgeText}>私信</Text>
+        </View>
       </View>
 
       {/* Messages */}
       {messagesQuery.isLoading ? (
-        <View style={styles.loader}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <LoadingView />
+      ) : messagesQuery.isError ? (
+        <ErrorView onRetry={() => messagesQuery.refetch()} />
       ) : (
         <FlatList
-          data={[...messages].reverse()}
+          data={messages}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           inverted
@@ -105,27 +133,54 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.card,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
   backBtn: {
     padding: 4,
+    marginRight: spacing.sm,
   },
-  headerTitle: {
+  headerInfo: {
     flex: 1,
-    fontSize: 17,
+    marginLeft: spacing.sm,
+  },
+  headerName: {
+    fontSize: 16,
     fontWeight: '600',
     color: colors.text,
-    textAlign: 'center',
   },
-  headerSpacer: {
-    width: 30,
-  },
-  loader: {
-    flex: 1,
+  statusRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    marginTop: 2,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.textTertiary,
+    marginRight: 4,
+  },
+  statusOnline: {
+    backgroundColor: colors.success,
+  },
+  statusText: {
+    fontSize: 11,
+    color: colors.textSecondary,
+  },
+  dmBadge: {
+    backgroundColor: '#f0f5ff',
+    borderWidth: 1,
+    borderColor: '#d6e4ff',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  dmBadgeText: {
+    color: '#2f54eb',
+    fontSize: 11,
+    fontWeight: '600',
   },
   listContent: {
     paddingVertical: spacing.sm,

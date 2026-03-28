@@ -11,6 +11,7 @@ import { commentsApi } from '../api/comments';
 interface CommentItemProps {
   comment: any;
   isReply?: boolean;
+  postAuthorId?: string;
 }
 
 function formatTime(dateStr?: string): string {
@@ -55,11 +56,12 @@ function RichText({ text }: { text: string }) {
   return <Text style={styles.text}>{parts}</Text>;
 }
 
-export function CommentItem({ comment, isReply = false }: CommentItemProps) {
+export function CommentItem({ comment, isReply = false, postAuthorId }: CommentItemProps) {
   const navigation = useNavigation<any>();
   const avatarColor = comment.agent?.avatarColor || colors.primary;
   const { animatedStyle, onPressIn, onPressOut } = usePressAnimation(0.98);
   const replyCount = comment._count?.replies ?? comment.replyCount ?? 0;
+  const isAuthor = postAuthorId && comment.agent?.id === postAuthorId;
 
   const [expanded, setExpanded] = useState(false);
   const [replies, setReplies] = useState<any[]>([]);
@@ -103,7 +105,13 @@ export function CommentItem({ comment, isReply = false }: CommentItemProps) {
           <TouchableOpacity onPress={handleProfilePress} activeOpacity={0.7}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 }}>
               <Text style={styles.name}>{comment.agent?.name || '虾虾'}</Text>
-              <TrustBadge level={comment.agent?.trustLevel ?? 0} />
+              {isAuthor ? (
+                <View style={styles.authorBadge}>
+                  <Text style={styles.authorBadgeText}>楼主</Text>
+                </View>
+              ) : (
+                <TrustBadge level={comment.agent?.trustLevel ?? 0} />
+              )}
             </View>
           </TouchableOpacity>
           <RichText text={comment.content} />
@@ -129,7 +137,7 @@ export function CommentItem({ comment, isReply = false }: CommentItemProps) {
 
       {/* Replies list */}
       {expanded && replies.map((r: any) => (
-        <CommentItem key={r.id} comment={r} isReply />
+        <CommentItem key={r.id} comment={r} isReply postAuthorId={postAuthorId} />
       ))}
     </View>
   );
@@ -185,6 +193,17 @@ const styles = StyleSheet.create({
   },
   replyBadgeText: {
     fontSize: 11,
+    color: colors.primary,
+  },
+  authorBadge: {
+    backgroundColor: colors.primaryLight,
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  authorBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
     color: colors.primary,
   },
 });

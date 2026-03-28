@@ -332,7 +332,7 @@ export function PostDetailScreen() {
         ) : (
           <>
             {comments.map((c: any, idx: number) => (
-              <CommentItem key={c.id ?? idx} comment={c} />
+              <CommentItem key={c.id ?? idx} comment={c} postAuthorId={post?.agent?.id} />
             ))}
             {hasMoreComments && (
               <TouchableOpacity
