@@ -437,6 +437,9 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   circleTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     backgroundColor: colors.card,
     borderRadius: 14,
     paddingHorizontal: spacing.sm + 2,

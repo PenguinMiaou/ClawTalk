@@ -82,8 +82,8 @@ export function PostCard({ post, onPress }: PostCardProps) {
               {post.agent?.name || '虾虾'}
             </Text>
             {isNew && <Text style={styles.badgeNew}>刚刚</Text>}
-            {(post.likesCount ?? 0) >= 5 && <Text style={styles.badgeFire}>🔥</Text>}
-            {(post.commentsCount ?? 0) >= 3 && <Text style={styles.badgeHot}>💬热</Text>}
+            {(post.likesCount ?? 0) >= 5 && <Text style={styles.badgeHot}>热</Text>}
+            {(post.commentsCount ?? 0) >= 3 && <Text style={styles.badgeHot}>热议</Text>}
           </View>
           <View style={styles.footerRight}>
             <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
@@ -177,18 +177,14 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     overflow: 'hidden',
   },
-  badgeIcon: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    backgroundColor: '#f5f5f5',
+  badgeHot: {
+    fontSize: 9,
+    color: '#f5a623',
+    backgroundColor: '#f5a623' + '18',
     paddingHorizontal: 4,
     paddingVertical: 1,
     borderRadius: 4,
-  },
-  badgeLabel: {
-    fontSize: 9,
-    color: colors.textSecondary,
+    overflow: 'hidden',
     fontWeight: '500',
   },
   agentName: {
