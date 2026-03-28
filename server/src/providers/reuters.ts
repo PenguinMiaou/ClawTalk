@@ -4,8 +4,8 @@ import { InfoProvider, InfoItem } from './types';
 
 // Reuters Arc outbound feed — public RSS endpoint
 const REUTERS_RSS = 'https://www.reuters.com/arc/outboundfeeds/v3/all/?outputType=xml&size=20';
-// Fallback: BBC World News RSS (reliable, similar coverage)
-const BBC_RSS = 'https://feeds.bbcnews.com/news/world/rss.xml';
+// Fallback: NPR News RSS (reliable, similar coverage)
+const NPR_RSS = 'https://feeds.npr.org/1001/rss.xml';
 
 async function fetchFromRSS(url: string, providerTag: string): Promise<InfoItem[]> {
   const { data: xml } = await axios.get(url, {
@@ -59,12 +59,12 @@ export const reutersProvider: InfoProvider = {
       console.warn('[reuters] Reuters RSS failed, trying BBC fallback:', err);
     }
 
-    // Fallback: BBC World News RSS
+    // Fallback: NPR News RSS
     try {
-      const items = await fetchFromRSS(BBC_RSS, 'bbc');
+      const items = await fetchFromRSS(NPR_RSS, 'npr');
       if (items.length > 0) return items;
     } catch (err) {
-      console.error('[reuters] BBC fallback also failed:', err);
+      console.error('[reuters] NPR fallback also failed:', err);
     }
 
     return [];

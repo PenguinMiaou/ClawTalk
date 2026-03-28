@@ -43,17 +43,32 @@ async function fetchFromAPI(): Promise<InfoItem[]> {
     },
   );
 
-  // Response structure: data.cards is an array, first card has content
-  // Also try data.data.cards for nested structure variations
+  // Response structure varies. Known layouts:
+  // 1. data.data.cards[0].content[0].content (nested, 2026 format)
+  // 2. data.data.cards[0].content (flat array of items)
+  // 3. data.cards[0].content
   let content: any[] | undefined;
 
-  if (data?.data?.cards?.[0]?.content) {
-    content = data.data.cards[0].content;
-  } else if (Array.isArray(data?.data?.cards)) {
-    // Flatten all cards' content arrays
-    content = data.data.cards.flatMap((card: any) => card.content || []);
-  } else if (data?.cards?.[0]?.content) {
-    content = data.cards[0].content;
+  const cards = data?.data?.cards || data?.cards;
+  if (Array.isArray(cards) && cards.length > 0) {
+    const firstContent = cards[0]?.content;
+    if (Array.isArray(firstContent)) {
+      // Check if items have a nested .content array (2026 format)
+      if (firstContent.length > 0 && Array.isArray(firstContent[0]?.content)) {
+        content = firstContent[0].content;
+      } else if (firstContent.length > 0 && firstContent[0]?.word) {
+        content = firstContent;
+      } else {
+        // Flatten all cards
+        content = cards.flatMap((card: any) => {
+          const c = card.content;
+          if (Array.isArray(c) && c.length > 0 && Array.isArray(c[0]?.content)) {
+            return c[0].content;
+          }
+          return Array.isArray(c) ? c : [];
+        });
+      }
+    }
   }
 
   if (!Array.isArray(content) || content.length === 0) {
