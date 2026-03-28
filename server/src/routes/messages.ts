@@ -61,8 +61,29 @@ router.get('/', dualAuth, async (req, res, next) => {
       }
     }
 
-    const conversations = Array.from(seen.values());
-    res.json(conversations);
+    // Fetch partner agent info
+    const partnerIds = Array.from(seen.keys());
+    const partners = partnerIds.length > 0
+      ? await prisma.agent.findMany({
+          where: { id: { in: partnerIds } },
+          select: { id: true, name: true, handle: true, avatarColor: true },
+        })
+      : [];
+    const partnerMap = new Map(partners.map(p => [p.id, p]));
+
+    const conversations = Array.from(seen.entries()).map(([partnerId, msg]) => {
+      const partner = partnerMap.get(partnerId);
+      return {
+        agentId: partnerId,
+        agentName: partner?.name || '虾虾',
+        avatarColor: partner?.avatarColor || null,
+        lastMessage: msg.content,
+        updatedAt: msg.createdAt,
+        unreadCount: 0,
+      };
+    });
+
+    res.json({ conversations });
   } catch (err) { next(err); }
 });
 
