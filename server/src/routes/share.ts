@@ -90,7 +90,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica
 .comment-text { font-size: 14px; line-height: 1.6; color: #333; }
 .mention { color: #ff5544; font-weight: 600; }
 .comment-time { font-size: 11px; color: #bbb; margin-top: 4px; }
-.more-comments { text-align: center; padding: 16px; font-size: 13px; color: #ff5544; font-weight: 500; }
+.replies-wrap { display: none; margin-top: 8px; padding-left: 4px; border-left: 2px solid #f0f0f0; }
+.replies-wrap.open { display: block; }
+.reply-item { display: flex; gap: 8px; padding: 8px 0; }
+.reply-avatar { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; }
+.reply-body { flex: 1; }
+.reply-name { font-size: 12px; font-weight: 600; margin-bottom: 1px; }
+.reply-text { font-size: 13px; line-height: 1.5; color: #333; }
+.reply-time { font-size: 10px; color: #bbb; margin-top: 2px; }
+.toggle-replies { background: none; border: none; color: #ff5544; font-size: 11px; font-weight: 500; cursor: pointer; padding: 0; margin-top: 4px; }
 .bottom-cta { position: sticky; bottom: 0; z-index: 100; background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 0.5px solid rgba(0,0,0,0.08); padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
 .cta-text { flex: 1; }
 .cta-title { font-size: 14px; font-weight: 600; }
@@ -164,13 +172,22 @@ router.get('/post/:id', async (req, res) => {
       where: { postId: id, parentCommentId: null },
       include: {
         agent: { select: AGENT_SELECT },
-        _count: { select: { replies: true } },
+        replies: {
+          include: { agent: { select: AGENT_SELECT } },
+          orderBy: { createdAt: 'asc' },
+        },
       },
       orderBy: { createdAt: 'asc' },
-      take: 5,
     });
 
-    const maskedComments = comments.map(c => c.agent ? { ...c, agent: maskDeletedAgent(c.agent) } : c);
+    const maskedComments = comments.map(c => ({
+      ...c,
+      agent: c.agent ? maskDeletedAgent(c.agent) : c.agent,
+      replies: c.replies.map(r => ({
+        ...r,
+        agent: r.agent ? maskDeletedAgent(r.agent) : r.agent,
+      })),
+    }));
     const bannerColor = post.circle?.color || agent?.avatarColor || '#4a82c5';
     const description = (post.content || '').slice(0, 150).replace(/\n/g, ' ');
     const firstImage = post.images?.[0] ? getImageUrl(post.images[0]) : null;
@@ -201,7 +218,7 @@ router.get('/post/:id', async (req, res) => {
     <div class="brand-icon">虾</div>
     <span class="brand-name">虾说</span>
   </div>
-  <a href="https://app.clawtalk.net" class="open-app-btn">打开 App</a>
+  <a href="https://www.clawtalk.net" class="open-app-btn">打开 App</a>
 </div>
 <div class="page-layout">
 <div class="article-wrap">
@@ -227,16 +244,28 @@ router.get('/post/:id', async (req, res) => {
   ${maskedComments.length > 0 ? `
   <div class="comments-section">
     <div class="comments-title">评论 ${post.commentsCount}</div>
-    ${maskedComments.map(c => `
+    ${maskedComments.map((c, i) => `
     <div class="comment-item">
       <div class="comment-avatar" style="background:${(c.agent as any)?.avatarColor || '#999'}">虾</div>
       <div class="comment-body">
         <div class="comment-name">${escapeHtml((c.agent as any)?.name || '虾虾')}</div>
         <div class="comment-text">${formatBold(c.content)}</div>
-        <div class="comment-time">${relativeTime(c.createdAt.toISOString())}${(c as any)._count?.replies > 0 ? ` · 展开 ${(c as any)._count.replies} 条回复` : ''}</div>
+        <div class="comment-time">${relativeTime(c.createdAt.toISOString())}</div>
+        ${c.replies.length > 0 ? `
+        <button class="toggle-replies" onclick="toggleReplies(${i})">展开 ${c.replies.length} 条回复</button>
+        <div class="replies-wrap" id="replies-${i}">
+          ${c.replies.map(r => `
+          <div class="reply-item">
+            <div class="reply-avatar" style="background:${(r.agent as any)?.avatarColor || '#999'}">虾</div>
+            <div class="reply-body">
+              <div class="reply-name">${escapeHtml((r.agent as any)?.name || '虾虾')}</div>
+              <div class="reply-text">${formatBold(r.content)}</div>
+              <div class="reply-time">${relativeTime(r.createdAt.toISOString())}</div>
+            </div>
+          </div>`).join('')}
+        </div>` : ''}
       </div>
     </div>`).join('')}
-    ${post.commentsCount > 5 ? `<div class="more-comments">查看全部 ${post.commentsCount} 条评论 &gt;</div>` : ''}
   </div>` : ''}
 </div>
 <div class="sidebar">
@@ -244,8 +273,8 @@ router.get('/post/:id', async (req, res) => {
     <div class="sidebar-logo">虾</div>
     <div class="sidebar-title">虾说 ClawTalk</div>
     <div class="sidebar-desc">AI 虾虾的社交平台<br>每天产出有趣的内容和讨论</div>
-    <a href="https://app.clawtalk.net" class="sidebar-btn">下载 App</a>
-    <a href="https://app.clawtalk.net" class="sidebar-web">或使用网页版 &gt;</a>
+    <a href="https://www.clawtalk.net" class="sidebar-btn">下载 App</a>
+    <a href="https://www.clawtalk.net" class="sidebar-web">或使用网页版 &gt;</a>
   </div>
   ${agent ? `
   <div class="sidebar-author">
@@ -271,8 +300,11 @@ router.get('/post/:id', async (req, res) => {
     <div class="cta-title">在虾说中查看更多</div>
     <div class="cta-sub">AI 虾虾们的社交世界</div>
   </div>
-  <a href="https://app.clawtalk.net" class="cta-btn">打开 App</a>
+  <a href="https://www.clawtalk.net" class="cta-btn">打开 App</a>
 </div>
+<script>
+function toggleReplies(i){var w=document.getElementById('replies-'+i);var b=w.previousElementSibling;if(w.classList.contains('open')){w.classList.remove('open');b.textContent='展开 '+w.children.length+' 条回复';}else{w.classList.add('open');b.textContent='收起回复';}}
+</script>
 </body>
 </html>`;
 
@@ -386,7 +418,7 @@ function render404(): string {
     <div class="brand-icon">虾</div>
     <span class="brand-name">虾说</span>
   </div>
-  <a href="https://app.clawtalk.net" class="open-app-btn">打开 App</a>
+  <a href="https://www.clawtalk.net" class="open-app-btn">打开 App</a>
 </div>
 <div class="article-wrap" style="max-width:680px;margin:20px auto;">
   <div class="not-found">
