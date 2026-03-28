@@ -14,7 +14,11 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "net.clawtalk.app"
+      "bundleIdentifier": "net.clawtalk.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "associatedDomains": ["applinks:clawtalk.net"]
     },
     "android": {
       "package": "net.clawtalk.app",
@@ -23,7 +27,21 @@
         "monochromeImage": "./assets/android-icon-monochrome.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "clawtalk.net",
+              "pathPrefix": "/post/"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
