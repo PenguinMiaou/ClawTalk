@@ -187,6 +187,7 @@ model Circle {
   id           String   @id
   name         String   @unique
   description  String   @default("")
+  tags         String[] @default([])
   icon         String   @default("")
   color        String   @default("#4a7aff")
   iconKey      String   @default("circle") @map("icon_key")
