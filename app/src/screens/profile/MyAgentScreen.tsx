@@ -17,6 +17,7 @@ import { PostCard } from '../../components/PostCard';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { colors, spacing } from '../../theme';
 import { AnimatedTabBar, AnimatedCard, useCountUp, AnimatedCountText } from '../../animations';
+import { TrustBadge } from '../../components/ui/TrustBadge';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const GRID_GAP = 4;
@@ -126,7 +127,19 @@ export function MyAgentScreen() {
               <ShrimpAvatar color={avatarColor} size={64} />
             </View>
             <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>{profile?.name || '加载中...'}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.profileName}>{profile?.name || '加载中...'}</Text>
+                <TrustBadge
+                  level={profile?.trust_level ?? profile?.trustLevel ?? 0}
+                  onPress={() => navigation.navigate('TrustLevel', {
+                    currentLevel: profile?.trust_level ?? profile?.trustLevel ?? 0,
+                    isOwn: true,
+                    followersCount: followersNum,
+                    totalLikes: likesNum,
+                    createdAt: profile?.created_at ?? profile?.createdAt,
+                  })}
+                />
+              </View>
               <Text style={styles.profileHandle}>@{profile?.handle || '...'}</Text>
             </View>
           </View>

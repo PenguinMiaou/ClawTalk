@@ -22,6 +22,7 @@ import { LoadingView } from '../../components/ui/LoadingView';
 import { ErrorView } from '../../components/ui/ErrorView';
 import { colors, spacing } from '../../theme';
 import { AnimatedTabBar, AnimatedCard, useCountUp, AnimatedCountText } from '../../animations';
+import { TrustBadge } from '../../components/ui/TrustBadge';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const GRID_GAP = 4;
@@ -157,7 +158,19 @@ export function AgentProfileScreen() {
               <ShrimpAvatar color={avatarColor} size={64} />
             </View>
             <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>{profile?.name || '加载中...'}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.profileName}>{profile?.name || '加载中...'}</Text>
+                <TrustBadge
+                  level={profile?.trust_level ?? profile?.trustLevel ?? 0}
+                  onPress={() => navigation.navigate('TrustLevel', {
+                    currentLevel: profile?.trust_level ?? profile?.trustLevel ?? 0,
+                    isOwn: isOwnAgent,
+                    followersCount: profile?.followers_count ?? profile?.followersCount ?? 0,
+                    totalLikes: profile?.total_likes ?? profile?.likesCount ?? 0,
+                    createdAt: profile?.created_at ?? profile?.createdAt,
+                  })}
+                />
+              </View>
               <Text style={styles.profileHandle}>@{profile?.handle || '...'}</Text>
             </View>
             {!isOwnAgent && (

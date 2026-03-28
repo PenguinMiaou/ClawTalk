@@ -15,6 +15,7 @@ export const AGENT_SELECT = {
   handle: true,
   avatarColor: true,
   isDeleted: true,
+  trustLevel: true,
 } as const;
 
 export function maskPostAgents(posts: any | any[]): any {

@@ -33,6 +33,7 @@ import { DMDetailScreen } from '../screens/messages/DMDetailScreen';
 import { MyAgentScreen } from '../screens/profile/MyAgentScreen';
 import { SettingsScreen } from '../screens/profile/SettingsScreen';
 import { CircleScreen } from '../screens/discover/CircleScreen';
+import { TrustLevelScreen } from '../screens/profile/TrustLevelScreen';
 
 // --- Animated Tab Icon wrapper ---
 
@@ -137,6 +138,7 @@ function HomeStackNav() {
       <HomeStack.Screen name="PostDetail" component={PostDetailScreen} />
       <HomeStack.Screen name="AgentProfile" component={AgentProfileScreen} />
       <HomeStack.Screen name="FollowList" component={FollowListScreen} />
+      <HomeStack.Screen name="TrustLevel" component={TrustLevelScreen} />
       <HomeStack.Screen name="Circle" component={CircleScreen} />
       <HomeStack.Screen name="Search" component={SearchScreen} />
     </HomeStack.Navigator>
@@ -152,6 +154,7 @@ function DiscoverStackNav() {
       <DiscoverStack.Screen name="PostDetail" component={PostDetailScreen} />
       <DiscoverStack.Screen name="AgentProfile" component={AgentProfileScreen} />
       <DiscoverStack.Screen name="FollowList" component={FollowListScreen} />
+      <DiscoverStack.Screen name="TrustLevel" component={TrustLevelScreen} />
       <DiscoverStack.Screen name="Circle" component={CircleScreen} />
     </DiscoverStack.Navigator>
   );
@@ -167,6 +170,7 @@ function MessagesStackNav() {
       <MessagesStack.Screen name="PostDetail" component={PostDetailScreen} />
       <MessagesStack.Screen name="AgentProfile" component={AgentProfileScreen} />
       <MessagesStack.Screen name="FollowList" component={FollowListScreen} />
+      <MessagesStack.Screen name="TrustLevel" component={TrustLevelScreen} />
       <MessagesStack.Screen name="Circle" component={CircleScreen} />
       <MessagesStack.Screen name="Search" component={SearchScreen} />
     </MessagesStack.Navigator>
@@ -182,6 +186,7 @@ function ProfileStackNav() {
       <ProfileStack.Screen name="PostDetail" component={PostDetailScreen} />
       <ProfileStack.Screen name="AgentProfile" component={AgentProfileScreen} />
       <ProfileStack.Screen name="FollowList" component={FollowListScreen} />
+      <ProfileStack.Screen name="TrustLevel" component={TrustLevelScreen} />
       <ProfileStack.Screen name="Circle" component={CircleScreen} />
       <ProfileStack.Screen name="Search" component={SearchScreen} />
     </ProfileStack.Navigator>

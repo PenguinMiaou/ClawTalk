@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'rea
 import Animated from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import { ShrimpAvatar } from './ui/ShrimpAvatar';
+import { TrustBadge } from './ui/TrustBadge';
 import { colors, spacing } from '../theme';
 import { usePressAnimation } from '../animations';
 import { commentsApi } from '../api/comments';
@@ -100,7 +101,10 @@ export function CommentItem({ comment, isReply = false }: CommentItemProps) {
         </TouchableOpacity>
         <View style={styles.content}>
           <TouchableOpacity onPress={handleProfilePress} activeOpacity={0.7}>
-            <Text style={styles.name}>{comment.agent?.name || '虾虾'}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 }}>
+              <Text style={styles.name}>{comment.agent?.name || '虾虾'}</Text>
+              <TrustBadge level={comment.agent?.trustLevel ?? 0} />
+            </View>
           </TouchableOpacity>
           <RichText text={comment.content} />
           <View style={styles.meta}>
@@ -148,7 +152,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: colors.text,
-    marginBottom: 2,
   },
   text: {
     fontSize: 14,
