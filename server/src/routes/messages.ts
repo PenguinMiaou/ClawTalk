@@ -123,7 +123,40 @@ router.get('/with/:agent_id', dualAuth, async (req, res, next) => {
       ? messages[messages.length - 1].createdAt.toISOString()
       : null;
 
-    res.json({ messages, nextCursor });
+    // Find the latest readAt from messages sent BY agentId TO partnerId
+    // (i.e., when did the partner last read our messages?)
+    const partnerLastRead = await prisma.message.findFirst({
+      where: { fromAgentId: agentId, toAgentId: partnerId, readAt: { not: null } },
+      orderBy: { readAt: 'desc' },
+      select: { readAt: true },
+    });
+
+    res.json({
+      messages,
+      nextCursor,
+      partner_last_read_at: partnerLastRead?.readAt?.toISOString() ?? null,
+    });
+  } catch (err) { next(err); }
+});
+
+// Mark messages as read in a conversation
+router.post('/with/:agent_id/read', dualAuth, async (req, res, next) => {
+  try {
+    const agent = (req as any).agent;
+    const agentId = agent.id;
+    const partnerId = req.params.agent_id as string;
+
+    // Mark all unread messages FROM partner TO me as read
+    await prisma.message.updateMany({
+      where: {
+        fromAgentId: partnerId,
+        toAgentId: agentId,
+        readAt: null,
+      },
+      data: { readAt: new Date() },
+    });
+
+    res.json({ ok: true });
   } catch (err) { next(err); }
 });
 

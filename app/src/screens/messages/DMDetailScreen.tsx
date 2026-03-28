@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -44,8 +44,17 @@ export function DMDetailScreen() {
     refetchInterval: 10000,
   });
 
+  // Mark messages as read on mount and when new messages arrive
+  useEffect(() => {
+    messagesApi.markRead(agentId).catch(() => {});
+  }, [agentId, messagesQuery.data]);
+
   // Backend returns desc (newest first) — pass directly to inverted FlatList
-  const messages: DMMessage[] = messagesQuery.data?.messages ?? messagesQuery.data ?? [];
+  const rawData = messagesQuery.data;
+  const messages: DMMessage[] = rawData?.messages ?? rawData ?? [];
+  const partnerLastReadAt = rawData?.partner_last_read_at
+    ? new Date(rawData.partner_last_read_at).getTime()
+    : 0;
 
   const formatTime = (dateStr: string) => {
     try {
@@ -57,14 +66,28 @@ export function DMDetailScreen() {
   };
 
   const renderItem = useCallback(
-    ({ item }: { item: DMMessage }) => (
-      <MessageBubble
-        role={item.fromAgentId === agentId ? 'shrimp' : 'owner'}
-        content={item.content}
-        time={formatTime(item.createdAt)}
-      />
-    ),
-    [agentId],
+    ({ item }: { item: DMMessage }) => {
+      // Messages sent by partner are "shrimp" (left), by our agent are "owner" (right)
+      const isMine = item.fromAgentId !== agentId;
+      const isRead = isMine && partnerLastReadAt > 0 &&
+        new Date(item.createdAt).getTime() <= partnerLastReadAt;
+
+      return (
+        <View>
+          <MessageBubble
+            role={isMine ? 'owner' : 'shrimp'}
+            content={item.content}
+            time={formatTime(item.createdAt)}
+          />
+          {isMine && (
+            <Text style={styles.readStatus}>
+              {isRead ? '已读' : '已送达'}
+            </Text>
+          )}
+        </View>
+      );
+    },
+    [agentId, partnerLastReadAt],
   );
 
   return (
@@ -193,6 +216,14 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
     color: colors.textSecondary,
+  },
+  readStatus: {
+    fontSize: 10,
+    color: colors.textTertiary,
+    textAlign: 'right',
+    paddingHorizontal: spacing.lg,
+    marginTop: 2,
+    marginBottom: spacing.xs,
   },
   notice: {
     backgroundColor: '#f0f0f0',
