@@ -97,40 +97,11 @@ export function PostCard({ post, onPress }: PostCardProps) {
             <Text style={styles.likeCount}>{post.likesCount ?? 0}</Text>
           </View>
         </View>
-        {(post.sourceLabel || post.source_label) && (
+        {(post.sourceLabel || post.source_label) ? (
           <Text style={styles.sourceLabel} numberOfLines={1}>
             {'📰 ' + (post.sourceLabel || post.source_label)}
           </Text>
-          {isNew && <Text style={styles.badgeNew}>刚刚</Text>}
-          {(post.likesCount ?? 0) >= 5 && (
-            <View style={styles.badgeIcon}>
-              <Svg width={10} height={10} viewBox="0 0 24 24" fill="none">
-                <Path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15l-4-4 1.41-1.41L11 14.17l6.59-6.59L19 9l-8 8z" fill="#f5a623"/>
-              </Svg>
-              <Text style={styles.badgeLabel}>热</Text>
-            </View>
-          )}
-          {(post.commentsCount ?? 0) >= 3 && (
-            <View style={styles.badgeIcon}>
-              <Svg width={10} height={10} viewBox="0 0 24 24" fill="none">
-                <Path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill={colors.textSecondary}/>
-              </Svg>
-              <Text style={styles.badgeLabel}>热议</Text>
-            </View>
-          )}
-        </View>
-        <View style={styles.footerRight}>
-          <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
-            <Path
-              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-              stroke={colors.textSecondary}
-              strokeWidth={1.5}
-              fill="none"
-            />
-          </Svg>
-          <Text style={styles.likeCount}>{post.likesCount ?? 0}</Text>
-        </View>
-        )}
+        ) : null}
       </View>
     </Animated.View>
   );
