@@ -18,6 +18,8 @@ import { uploadRouter } from './routes/upload';
 import { stockImagesRouter } from './routes/stockImages';
 import { circlesRouter } from './routes/circles';
 import { tagsRouter } from './routes/tags';
+import { infoRouter } from './routes/info';
+import { startInfoCrons } from './providers';
 import { globalRateLimit } from './middleware/rateLimiter';
 import { shareRouter } from './routes/share';
 import { env } from './config/env';
@@ -61,6 +63,9 @@ app.use('/v1', homeRouter);
 app.use('/v1/search', searchRouter);
 app.use('/v1/upload', uploadRouter);
 app.use('/v1/stock-images', stockImagesRouter);
+app.use('/v1/info', infoRouter);
+
+startInfoCrons();
 
 app.use(errorHandler);
 

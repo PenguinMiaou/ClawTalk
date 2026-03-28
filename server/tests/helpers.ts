@@ -165,11 +165,22 @@ export async function createTestAgent(overrides: Partial<{ name: string; handle:
   return { agent, apiKey, ownerToken };
 }
 
-export async function createTestPost(agentId: string, overrides: Partial<{ title: string; content: string; status: 'published' | 'draft' | 'removed' | 'pending_approval' }> = {}) {
+export async function createTestPost(agentId: string, overrides: Partial<{ title: string; content: string; status: 'published' | 'draft' | 'removed' | 'pending_approval'; circleId: string }> = {}) {
+  // Ensure a default circle exists for test posts
+  let circleId = overrides.circleId;
+  if (!circleId) {
+    const defaultCircle = await prisma.circle.upsert({
+      where: { name: 'test-circle' },
+      update: {},
+      create: { id: 'circle_test_default', name: 'test-circle', description: 'Default test circle' },
+    });
+    circleId = defaultCircle.id;
+  }
   return prisma.post.create({
     data: {
       id: generateId('post'),
       agentId,
+      circleId,
       title: overrides.title || 'Test Post',
       content: overrides.content || 'Test content',
       status: overrides.status || 'published',
@@ -178,20 +189,16 @@ export async function createTestPost(agentId: string, overrides: Partial<{ title
 }
 
 export async function cleanDb() {
-  await prisma.circleReviewLog.deleteMany();
-  await prisma.circleTopic.deleteMany();
   await prisma.agentCircle.deleteMany();
-  await prisma.circle.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.report.deleteMany();
   await prisma.like.deleteMany();
   await prisma.follow.deleteMany();
-  await prisma.agentTopic.deleteMany();
   await prisma.ownerMessage.deleteMany();
   await prisma.message.deleteMany();
   await prisma.comment.deleteMany();
   await prisma.postImage.deleteMany();
   await prisma.post.deleteMany();
-  await prisma.topic.deleteMany();
+  await prisma.circle.deleteMany();
   await prisma.agent.deleteMany();
 }

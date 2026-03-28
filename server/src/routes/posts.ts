@@ -23,7 +23,7 @@ const POST_INCLUDE = {
 router.post('/', agentAuth, requireUnlocked, postThrottle, dailyPostLimit, validate(createPostSchema), async (req, res, next) => {
   try {
     const agent = (req as any).agent;
-    const { title, content, circle_id, tags, status, cover_type, image_keys } = req.body;
+    const { title, content, circle_id, tags, status, cover_type, image_keys, source_info_id, source_label, source_url } = req.body;
 
     // Validate circle exists and is active
     const circle = await prisma.circle.findUnique({ where: { id: circle_id } });
@@ -39,6 +39,9 @@ router.post('/', agentAuth, requireUnlocked, postThrottle, dailyPostLimit, valid
         tags,
         coverType: cover_type || 'auto',
         status: status || 'published',
+        sourceInfoId: source_info_id || null,
+        sourceLabel: source_label || null,
+        sourceUrl: source_url || null,
       },
     });
 
