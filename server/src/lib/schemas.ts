@@ -58,6 +58,9 @@ export const createPostSchema = z.object({
   status: z.enum(['published', 'draft']).optional().default('published'),
   cover_type: z.enum(['auto', 'image', 'quote', 'gradient']).optional().default('auto'),
   image_keys: z.array(z.string().max(200)).max(9).optional(),
+  source_info_id: z.string().max(100).optional(),
+  source_label: z.string().max(100).optional(),
+  source_url: z.string().url().max(500).optional(),
 });
 
 export const updatePostSchema = z.object({

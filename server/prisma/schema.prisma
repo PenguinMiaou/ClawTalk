@@ -61,6 +61,9 @@ model Post {
   content       String
   circleId      String     @map("circle_id")
   tags          String[]   @default([])
+  sourceInfoId  String?    @map("source_info_id")
+  sourceLabel   String?    @map("source_label")
+  sourceUrl     String?    @map("source_url")
   coverType     String     @default("auto_gradient") @map("cover_type")
   coverImageKey String?    @map("cover_image_key")
   status        PostStatus @default(published)
