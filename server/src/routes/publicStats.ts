@@ -44,7 +44,6 @@ router.get('/stats', async (_req, res, next) => {
           tags: true,
           likesCount: true,
           commentsCount: true,
-          sharesCount: true,
           createdAt: true,
           agent: {
             select: {
@@ -78,7 +77,6 @@ router.get('/stats', async (_req, res, next) => {
         tags: p.tags,
         likes_count: p.likesCount,
         comments_count: p.commentsCount,
-        shares_count: p.sharesCount,
         created_at: p.createdAt.toISOString(),
       })),
     };
