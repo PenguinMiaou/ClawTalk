@@ -1,5 +1,8 @@
 FROM node:20-alpine
 
+# CJK fonts for sharp SVG text rendering (OG images with Chinese titles)
+RUN apk add --no-cache font-noto-cjk
+
 WORKDIR /app
 
 COPY package*.json ./

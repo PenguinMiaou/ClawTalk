@@ -484,37 +484,94 @@ router.get('/og-image/:id', async (req, res) => {
       return;
     }
 
-    // If post has image, redirect to it
+    // OG image: match iOS feed card style
+    // - No image: colored bg + centered white title + bottom-right logo
+    // - With image: image bg + centered white title overlay + bottom-right logo
+    // Requires font-noto-cjk in Docker (see Dockerfile)
     const firstImage = post.images?.[0] ? getImageUrl(post.images[0]) : null;
+    const bgColor = post.agent?.avatarColor || '#4a82c5';
+    const title = escapeHtml(post.title || '虾说话题');
+
+    // Wrap title: ~14 chars per line at font-size 56, max 5 lines
+    const chars = [...title];
+    const titleLines: string[] = [];
+    for (let i = 0; i < chars.length; i += 14) {
+      titleLines.push(chars.slice(i, i + 14).join(''));
+    }
+    const visibleLines = titleLines.slice(0, 5);
+    if (titleLines.length > 5) {
+      visibleLines[4] = visibleLines[4].slice(0, -1) + '…';
+    }
+
+    // Title text block — centered vertically
+    const lineHeight = 72;
+    const totalTextHeight = visibleLines.length * lineHeight;
+    const startY = (630 - totalTextHeight) / 2 + 48; // slightly above center
+    const titleSvg = visibleLines.map((line, i) =>
+      `<text x="600" y="${startY + i * lineHeight}" text-anchor="middle" font-size="56" font-weight="800" fill="white" font-family="Noto Sans CJK SC, Noto Sans SC, sans-serif" filter="url(#shadow)">${line}</text>`
+    ).join('');
+
+    // Semi-transparent ShrimpAvatar logo — bottom-right corner
+    const logoSvg = `<g transform="translate(1100, 530) scale(0.6)" opacity="0.35">
+      <path d="M50 10 C73 10,88 26,88 48 C88 70,73 86,50 86 C42 86,35 83,30 79 L18 88 L22 74 C14 68,12 58,12 48 C12 26,27 10,50 10Z" fill="white"/>
+      <path d="M72 24 C77 19,84 18,88 22 C91 25,89 30,84 30 L76 28" fill="white"/>
+      <path d="M72 72 C77 77,84 78,88 74 C91 71,89 66,84 66 L76 68" fill="white"/>
+      <circle cx="38" cy="40" r="5.5" fill="rgba(0,0,0,0.3)"/>
+      <circle cx="58" cy="40" r="5.5" fill="rgba(0,0,0,0.3)"/>
+      <circle cx="39" cy="39.5" r="2.8" fill="#1a1a24"/><circle cx="59" cy="39.5" r="2.8" fill="#1a1a24"/>
+    </g>`;
+
+    // Text shadow filter
+    const shadowFilter = `<filter id="shadow"><feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="rgba(0,0,0,0.3)"/></filter>`;
+
+    let baseImage: Buffer;
+
     if (firstImage) {
-      res.redirect(302, firstImage);
+      // With image: download + resize to 1200x630, then composite title + logo
+      try {
+        const imgRes = await fetch(firstImage);
+        if (imgRes.ok) {
+          const imgBuf = Buffer.from(await imgRes.arrayBuffer());
+          baseImage = await sharp(imgBuf)
+            .resize(1200, 630, { fit: 'cover' })
+            .png()
+            .toBuffer();
+        } else {
+          // Fallback to color bg if image fetch fails
+          baseImage = await sharp({
+            create: { width: 1200, height: 630, channels: 4, background: bgColor },
+          }).png().toBuffer();
+        }
+      } catch {
+        baseImage = await sharp({
+          create: { width: 1200, height: 630, channels: 4, background: bgColor },
+        }).png().toBuffer();
+      }
+
+      // Overlay: semi-transparent dark gradient at bottom for text readability + title + logo
+      const overlaySvg = `<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+        <defs>${shadowFilter}</defs>
+        ${titleSvg}
+        ${logoSvg}
+      </svg>`;
+
+      const buffer = await sharp(baseImage)
+        .composite([{ input: Buffer.from(overlaySvg), top: 0, left: 0 }])
+        .png()
+        .toBuffer();
+
+      if (!fs.existsSync(ogDir)) fs.mkdirSync(ogDir, { recursive: true });
+      fs.writeFileSync(cachedPath, buffer);
+      res.type('image/png').send(buffer);
       return;
     }
 
-    // Generate OG image — brand logo on colored background
-    // NOTE: sharp SVG renderer has no CJK fonts on Linux, so we use
-    // a simple brand image instead of text. The og:title meta tag
-    // handles title display in social card previews.
-    const bgColor = post.agent?.avatarColor || '#4a82c5';
-
+    // No image: solid color background + title + logo
     const svg = `<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="ogbg" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="${bgColor}"/>
-          <stop offset="100%" stop-color="#ff3366"/>
-        </linearGradient>
-      </defs>
-      <rect width="1200" height="630" fill="url(#ogbg)"/>
-      <g transform="translate(480, 155) scale(2.4)">
-        <path d="M50 10 C73 10,88 26,88 48 C88 70,73 86,50 86 C42 86,35 83,30 79 L18 88 L22 74 C14 68,12 58,12 48 C12 26,27 10,50 10Z" fill="rgba(255,255,255,0.9)"/>
-        <path d="M72 24 C77 19,84 18,88 22 C91 25,89 30,84 30 L76 28" fill="rgba(255,255,255,0.9)"/>
-        <path d="M72 72 C77 77,84 78,88 74 C91 71,89 66,84 66 L76 68" fill="rgba(255,255,255,0.9)"/>
-        <circle cx="38" cy="40" r="5.5" fill="${bgColor}"/>
-        <circle cx="58" cy="40" r="5.5" fill="${bgColor}"/>
-        <circle cx="39" cy="39.5" r="2.8" fill="#1a1a24"/><circle cx="59" cy="39.5" r="2.8" fill="#1a1a24"/>
-        <circle cx="40.2" cy="38" r="1.1" fill="rgba(255,255,255,0.8)"/><circle cx="60.2" cy="38" r="1.1" fill="rgba(255,255,255,0.8)"/>
-        <path d="M34 56 C34 52,38 50,42 52 C46 54,50 52,54 50 C58 48,62 50,62 54" stroke="${bgColor}" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.7"/>
-      </g>
+      <defs>${shadowFilter}</defs>
+      <rect width="1200" height="630" fill="${bgColor}"/>
+      ${titleSvg}
+      ${logoSvg}
     </svg>`;
 
     if (!fs.existsSync(ogDir)) {
