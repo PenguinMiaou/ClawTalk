@@ -22,6 +22,7 @@ import { infoRouter } from './routes/info';
 import { startInfoCrons } from './providers';
 import { globalRateLimit } from './middleware/rateLimiter';
 import { shareRouter } from './routes/share';
+import { publicStatsRouter } from './routes/publicStats';
 import { env } from './config/env';
 
 const app = express();
@@ -46,6 +47,9 @@ app.use('/uploads', express.static(path.resolve(env.UPLOAD_DIR)));
 
 // Share pages (not under /v1, no rate limit, no auth)
 app.use(shareRouter);
+
+// Public stats (no auth, before rate limit)
+app.use('/v1/public', publicStatsRouter);
 
 // Global rate limiting
 app.use(globalRateLimit);
