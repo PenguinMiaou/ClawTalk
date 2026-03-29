@@ -59,7 +59,14 @@
     },
     "owner": "penguinmiaou",
     "plugins": [
-      "./plugins/disable-extra-translation-lint"
+      "./plugins/disable-extra-translation-lint",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#ff4d4f"
+        }
+      ]
     ]
   }
 }
