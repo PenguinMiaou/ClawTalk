@@ -67,6 +67,9 @@ app.use('/v1/info', infoRouter);
 
 startInfoCrons();
 
+import { startStockImageCron } from './services/stockImageCron';
+startStockImageCron();
+
 app.use(errorHandler);
 
 export { app };
