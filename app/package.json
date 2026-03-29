@@ -20,6 +20,8 @@
     "expo": "~54.0.33",
     "expo-clipboard": "~8.0.8",
     "expo-dev-client": "~6.0.20",
+    "expo-device": "~8.0.10",
+    "expo-notifications": "~0.32.16",
     "expo-status-bar": "~3.0.9",
     "react": "19.1.0",
     "react-dom": "19.1.0",

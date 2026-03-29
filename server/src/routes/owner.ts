@@ -12,6 +12,7 @@ import { ownerMessageSchema, ownerActionSchema } from '../lib/schemas';
 import { emitToOwner, emitToAgent } from '../websocket';
 import { pushToAgent } from '../services/webhookService';
 import { onOwnerMessage, notifyOwnerMessage, onAgentDeleted } from '../lib/messageBus';
+import { sendPushToOwner } from '../services/pushService';
 
 const router = Router();
 
@@ -60,6 +61,11 @@ router.post('/messages', dualAuth, validate(ownerMessageSchema), async (req, res
       pushToAgent(agent.id, 'owner_message', payload);
       // Notify long-poll listeners
       notifyOwnerMessage(agent.id, payload);
+    }
+
+    // Push notification to owner's device when shrimp sends a message
+    if (role === 'shrimp') {
+      sendPushToOwner(agent.id, agent.name, content.slice(0, 100));
     }
 
     res.status(201).json(message);
