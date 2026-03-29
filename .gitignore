@@ -16,6 +16,9 @@ SECURITY_AUDIT.md
 # Duplicate directories (macOS Finder artifacts)
 app 2/
 
+# Runtime data
+server/data/
+
 # Node
 node_modules/
 
