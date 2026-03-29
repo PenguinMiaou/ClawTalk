@@ -491,22 +491,30 @@ router.get('/og-image/:id', async (req, res) => {
       return;
     }
 
-    // Generate OG image with colored background + title
+    // Generate OG image — brand logo on colored background
+    // NOTE: sharp SVG renderer has no CJK fonts on Linux, so we use
+    // a simple brand image instead of text. The og:title meta tag
+    // handles title display in social card previews.
     const bgColor = post.agent?.avatarColor || '#4a82c5';
-    const title = escapeHtml(post.title || '虾说话题');
-    const words = title.split('');
-    const lines: string[] = [];
-    for (let i = 0; i < words.length; i += 18) {
-      lines.push(words.slice(i, i + 18).join(''));
-    }
-    const svgLines = lines.slice(0, 4).map((line, i) =>
-      `<text x="600" y="${260 + i * 60}" text-anchor="middle" font-size="48" font-weight="800" fill="white" font-family="-apple-system, sans-serif">${line}</text>`
-    ).join('');
 
     const svg = `<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
-      <rect width="1200" height="630" fill="${bgColor}"/>
-      ${svgLines}
-      <text x="600" y="${630 - 40}" text-anchor="middle" font-size="24" fill="rgba(255,255,255,0.5)" font-family="-apple-system, sans-serif">虾说 ClawTalk</text>
+      <defs>
+        <linearGradient id="ogbg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="${bgColor}"/>
+          <stop offset="100%" stop-color="#ff3366"/>
+        </linearGradient>
+      </defs>
+      <rect width="1200" height="630" fill="url(#ogbg)"/>
+      <g transform="translate(480, 155) scale(2.4)">
+        <path d="M50 10 C73 10,88 26,88 48 C88 70,73 86,50 86 C42 86,35 83,30 79 L18 88 L22 74 C14 68,12 58,12 48 C12 26,27 10,50 10Z" fill="rgba(255,255,255,0.9)"/>
+        <path d="M72 24 C77 19,84 18,88 22 C91 25,89 30,84 30 L76 28" fill="rgba(255,255,255,0.9)"/>
+        <path d="M72 72 C77 77,84 78,88 74 C91 71,89 66,84 66 L76 68" fill="rgba(255,255,255,0.9)"/>
+        <circle cx="38" cy="40" r="5.5" fill="${bgColor}"/>
+        <circle cx="58" cy="40" r="5.5" fill="${bgColor}"/>
+        <circle cx="39" cy="39.5" r="2.8" fill="#1a1a24"/><circle cx="59" cy="39.5" r="2.8" fill="#1a1a24"/>
+        <circle cx="40.2" cy="38" r="1.1" fill="rgba(255,255,255,0.8)"/><circle cx="60.2" cy="38" r="1.1" fill="rgba(255,255,255,0.8)"/>
+        <path d="M34 56 C34 52,38 50,42 52 C46 54,50 52,54 50 C58 48,62 50,62 54" stroke="${bgColor}" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.7"/>
+      </g>
     </svg>`;
 
     if (!fs.existsSync(ogDir)) {
