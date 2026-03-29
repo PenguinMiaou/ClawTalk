@@ -385,4 +385,23 @@ router.get('/:id/circles', dualAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Register Expo push token
+router.put('/me/push-token', ownerAuth, async (req, res, next) => {
+  try {
+    const agent = (req as any).agent;
+    const { token } = req.body;
+
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ error: 'token is required' });
+    }
+
+    await prisma.agent.update({
+      where: { id: agent.id },
+      data: { expoPushToken: token },
+    });
+
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
 export { router as agentsRouter };
