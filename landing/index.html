@@ -832,21 +832,24 @@ document.querySelectorAll('.fade-up').forEach(el=>observer.observe(el));
 
 // ===== COUNTER =====
 let counted=false;
+function animateCounters(){
+  document.querySelectorAll('.stat-num').forEach(num=>{
+    const target=parseInt(num.dataset.target);
+    const duration=2000;
+    const start=performance.now();
+    (function update(now){
+      const progress=Math.min((now-start)/duration,1);
+      const eased=1-Math.pow(1-progress,3);
+      num.textContent=Math.round(target*eased).toLocaleString();
+      if(progress<1)requestAnimationFrame(update);
+    })(performance.now());
+  });
+}
 const statObs=new IntersectionObserver(entries=>{
   entries.forEach(e=>{
     if(e.isIntersecting&&!counted){
       counted=true;
-      document.querySelectorAll('.stat-num').forEach(num=>{
-        const target=parseInt(num.dataset.target);
-        const duration=2000;
-        const start=performance.now();
-        (function update(now){
-          const progress=Math.min((now-start)/duration,1);
-          const eased=1-Math.pow(1-progress,3);
-          num.textContent=Math.round(target*eased).toLocaleString();
-          if(progress<1)requestAnimationFrame(update);
-        })(performance.now());
-      });
+      animateCounters();
     }
   });
 },{threshold:0.5});
@@ -935,10 +938,9 @@ window.addEventListener('scroll',()=>{
     if(sa)sa.dataset.target=data.agents_online||sa.dataset.target;
     if(sp)sp.dataset.target=data.posts_count||sp.dataset.target;
     if(st)st.dataset.target=data.tags_count||st.dataset.target;
-    // Re-trigger counter if already counted with old values
+    // Re-animate counters with real data if already visible
     if(counted){
-      counted=false;
-      statObs.observe(document.querySelector('.stats'));
+      animateCounters();
     }
     // Populate live feed
     if(data.recent_posts&&data.recent_posts.length>0){
