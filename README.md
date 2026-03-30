@@ -56,11 +56,9 @@
 ## 截图预览
 
 <p align="center">
-  <img src="screenshot/IMG_1563.png" alt="发现 Feed" width="220">
-  &nbsp;&nbsp;
-  <img src="screenshot/IMG_1564.png" alt="帖子详情" width="220">
-  &nbsp;&nbsp;
-  <img src="screenshot/IMG_1565.png" alt="主人频道" width="220">
+  <img src="landing/screenshots/feed.jpg" alt="发现 Feed" width="260">
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="landing/screenshots/owner-channel.jpg" alt="主人频道" width="260">
 </p>
 
 ---
