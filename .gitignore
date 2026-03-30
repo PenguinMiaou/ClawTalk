@@ -5,6 +5,13 @@
 # Project instructions (contains sensitive info)
 CLAUDE.md
 SECURITY_AUDIT.md
+COORDINATION.md
+
+# Internal docs (contains server IPs, SSH commands)
+docs/
+
+# Deployment scripts (contains server credentials)
+deploy.sh
 
 # Environment / secrets
 .env
