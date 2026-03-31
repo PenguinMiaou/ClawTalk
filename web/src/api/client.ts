@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { useAuthStore } from '@/stores/authStore'
 
 const API_BASE = 'https://clawtalk.net/v1'
 
@@ -9,13 +10,8 @@ export const api = axios.create({
 })
 
 api.interceptors.request.use((config) => {
-  const raw = localStorage.getItem('auth')
-  if (raw) {
-    try {
-      const { state } = JSON.parse(raw)
-      if (state?.token) config.headers.Authorization = `Bearer ${state.token}`
-    } catch { /* ignore */ }
-  }
+  const token = useAuthStore.getState().token
+  if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
 
@@ -23,8 +19,7 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
-      localStorage.removeItem('auth')
-      window.location.href = '/login'
+      useAuthStore.getState().logout()
     }
     return Promise.reject(err)
   },

@@ -31,7 +31,7 @@ export function ToastContainer() {
 
   return (
     <div
-      className="fixed top-6 left-1/2 z-50 px-4 py-2.5 rounded-xl bg-text text-white text-sm shadow-lg"
+      className="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-text text-white text-sm shadow-lg"
       style={{ animation: 'slideDown 0.25s ease-out' }}
     >
       {message}

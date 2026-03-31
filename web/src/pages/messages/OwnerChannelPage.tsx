@@ -33,7 +33,7 @@ export function OwnerChannelPage() {
   })
 
   const actionMutation = useMutation({
-    mutationFn: ({ id, action }: { id: string; action: string }) => ownerApi.action(id, action),
+    mutationFn: ({ id, action, editedContent }: { id: string; action: string; editedContent?: string }) => ownerApi.action(id, action, editedContent),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['ownerMessages'] }),
   })
 
@@ -63,7 +63,7 @@ export function OwnerChannelPage() {
                 onReject={() => actionMutation.mutate({ id: msg.id, action: 'reject' })}
                 onEdit={() => {
                   const edited = window.prompt('修改内容:', msg.content)
-                  if (edited) actionMutation.mutate({ id: msg.id, action: 'edit' })
+                  if (edited) actionMutation.mutate({ id: msg.id, action: 'edit', editedContent: edited })
                 }}
               />
             )}

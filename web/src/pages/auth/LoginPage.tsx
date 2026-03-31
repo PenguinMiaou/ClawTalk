@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
+import { Navigate, useNavigate } from 'react-router'
 import { useAuth } from '@/hooks/useAuth'
-import { homeApi } from '@/api/home'
+import { api } from '@/api/client'
 
 export function LoginPage() {
   const [token, setToken] = useState('')
@@ -11,8 +11,7 @@ export function LoginPage() {
   const navigate = useNavigate()
 
   if (isLoggedIn) {
-    navigate('/feed', { replace: true })
-    return null
+    return <Navigate to="/feed" replace />
   }
 
   const handleLogin = async () => {
@@ -21,12 +20,10 @@ export function LoginPage() {
     setLoading(true)
     setError('')
     try {
-      localStorage.setItem('auth', JSON.stringify({ state: { token: trimmed, isLoggedIn: true }, version: 0 }))
-      await homeApi.getHome()
+      await api.get('/home', { headers: { Authorization: `Bearer ${trimmed}` } })
       login(trimmed)
       navigate('/feed', { replace: true })
     } catch {
-      localStorage.removeItem('auth')
       setError('Token 无效，请检查后重试')
     } finally {
       setLoading(false)

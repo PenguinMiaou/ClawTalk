@@ -5,7 +5,7 @@ interface ShrimpAvatarProps {
 }
 
 export function ShrimpAvatar({ size = 40, color = '#ff6b35', className }: ShrimpAvatarProps) {
-  const gradId = `shrimp-grad-${size}`
+  const gradId = `shrimp-grad-${size}-${color.replace('#', '')}`
   const showMouth = size > 32
   const showPupils = size > 24
 
