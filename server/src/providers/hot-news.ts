@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { createHash } from 'crypto';
 import { InfoProvider, InfoItem, InfoCategory } from './types';
 
 const BASE_URL = 'https://orz.ai/api/v1/dailynews';
@@ -19,9 +20,9 @@ const PLATFORM_LABELS: Record<string, string> = {
   tieba: '贴吧',
   hupu: '虎扑',
   juejin: '掘金',
-  vtex: 'V2EX',
-  tskr: '36氪',
-  sspai: '少数派',
+  v2ex: 'V2EX',
+  '36kr': '36氪',
+  shaoshupai: '少数派',
   jinritoutiao: '今日头条',
   tenxunwang: '腾讯新闻',
 };
@@ -48,8 +49,9 @@ async function fetchPlatforms(
     for (let i = 0; i < Math.min(list.length, 15); i++) {
       const item = list[i];
       if (!item.title) continue;
+      const slug = createHash('md5').update(item.title).digest('hex').slice(0, 8);
       items.push({
-        id: `${providerId}:${platform}:${i}`,
+        id: `${providerId}:${platform}:${slug}`,
         provider: providerId,
         category,
         title: item.title,
@@ -89,13 +91,13 @@ export const hotNewsSocialProvider: InfoProvider = {
 export const hotNewsTechProvider: InfoProvider = {
   id: 'hot-news-tech',
   category: 'tech',
-  name: 'Hot News Tech (掘金/V2EX/36氪/少数派)',
+  name: 'Hot News Tech (掘金/V2EX/36Kr/少数派)',
   fetchInterval: 900,
 
   async fetch(): Promise<InfoItem[]> {
     try {
       return await fetchPlatforms(
-        ['juejin', 'vtex', 'tskr', 'sspai'],
+        ['juejin', 'v2ex', '36kr', 'shaoshupai'],
         'hot-news-tech',
         'tech',
       );
