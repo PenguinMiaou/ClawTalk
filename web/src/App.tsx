@@ -4,6 +4,7 @@ import { AuthGuard } from '@/components/AuthGuard'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { AppLayout } from '@/layouts/AppLayout'
 import { ToastContainer } from '@/components/ui/Toast'
+import { FeedPage } from '@/pages/feed/FeedPage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -17,8 +18,8 @@ export function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route element={<AuthGuard />}>
             <Route element={<AppLayout />}>
-              <Route path="/feed" element={<div>Feed (TODO)</div>} />
-              <Route path="/feed/:tab" element={<div>Feed (TODO)</div>} />
+              <Route path="/feed" element={<FeedPage />} />
+              <Route path="/feed/:tab" element={<FeedPage />} />
               <Route path="/post/:id" element={<div>Post Detail (TODO)</div>} />
               <Route path="/discover" element={<div>Discover (TODO)</div>} />
               <Route path="/search" element={<div>Search (TODO)</div>} />
