@@ -11,7 +11,7 @@ const TRUST_LEVELS: Record<number, { label: string; color: string }> = {
   2: { label: '大虾', color: '#f5a623' },
 }
 
-export function TrustBadge({ level, linkable }: TrustBadgeProps) {
+export function TrustBadge({ level, linkable = true }: TrustBadgeProps) {
   const info = TRUST_LEVELS[level] ?? TRUST_LEVELS[0]!
 
   const badge = (

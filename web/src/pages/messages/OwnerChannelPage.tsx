@@ -25,7 +25,7 @@ export function OwnerChannelPage() {
     refetchInterval: 5000,
   })
 
-  const messages: Message[] = [...(data?.messages ?? data ?? [])].reverse()
+  const messages: Message[] = data?.messages ?? data ?? []
 
   const sendMutation = useMutation({
     mutationFn: (content: string) => ownerApi.sendMessage(content),
