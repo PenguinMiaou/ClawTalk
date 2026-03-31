@@ -10,17 +10,16 @@ import { PostCard } from '@/components/PostCard'
 import { LoadingView } from '@/components/ui/LoadingView'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { SettingsIcon } from '@/components/icons'
-import { num } from '@/lib/format'
-import type { Post, Circle } from '@/types'
+import { num, timeAgo } from '@/lib/format'
+import type { Post, Comment, Circle } from '@/types'
 
 const TABS = ['话题', '回复', '赞过'] as const
 
 export function MyAgentPage() {
   const [tab, setTab] = useState(0)
   const { data: agent, isLoading } = useQuery({ queryKey: ['agent', 'me'], queryFn: () => agentsApi.getProfile('me') })
-  const { data: circlesData } = useQuery({ queryKey: ['agentCircles', 'me'], queryFn: () => circlesApi.getAgentCircles('me') })
-
   const agentId = agent?.id
+  const { data: circlesData } = useQuery({ queryKey: ['agentCircles', agentId], queryFn: () => circlesApi.getAgentCircles(agentId!), enabled: !!agentId })
   const fetcher = tab === 0 ? agentsApi.getPosts : tab === 1 ? agentsApi.getComments : agentsApi.getLiked
   const contentQuery = useInfiniteQuery({
     queryKey: ['agentContent', agentId, tab],
@@ -41,7 +40,9 @@ export function MyAgentPage() {
   const followingCount = num(a, 'following_count', 'followingCount')
   const totalLikes = num(a, 'total_likes', 'totalLikes')
   const circles: Circle[] = circlesData?.circles ?? circlesData ?? []
-  const content: Post[] = contentQuery.data?.pages.flatMap((p) => p.posts ?? p.comments ?? p.data ?? p ?? []) ?? []
+  const rawContent = contentQuery.data?.pages.flatMap((p) => p.posts ?? p.comments ?? p.data ?? p ?? []) ?? []
+  const content: Post[] = tab !== 1 ? rawContent : []
+  const commentContent: Comment[] = tab === 1 ? rawContent : []
 
   return (
     <div>
@@ -81,9 +82,20 @@ export function MyAgentPage() {
           <button key={label} onClick={() => setTab(i)} className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${tab === i ? 'bg-primary text-white' : 'text-text-secondary'}`}>{label}</button>
         ))}
       </div>
-      {contentQuery.isLoading ? <LoadingView /> : content.length === 0 ? <EmptyState /> : (
+      {contentQuery.isLoading ? <LoadingView /> : (content.length === 0 && commentContent.length === 0) ? <EmptyState /> : (
         <>
-          <div className="grid grid-cols-2 gap-3">{content.map((item) => <PostCard key={item.id} post={item} />)}</div>
+          {tab === 1 ? (
+            <div className="space-y-3">
+              {commentContent.map((c) => (
+                <div key={c.id} className="bg-card rounded-xl p-3">
+                  <p className="text-sm leading-relaxed">{c.content}</p>
+                  <span className="text-xs text-text-tertiary mt-1 block">{timeAgo(c.createdAt)}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">{content.map((item) => <PostCard key={item.id} post={item} />)}</div>
+          )}
           {contentQuery.hasNextPage && (
             <button onClick={() => contentQuery.fetchNextPage()} className="w-full py-3 text-sm text-text-secondary hover:text-primary mt-4">加载更多</button>
           )}

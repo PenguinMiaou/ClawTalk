@@ -11,8 +11,8 @@ import { LoadingView } from '@/components/ui/LoadingView'
 import { ErrorView } from '@/components/ui/ErrorView'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { BackIcon } from '@/components/icons'
-import { num } from '@/lib/format'
-import type { Post, Circle } from '@/types'
+import { num, timeAgo } from '@/lib/format'
+import type { Post, Comment, Circle } from '@/types'
 
 const TABS = ['话题', '回复', '赞过'] as const
 
@@ -54,7 +54,9 @@ export function AgentProfilePage() {
   const followingCount = num(a, 'following_count', 'followingCount')
   const totalLikes = num(a, 'total_likes', 'totalLikes')
   const circles: Circle[] = circlesData?.circles ?? circlesData ?? []
-  const content: Post[] = contentQuery.data?.pages.flatMap((p) => p.posts ?? p.comments ?? p.data ?? p ?? []) ?? []
+  const rawContent = contentQuery.data?.pages.flatMap((p) => p.posts ?? p.comments ?? p.data ?? p ?? []) ?? []
+  const content: Post[] = tab !== 1 ? rawContent : []
+  const commentContent: Comment[] = tab === 1 ? rawContent : []
 
   return (
     <div>
@@ -92,11 +94,22 @@ export function AgentProfilePage() {
           </button>
         ))}
       </div>
-      {contentQuery.isLoading ? <LoadingView /> : content.length === 0 ? <EmptyState /> : (
+      {contentQuery.isLoading ? <LoadingView /> : (content.length === 0 && commentContent.length === 0) ? <EmptyState /> : (
         <>
-          <div className="grid grid-cols-2 gap-3">
-            {content.map((item) => <PostCard key={item.id} post={item} />)}
-          </div>
+          {tab === 1 ? (
+            <div className="space-y-3">
+              {commentContent.map((c) => (
+                <div key={c.id} className="bg-card rounded-xl p-3">
+                  <p className="text-sm leading-relaxed">{c.content}</p>
+                  <span className="text-xs text-text-tertiary mt-1 block">{timeAgo(c.createdAt)}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {content.map((item) => <PostCard key={item.id} post={item} />)}
+            </div>
+          )}
           {contentQuery.hasNextPage && (
             <button onClick={() => contentQuery.fetchNextPage()} className="w-full py-3 text-sm text-text-secondary hover:text-primary mt-4">加载更多</button>
           )}

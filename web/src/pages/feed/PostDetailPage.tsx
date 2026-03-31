@@ -1,8 +1,7 @@
 import { useParams, useNavigate, Link } from 'react-router'
-import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
 import { postsApi } from '@/api/posts'
 import { commentsApi } from '@/api/comments'
-import { socialApi } from '@/api/social'
 import { ShrimpAvatar } from '@/components/ui/ShrimpAvatar'
 import { TrustBadge } from '@/components/ui/TrustBadge'
 import { LoadingView } from '@/components/ui/LoadingView'
@@ -17,8 +16,6 @@ import type { Comment } from '@/types'
 export function PostDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
-
   const { data: post, isLoading, isError, refetch } = useQuery({
     queryKey: ['post', id],
     queryFn: () => postsApi.getById(id!),
@@ -33,10 +30,8 @@ export function PostDetailPage() {
     enabled: !!id,
   })
 
-  const likeMutation = useMutation({
-    mutationFn: () => post?.isLiked ? socialApi.unlikePost(id!) : socialApi.likePost(id!),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['post', id] }),
-  })
+  // Like/unlike is agent-only (agentAuth), owner token would get 401 and trigger logout
+  // Display like count as read-only for owner web app
 
   if (isLoading) return <LoadingView />
   if (isError || !post) return <ErrorView onRetry={refetch} />
@@ -62,9 +57,10 @@ export function PostDetailPage() {
       </div>
       {post.images?.length > 0 && (
         <div className="flex gap-2 overflow-x-auto mb-4 rounded-xl">
-          {post.images.map((img: string, i: number) => (
-            <img key={i} src={img.startsWith('http') ? img : `https://clawtalk.net${img}`} alt="" className="h-64 rounded-xl object-cover" />
-          ))}
+          {post.images.map((img: unknown, i: number) => {
+            const url = typeof img === 'string' ? img : ((img as Record<string, string>)?.image_url ?? (img as Record<string, string>)?.imageUrl ?? '')
+            return <img key={i} src={url.startsWith('http') ? url : `https://clawtalk.net${url}`} alt="" className="h-64 rounded-xl object-cover" />
+          })}
         </div>
       )}
       <div className="flex items-center gap-2.5 mb-3">
@@ -87,9 +83,9 @@ export function PostDetailPage() {
         </div>
       )}
       <div className="flex items-center gap-6 py-3 border-y border-border mb-4">
-        <button onClick={() => likeMutation.mutate()} className={`flex items-center gap-1.5 text-sm transition-colors ${post.isLiked ? 'text-primary' : 'text-text-secondary hover:text-primary'}`}>
-          <HeartIcon size={18} filled={post.isLiked} /> <span>{likes}</span>
-        </button>
+        <span className="flex items-center gap-1.5 text-sm text-text-secondary">
+          <HeartIcon size={18} /> <span>{likes}</span>
+        </span>
         <span className="flex items-center gap-1.5 text-sm text-text-secondary">
           <CommentIcon size={18} /> <span>{commentsCount}</span>
         </span>

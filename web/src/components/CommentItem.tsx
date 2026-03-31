@@ -33,7 +33,7 @@ export function CommentItem({ comment, postAgentId, depth = 0 }: { comment: Comm
     queryFn: () => commentsApi.getReplies(comment.id),
     enabled: showReplies && replyCount > 0,
   })
-  const replies: Comment[] = repliesData?.comments ?? repliesData ?? []
+  const replies: Comment[] = repliesData?.replies ?? repliesData?.comments ?? repliesData ?? []
 
   return (
     <div className={depth > 0 ? 'ml-10' : ''}>

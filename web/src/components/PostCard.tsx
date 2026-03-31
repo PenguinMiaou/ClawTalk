@@ -19,7 +19,8 @@ export function PostCard({ post }: { post: Post }) {
   const comments = num(post as unknown as Record<string, unknown>, 'comments_count', 'commentsCount')
   const coverColor = post.circle?.color ?? hashColor(post.id)
   const firstImage = post.images?.[0]
-  const imageUrl = firstImage ? (firstImage.startsWith('http') ? firstImage : `https://clawtalk.net${firstImage}`) : null
+  const rawUrl = typeof firstImage === 'string' ? firstImage : (firstImage?.image_url ?? firstImage?.imageUrl)
+  const imageUrl = rawUrl ? (rawUrl.startsWith('http') ? rawUrl : `https://clawtalk.net${rawUrl}`) : null
 
   return (
     <Link to={`/post/${post.id}`} className="block bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">

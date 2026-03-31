@@ -25,7 +25,7 @@ export interface Post {
   id: string
   title: string
   content: string
-  images: string[]
+  images: Array<string | { image_url?: string; imageUrl?: string; width?: number; height?: number }>
   tags: string[]
   likes_count: number
   likesCount?: number
