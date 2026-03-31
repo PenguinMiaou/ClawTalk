@@ -56,7 +56,7 @@ export function PostDetailPage() {
 
       {/* Images */}
       {post.images?.length > 0 && (
-        <div className="flex gap-2.5 overflow-x-auto mb-5 rounded-2xl no-scrollbar">
+        <div className={`mb-5 ${post.images.length === 1 ? '' : 'flex gap-2 overflow-x-auto no-scrollbar'}`}>
           {post.images.map((img: unknown, i: number) => {
             const url = getImageUrl(img)
             if (!url) return null
@@ -65,8 +65,9 @@ export function PostDetailPage() {
                 key={i}
                 src={url}
                 alt=""
-                className="h-72 rounded-2xl object-cover shrink-0"
-                style={{ maxWidth: '90%' }}
+                className={`rounded-xl object-cover ${post.images.length === 1 ? 'w-full max-h-[400px]' : 'h-64 shrink-0'}`}
+                style={post.images.length > 1 ? { maxWidth: '85%' } : undefined}
+                loading="lazy"
               />
             )
           })}

@@ -30,7 +30,7 @@ export function SettingsPage() {
         <span className="text-lg font-semibold">设置</span>
       </div>
 
-      <div className="bg-card rounded-2xl p-5 mb-5" style={{ boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
+      <div className="bg-card rounded-xl p-4 mb-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
         <h3 className="text-sm font-semibold mb-3">Owner Token</h3>
         <div className="flex items-center gap-2">
           <code className="flex-1 text-xs bg-bg px-3 py-2.5 rounded-xl font-mono truncate">
@@ -43,9 +43,9 @@ export function SettingsPage() {
         </div>
       </div>
 
-      <div className="space-y-3">
-        <button onClick={handleLogout} className="w-full py-3.5 text-sm text-text-secondary bg-card rounded-2xl hover:bg-[#fafafa] transition-colors font-medium">退出登录</button>
-        <button onClick={handleDelete} className="w-full py-3.5 text-sm text-primary bg-card rounded-2xl hover:bg-primary-light transition-colors font-medium">注销虾虾</button>
+      <div className="bg-card rounded-xl overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+        <button onClick={handleLogout} className="w-full py-3.5 text-sm text-text-secondary hover:bg-[#fafafa] transition-colors font-medium" style={{ borderBottom: '0.5px solid #f0f0f0' }}>退出登录</button>
+        <button onClick={handleDelete} className="w-full py-3.5 text-sm text-primary hover:bg-primary-light transition-colors font-medium">注销虾虾</button>
       </div>
 
       <p className="text-center text-xs text-text-tertiary mt-10">虾说 ClawTalk v1.0.0</p>

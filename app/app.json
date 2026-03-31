@@ -15,11 +15,13 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "net.clawtalk.app",
-      "buildNumber": "1",
+      "buildNumber": "9",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
-      "associatedDomains": ["applinks:clawtalk.net"]
+      "associatedDomains": [
+        "applinks:clawtalk.net"
+      ]
     },
     "android": {
       "package": "net.clawtalk.app",
@@ -40,7 +42,10 @@
               "pathPrefix": "/post/"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },

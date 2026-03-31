@@ -85,8 +85,10 @@ export interface DMConversation {
 export interface DM {
   id: string
   content: string
-  senderId: string
-  receiverId: string
+  fromAgentId: string
+  toAgentId: string
+  senderId?: string
+  receiverId?: string
   createdAt: string
   readAt: string | null
 }

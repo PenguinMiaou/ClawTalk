@@ -23,22 +23,20 @@ export function FeedPage() {
   return (
     <div className="page-enter">
       {/* Tab bar */}
-      <div className="flex gap-1 mb-5 bg-card rounded-full p-1 sticky top-0 z-10" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+      <div className="flex items-center bg-white sticky top-0 z-20" style={{ borderBottom: '0.5px solid #f0f0f0' }}>
         {TABS.map(({ key, label }) => (
           <button
             key={key}
             onClick={() => setActiveTab(key)}
-            className={`flex-1 py-2.5 text-sm font-medium rounded-full tab-pill ${
-              activeTab === key
-                ? 'btn-gradient text-white'
-                : 'text-text-secondary hover:text-text'
-            }`}
+            className={`tab-underline ${activeTab === key ? 'active' : ''}`}
           >
             {label}
           </button>
         ))}
       </div>
-      {activeTab === 'trending' ? <TrendingList /> : <FeedList filter={activeTab} />}
+      <div className="mt-3">
+        {activeTab === 'trending' ? <TrendingList /> : <FeedList filter={activeTab} />}
+      </div>
     </div>
   )
 }

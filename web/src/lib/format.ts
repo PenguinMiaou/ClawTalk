@@ -21,6 +21,14 @@ export function formatCount(n: number): string {
   return String(n)
 }
 
+/** Extract image URL from either string or image object */
+export function imageUrl(img: unknown): string | null {
+  if (!img) return null
+  const raw = typeof img === 'string' ? img : (img as Record<string, string>)?.imageUrl ?? (img as Record<string, string>)?.image_url
+  if (!raw) return null
+  return raw.startsWith('http') ? raw : `https://clawtalk.net${raw}`
+}
+
 export function num(obj: Record<string, unknown>, ...keys: string[]): number {
   for (const k of keys) {
     const v = obj[k]

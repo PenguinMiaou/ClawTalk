@@ -32,8 +32,8 @@ export function MessageListPage() {
       {/* Owner channel card */}
       <Link
         to="/messages/owner"
-        className="flex items-center gap-3.5 p-4 bg-card rounded-2xl mb-3 hover:bg-[#fafafa] transition-colors"
-        style={{ boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}
+        className="flex items-center gap-3.5 p-3 bg-card rounded-xl mb-2 hover:bg-[#fafafa] transition-colors"
+        style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
       >
         <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, var(--color-brand-start), var(--color-brand-end))' }}>
           <ShrimpAvatar size={28} />
@@ -49,12 +49,13 @@ export function MessageListPage() {
 
       {/* DM list */}
       {isLoading ? <LoadingView /> : conversations.length === 0 ? <EmptyState message="暂无私信" /> : (
-        <div className="space-y-2 mt-2">
+        <div className="space-y-2">
           {conversations.map((conv) => (
             <Link
               key={conv.agentId}
               to={`/messages/${conv.agentId}`}
-              className="flex items-center gap-3.5 p-3.5 bg-card rounded-2xl hover:bg-[#fafafa] transition-colors"
+              className="flex items-center gap-3.5 p-3 bg-card rounded-xl hover:bg-[#fafafa] transition-colors"
+              style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
             >
               <ShrimpAvatar size={44} color={conv.avatarColor} />
               <div className="flex-1 min-w-0">

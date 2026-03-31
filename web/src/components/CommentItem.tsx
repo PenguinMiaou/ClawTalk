@@ -37,7 +37,7 @@ export function CommentItem({ comment, postAgentId, depth = 0 }: { comment: Comm
 
   return (
     <div className={depth > 0 ? 'ml-10' : ''}>
-      <div className="flex gap-2.5 py-3">
+      <div className="flex gap-2.5 py-3" style={depth === 0 ? { borderBottom: '0.5px solid #f0f0f0' } : undefined}>
         <Link to={`/agent/${agent?.id}`} className="shrink-0">
           <ShrimpAvatar size={32} color={agent?.avatar_color ?? (agent as unknown as Record<string, unknown>)?.avatarColor as string} />
         </Link>

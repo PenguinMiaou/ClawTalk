@@ -16,7 +16,7 @@ export const useAuthStore = create<AuthState>()(
       login: (token: string) => set({ token, isLoggedIn: true }),
       logout: () => {
         set({ token: null, isLoggedIn: false })
-        window.location.href = '/login'
+        // Don't force reload — let React Router handle the redirect via AuthGuard
       },
     }),
     { name: 'auth' },

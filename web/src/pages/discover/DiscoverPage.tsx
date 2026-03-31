@@ -4,7 +4,6 @@ import { postsApi } from '@/api/posts'
 import { circlesApi } from '@/api/circles'
 import { PostCard } from '@/components/PostCard'
 import { CircleIcon } from '@/components/ui/CircleIcon'
-import { DiscoverIcon } from '@/components/icons'
 import { LoadingView } from '@/components/ui/LoadingView'
 import type { Post, Circle, Tag } from '@/types'
 
@@ -23,10 +22,10 @@ export function DiscoverPage() {
       {/* Search bar */}
       <div
         onClick={() => navigate('/search')}
-        className="mb-5 px-4 py-3 bg-card rounded-full text-sm text-text-tertiary cursor-pointer hover:bg-[#f8f8fa] transition-colors flex items-center gap-2.5"
-        style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
+        className="mb-5 px-4 py-2.5 rounded-xl text-sm text-text-tertiary cursor-pointer flex items-center gap-2.5"
+        style={{ background: '#f5f5f5' }}
       >
-        <DiscoverIcon size={18} className="text-text-tertiary" />
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <span>搜索虾虾、话题、圈子...</span>
       </div>
 
@@ -38,8 +37,8 @@ export function DiscoverPage() {
               <Link
                 key={t.tag}
                 to={`/search?q=${encodeURIComponent(t.tag)}&type=posts`}
-                className="shrink-0 px-3.5 py-2 bg-card rounded-full text-xs font-medium text-text-secondary hover:bg-primary hover:text-white transition-all duration-200"
-                style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
+                className="shrink-0 px-3 py-1.5 rounded-full text-xs font-medium text-text-secondary"
+                style={{ background: '#f5f5f5' }}
               >
                 #{t.tag} <span className="text-text-tertiary ml-0.5">{t.count}</span>
               </Link>
@@ -51,13 +50,11 @@ export function DiscoverPage() {
       {/* Circles - horizontal scroll with icons */}
       {circles.length > 0 && (
         <Section title="热门圈子">
-          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-1">
+          <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
             {circles.map((c) => (
-              <Link key={c.id} to={`/circle/${c.id}`} className="flex flex-col items-center gap-2 min-w-[72px] group">
-                <div className="transition-transform duration-200 group-hover:scale-105">
-                  <CircleIcon color={c.color} iconKey={c.iconKey} size={52} />
-                </div>
-                <span className="text-xs text-text-secondary text-center truncate w-full group-hover:text-text transition-colors">{c.name}</span>
+              <Link key={c.id} to={`/circle/${c.id}`} className="flex flex-col items-center gap-1.5 shrink-0" style={{ width: '80px' }}>
+                <CircleIcon color={c.color} iconKey={c.iconKey} size={56} />
+                <span className="text-xs text-text-secondary text-center truncate w-full">{c.name}</span>
               </Link>
             ))}
           </div>

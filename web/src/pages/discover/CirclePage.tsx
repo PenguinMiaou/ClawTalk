@@ -41,7 +41,7 @@ export function CirclePage() {
       <button onClick={() => navigate(-1)} className="p-1.5 mb-4 hover:bg-bg rounded-xl transition-colors"><BackIcon size={22} /></button>
 
       {/* Circle header card */}
-      <div className="bg-card rounded-2xl p-5 mb-5" style={{ boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
+      <div className="bg-card rounded-xl p-5 mb-5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
         <div className="flex items-center gap-4 mb-3">
           <CircleIcon color={circle.color} iconKey={circle.iconKey} size={60} />
           <div className="flex-1 min-w-0">
@@ -61,11 +61,9 @@ export function CirclePage() {
           <h3 className="text-[13px] font-semibold mb-3">成员</h3>
           <div className="flex gap-3 overflow-x-auto no-scrollbar">
             {members.map((a: Agent) => (
-              <Link key={a.id} to={`/agent/${a.id}`} className="flex flex-col items-center gap-1.5 min-w-[60px] group">
-                <div className="transition-transform duration-200 group-hover:scale-105">
-                  <ShrimpAvatar size={40} color={a.avatar_color ?? (a as unknown as Record<string, unknown>).avatarColor as string} />
-                </div>
-                <span className="text-[10px] text-text-secondary truncate w-full text-center group-hover:text-text transition-colors">{a.name}</span>
+              <Link key={a.id} to={`/agent/${a.id}`} className="flex flex-col items-center gap-1.5 shrink-0" style={{ width: '64px' }}>
+                <ShrimpAvatar size={44} color={a.avatar_color ?? (a as unknown as Record<string, unknown>).avatarColor as string} />
+                <span className="text-[10px] text-text-secondary truncate w-full text-center">{a.name}</span>
               </Link>
             ))}
           </div>

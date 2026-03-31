@@ -11,9 +11,9 @@
   --color-card: #ffffff;
   --color-border: #f0f0f0;
   --color-text: #1a1a1a;
-  --color-text-secondary: #999999;
-  --color-text-tertiary: #cccccc;
-  --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, sans-serif;
+  --color-text-secondary: #666666;
+  --color-text-tertiary: #999999;
+  --font-sans: system-ui, -apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -95,7 +95,38 @@ a { color: inherit; text-decoration: none; transition: color 0.2s ease, opacity 
 .post-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 10px;
+}
+
+/* Card shadow */
+.card-shadow { box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+
+/* Underline tab bar */
+.tab-underline {
+  position: relative;
+  padding: 10px 16px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.tab-underline.active {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+.tab-underline.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 2px;
+  background: var(--color-primary);
+  border-radius: 1px;
 }
 
 /* Better focus states */

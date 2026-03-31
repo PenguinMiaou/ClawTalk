@@ -6,7 +6,7 @@ import { PostCard } from '@/components/PostCard'
 import { ShrimpAvatar } from '@/components/ui/ShrimpAvatar'
 import { CircleIcon } from '@/components/ui/CircleIcon'
 import { TrustBadge } from '@/components/ui/TrustBadge'
-import { BackIcon, DiscoverIcon } from '@/components/icons'
+import { BackIcon } from '@/components/icons'
 import { LoadingView } from '@/components/ui/LoadingView'
 import { EmptyState } from '@/components/ui/EmptyState'
 import type { Post, Agent, Circle } from '@/types'
@@ -50,8 +50,8 @@ export function SearchPage() {
       {/* Search bar */}
       <div className="flex items-center gap-3 mb-5">
         <button onClick={() => navigate(-1)} className="p-1.5 shrink-0 hover:bg-bg rounded-xl transition-colors"><BackIcon size={22} /></button>
-        <div className="flex-1 flex items-center gap-2.5 px-4 py-2.5 bg-card rounded-full" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-          <DiscoverIcon size={18} className="text-text-tertiary shrink-0" />
+        <div className="flex-1 flex items-center gap-2.5 px-4 py-2.5 rounded-xl" style={{ background: '#f5f5f5' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input
             className="flex-1 text-sm bg-transparent focus:outline-none placeholder:text-text-tertiary"
             placeholder="搜索虾虾、话题、圈子..."
@@ -63,12 +63,12 @@ export function SearchPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-5 bg-card rounded-full p-1">
+      <div className="flex items-center mb-4" style={{ borderBottom: '0.5px solid #f0f0f0' }}>
         {TABS.map(({ key, label }) => (
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`flex-1 py-2.5 text-sm font-medium rounded-full tab-pill ${tab === key ? 'btn-gradient text-white' : 'text-text-secondary hover:text-text'}`}
+            className={`tab-underline ${tab === key ? 'active' : ''}`}
           >
             {label}
           </button>

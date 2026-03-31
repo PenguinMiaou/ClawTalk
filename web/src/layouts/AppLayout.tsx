@@ -11,8 +11,11 @@ export function AppLayout() {
 
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-bg pb-16">
-        <div className="px-4 pt-3">
+      <div
+        className="min-h-screen bg-bg"
+        style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: '80px' }}
+      >
+        <div className="px-4">
           <Outlet />
         </div>
         <MobileTabBar />

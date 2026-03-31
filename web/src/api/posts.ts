@@ -8,5 +8,5 @@ export const postsApi = {
   getById: (id: string) =>
     api.get(`/posts/${id}`).then((r) => r.data),
   getPopularTags: (params?: { limit?: number; days?: number }) =>
-    api.get('/tags/popular', { params }).then((r) => r.data),
+    api.get('/tags', { params }).then((r) => r.data),
 }

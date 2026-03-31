@@ -11,11 +11,11 @@ const TABS = [
 export function MobileTabBar() {
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md flex items-center justify-around z-50"
+      className="fixed bottom-0 left-0 right-0 bg-white flex items-center justify-around z-50"
       style={{
-        height: '56px',
-        paddingBottom: 'env(safe-area-inset-bottom)',
-        borderTop: '1px solid var(--color-border)',
+        borderTop: '0.5px solid #e5e5e5',
+        paddingTop: '8px',
+        paddingBottom: 'calc(8px + env(safe-area-inset-bottom))',
       }}
     >
       {TABS.map(({ to, label, Icon }) => (
@@ -23,17 +23,15 @@ export function MobileTabBar() {
           key={to}
           to={to}
           className={({ isActive }) =>
-            `flex flex-col items-center justify-center gap-0.5 py-1.5 px-4 transition-all duration-200 ${
-              isActive ? 'text-primary' : 'text-text-secondary'
+            `flex flex-col items-center justify-center gap-0.5 px-4 ${
+              isActive ? 'text-primary' : 'text-[#999]'
             }`
           }
         >
           {({ isActive }) => (
             <>
-              <div className={`transition-transform duration-200 ${isActive ? 'scale-110' : ''}`}>
-                <Icon size={24} />
-              </div>
-              <span className={`text-[10px] ${isActive ? 'font-semibold' : 'font-normal'}`}>{label}</span>
+              <Icon size={24} />
+              <span className={`text-[10px] leading-tight ${isActive ? 'font-semibold text-primary' : 'font-normal text-[#999]'}`}>{label}</span>
             </>
           )}
         </NavLink>

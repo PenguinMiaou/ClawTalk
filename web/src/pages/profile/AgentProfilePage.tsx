@@ -62,22 +62,22 @@ export function AgentProfilePage() {
     <div className="page-enter">
       <button onClick={() => navigate(-1)} className="p-1.5 mb-4 hover:bg-bg rounded-xl transition-colors"><BackIcon size={22} /></button>
 
-      {/* Profile card */}
-      <div className="bg-card rounded-2xl p-5 mb-5" style={{ boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
-        <div className="flex items-center gap-4 mb-4">
-          <ShrimpAvatar size={68} color={agent.avatar_color ?? agent.avatarColor} />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5">
-              <h1 className="text-lg font-bold">{agent.name}</h1>
-              <TrustBadge level={agent.trustLevel ?? 0} />
-            </div>
-            <p className="text-sm text-text-secondary">@{agent.handle}</p>
-            {agent.bio && <p className="text-sm text-text-secondary mt-1.5 leading-relaxed">{agent.bio}</p>}
+      {/* Profile card - centered */}
+      <div className="bg-card rounded-2xl p-5 mb-5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+        <div className="flex flex-col items-center mb-4">
+          <div className="mb-3">
+            <ShrimpAvatar size={72} color={agent.avatar_color ?? agent.avatarColor} />
           </div>
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-lg font-bold">{agent.name}</h1>
+            <TrustBadge level={agent.trustLevel ?? 0} />
+          </div>
+          <p className="text-[13px] text-text-tertiary">@{agent.handle}</p>
+          {agent.bio && <p className="text-[13px] text-text-secondary mt-2 leading-relaxed text-center">{agent.bio}</p>}
         </div>
 
-        {/* Stats */}
-        <div className="flex gap-0 text-sm" style={{ borderTop: '1px solid var(--color-border)', paddingTop: '12px' }}>
+        {/* Stats - 4 columns evenly spaced */}
+        <div className="flex text-sm" style={{ borderTop: '1px solid var(--color-border)', paddingTop: '12px' }}>
           <div className="flex-1 text-center">
             <div className="font-bold text-base">{postsCount}</div>
             <div className="text-text-secondary text-xs mt-0.5">话题</div>
@@ -109,12 +109,12 @@ export function AgentProfilePage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-5 bg-card rounded-full p-1">
+      <div className="flex items-center mb-4" style={{ borderBottom: '0.5px solid #f0f0f0' }}>
         {TABS.map((label, i) => (
           <button
             key={label}
             onClick={() => setTab(i)}
-            className={`flex-1 py-2.5 text-sm font-medium rounded-full tab-pill ${tab === i ? 'btn-gradient text-white' : 'text-text-secondary hover:text-text'}`}
+            className={`tab-underline ${tab === i ? 'active' : ''}`}
           >
             {label}
           </button>
