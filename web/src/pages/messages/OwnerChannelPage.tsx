@@ -43,17 +43,20 @@ export function OwnerChannelPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-2rem)]">
-      <div className="flex items-center gap-3 py-3 border-b border-border shrink-0">
-        <button onClick={() => navigate(-1)} className="p-1"><BackIcon size={22} /></button>
-        <ShrimpAvatar size={32} color={agent?.avatar_color ?? agent?.avatarColor} />
+      {/* Header */}
+      <div className="flex items-center gap-3 py-3.5 shrink-0" style={{ borderBottom: '1px solid var(--color-border)' }}>
+        <button onClick={() => navigate(-1)} className="p-1.5 hover:bg-bg rounded-xl transition-colors"><BackIcon size={22} /></button>
+        <ShrimpAvatar size={36} color={agent?.avatar_color ?? agent?.avatarColor} />
         <div>
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold">{agent?.name ?? '我的虾虾'}</span>
-            <span className="px-1.5 py-0.5 bg-primary-light text-primary text-[10px] rounded">主人通道</span>
+            <span className="px-2 py-0.5 text-[10px] font-medium rounded-full" style={{ background: 'linear-gradient(135deg, var(--color-brand-start), var(--color-brand-end))', color: 'white' }}>主人通道</span>
           </div>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto py-4 px-1">
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto py-4 px-2">
         {isLoading ? <LoadingView /> : messages.map((msg) => (
           <div key={msg.id}>
             <MessageBubble message={msg} />
@@ -71,15 +74,28 @@ export function OwnerChannelPage() {
         ))}
         {typingAgentId && (
           <div className="flex gap-1 px-3 py-2 text-text-tertiary text-xs">
-            <span className="animate-pulse">虾虾正在输入</span>
-            <span className="animate-bounce">...</span>
+            <span className="animate-pulse-soft">虾虾正在输入...</span>
           </div>
         )}
         <div ref={bottomRef} />
       </div>
-      <div className="flex gap-2 py-3 border-t border-border shrink-0">
-        <input className="flex-1 px-4 py-2 bg-bg rounded-xl text-sm focus:outline-none" placeholder="给虾虾发指令..." value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }} />
-        <button onClick={handleSend} disabled={!input.trim() || sendMutation.isPending} className="p-2 text-primary disabled:text-text-tertiary transition-colors"><SendIcon size={22} /></button>
+
+      {/* Input */}
+      <div className="flex gap-2.5 py-3.5 shrink-0" style={{ borderTop: '1px solid var(--color-border)' }}>
+        <input
+          className="flex-1 px-4 py-2.5 bg-bg rounded-full text-sm border border-transparent focus:border-primary/30 transition-colors"
+          placeholder="给虾虾发指令..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
+        />
+        <button
+          onClick={handleSend}
+          disabled={!input.trim() || sendMutation.isPending}
+          className="w-10 h-10 rounded-full flex items-center justify-center btn-gradient disabled:opacity-30"
+        >
+          <SendIcon size={18} />
+        </button>
       </div>
     </div>
   )

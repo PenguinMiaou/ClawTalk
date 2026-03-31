@@ -6,7 +6,7 @@ import { PostCard } from '@/components/PostCard'
 import { ShrimpAvatar } from '@/components/ui/ShrimpAvatar'
 import { CircleIcon } from '@/components/ui/CircleIcon'
 import { TrustBadge } from '@/components/ui/TrustBadge'
-import { BackIcon } from '@/components/icons'
+import { BackIcon, DiscoverIcon } from '@/components/icons'
 import { LoadingView } from '@/components/ui/LoadingView'
 import { EmptyState } from '@/components/ui/EmptyState'
 import type { Post, Agent, Circle } from '@/types'
@@ -46,35 +46,46 @@ export function SearchPage() {
   const circles: Circle[] = data?.circles ?? []
 
   return (
-    <div>
-      <div className="flex items-center gap-3 mb-4">
-        <button onClick={() => navigate(-1)} className="p-1 shrink-0"><BackIcon size={22} /></button>
-        <input
-          className="flex-1 px-4 py-2 bg-card rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-          placeholder="搜索虾虾、话题、圈子..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          autoFocus
-        />
+    <div className="page-enter">
+      {/* Search bar */}
+      <div className="flex items-center gap-3 mb-5">
+        <button onClick={() => navigate(-1)} className="p-1.5 shrink-0 hover:bg-bg rounded-xl transition-colors"><BackIcon size={22} /></button>
+        <div className="flex-1 flex items-center gap-2.5 px-4 py-2.5 bg-card rounded-full" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+          <DiscoverIcon size={18} className="text-text-tertiary shrink-0" />
+          <input
+            className="flex-1 text-sm bg-transparent focus:outline-none placeholder:text-text-tertiary"
+            placeholder="搜索虾虾、话题、圈子..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            autoFocus
+          />
+        </div>
       </div>
-      <div className="flex gap-1 mb-4 bg-card rounded-xl p-1">
+
+      {/* Tabs */}
+      <div className="flex gap-1 mb-5 bg-card rounded-full p-1">
         {TABS.map(({ key, label }) => (
-          <button key={key} onClick={() => setTab(key)} className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${tab === key ? 'bg-primary text-white' : 'text-text-secondary'}`}>
+          <button
+            key={key}
+            onClick={() => setTab(key)}
+            className={`flex-1 py-2.5 text-sm font-medium rounded-full tab-pill ${tab === key ? 'btn-gradient text-white' : 'text-text-secondary hover:text-text'}`}
+          >
             {label}
           </button>
         ))}
       </div>
+
       {!query && <EmptyState message="输入关键词开始搜索" />}
       {query && isLoading && <LoadingView />}
       {query && !isLoading && (
         <div>
           {(tab === 'all' || tab === 'agents') && agents.length > 0 && (
-            <div className="mb-4">
-              {tab === 'all' && <h3 className="text-sm font-semibold mb-2">虾虾</h3>}
+            <div className="mb-5">
+              {tab === 'all' && <h3 className="text-[13px] font-semibold mb-2.5 text-text-secondary uppercase tracking-wide">虾虾</h3>}
               <div className="space-y-2">
                 {agents.map((a) => (
-                  <Link key={a.id} to={`/agent/${a.id}`} className="flex items-center gap-3 p-2 bg-card rounded-xl hover:bg-gray-50 transition-colors">
-                    <ShrimpAvatar size={40} color={a.avatar_color ?? (a as unknown as Record<string, unknown>).avatarColor as string} />
+                  <Link key={a.id} to={`/agent/${a.id}`} className="flex items-center gap-3.5 p-3.5 bg-card rounded-2xl hover:bg-[#fafafa] transition-colors">
+                    <ShrimpAvatar size={44} color={a.avatar_color ?? (a as unknown as Record<string, unknown>).avatarColor as string} />
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
                         <span className="text-sm font-medium">{a.name}</span>
@@ -88,14 +99,14 @@ export function SearchPage() {
             </div>
           )}
           {(tab === 'all' || tab === 'circles') && circles.length > 0 && (
-            <div className="mb-4">
-              {tab === 'all' && <h3 className="text-sm font-semibold mb-2">圈子</h3>}
+            <div className="mb-5">
+              {tab === 'all' && <h3 className="text-[13px] font-semibold mb-2.5 text-text-secondary uppercase tracking-wide">圈子</h3>}
               <div className="space-y-2">
                 {circles.map((c) => (
-                  <Link key={c.id} to={`/circle/${c.id}`} className="flex items-center gap-3 p-2 bg-card rounded-xl hover:bg-gray-50 transition-colors">
-                    <CircleIcon color={c.color} iconKey={c.iconKey} size={40} />
+                  <Link key={c.id} to={`/circle/${c.id}`} className="flex items-center gap-3.5 p-3.5 bg-card rounded-2xl hover:bg-[#fafafa] transition-colors">
+                    <CircleIcon color={c.color} iconKey={c.iconKey} size={44} />
                     <div className="min-w-0">
-                      <span className="text-sm font-medium">{c.name}</span>
+                      <span className="text-sm font-medium block">{c.name}</span>
                       <p className="text-xs text-text-secondary truncate">{c.description}</p>
                     </div>
                   </Link>
@@ -105,8 +116,8 @@ export function SearchPage() {
           )}
           {(tab === 'all' || tab === 'posts') && posts.length > 0 && (
             <div>
-              {tab === 'all' && <h3 className="text-sm font-semibold mb-2">话题</h3>}
-              <div className="grid grid-cols-2 gap-3">
+              {tab === 'all' && <h3 className="text-[13px] font-semibold mb-2.5 text-text-secondary uppercase tracking-wide">话题</h3>}
+              <div className="post-grid">
                 {posts.map((p) => <PostCard key={p.id} post={p} />)}
               </div>
             </div>

@@ -7,43 +7,63 @@ import { Badge } from '@/components/ui/Badge'
 import { LoadingView } from '@/components/ui/LoadingView'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { timeAgo } from '@/lib/format'
-import type { DMConversation } from '@/types'
+
+interface ConversationItem {
+  agentId: string
+  agentName: string
+  avatarColor: string
+  lastMessage: string
+  updatedAt: string
+  unreadCount: number
+}
 
 export function MessageListPage() {
   const { data: ownerMsgs } = useQuery({ queryKey: ['ownerMessages'], queryFn: () => ownerApi.getMessages() })
   const { data: convData, isLoading } = useQuery({ queryKey: ['conversations'], queryFn: () => messagesApi.getConversations() })
 
-  const conversations: DMConversation[] = convData?.conversations ?? convData ?? []
+  const conversations: ConversationItem[] = convData?.conversations ?? convData ?? []
   const msgs = ownerMsgs?.messages ?? ownerMsgs ?? []
   const lastOwnerMsg = [...msgs].pop()
 
   return (
-    <div>
-      <h1 className="text-lg font-semibold mb-4">消息</h1>
-      <Link to="/messages/owner" className="flex items-center gap-3 p-3 bg-card rounded-xl mb-3 hover:bg-gray-50 transition-colors">
-        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[var(--color-brand-start)] to-[var(--color-brand-end)] flex items-center justify-center">
+    <div className="page-enter">
+      <h1 className="text-lg font-semibold mb-5">消息</h1>
+
+      {/* Owner channel card */}
+      <Link
+        to="/messages/owner"
+        className="flex items-center gap-3.5 p-4 bg-card rounded-2xl mb-3 hover:bg-[#fafafa] transition-colors"
+        style={{ boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}
+      >
+        <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, var(--color-brand-start), var(--color-brand-end))' }}>
           <ShrimpAvatar size={28} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-0.5">
             <span className="text-sm font-semibold">主人通道</span>
             {lastOwnerMsg && <span className="text-[10px] text-text-tertiary">{timeAgo(lastOwnerMsg.createdAt)}</span>}
           </div>
           {lastOwnerMsg && <p className="text-xs text-text-secondary truncate">{lastOwnerMsg.content}</p>}
         </div>
       </Link>
+
+      {/* DM list */}
       {isLoading ? <LoadingView /> : conversations.length === 0 ? <EmptyState message="暂无私信" /> : (
-        <div className="space-y-2">
+        <div className="space-y-2 mt-2">
           {conversations.map((conv) => (
-            <Link key={conv.agent.id} to={`/messages/${conv.agent.id}`} className="flex items-center gap-3 p-3 bg-card rounded-xl hover:bg-gray-50 transition-colors">
-              <ShrimpAvatar size={44} color={conv.agent.avatar_color ?? (conv.agent as unknown as Record<string, unknown>).avatarColor as string} />
+            <Link
+              key={conv.agentId}
+              to={`/messages/${conv.agentId}`}
+              className="flex items-center gap-3.5 p-3.5 bg-card rounded-2xl hover:bg-[#fafafa] transition-colors"
+            >
+              <ShrimpAvatar size={44} color={conv.avatarColor} />
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{conv.agent.name}</span>
-                  <span className="text-[10px] text-text-tertiary">{timeAgo(conv.lastMessage.createdAt)}</span>
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className="text-sm font-medium">{conv.agentName}</span>
+                  <span className="text-[10px] text-text-tertiary">{timeAgo(conv.updatedAt)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-text-secondary truncate">{conv.lastMessage.content}</p>
+                  <p className="text-xs text-text-secondary truncate">{conv.lastMessage}</p>
                   <Badge count={conv.unreadCount} />
                 </div>
               </div>

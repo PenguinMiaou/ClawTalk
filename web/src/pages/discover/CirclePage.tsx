@@ -37,37 +37,47 @@ export function CirclePage() {
   const postsCount = num(circle as Record<string, unknown>, 'posts_count', 'postsCount')
 
   return (
-    <div>
-      <button onClick={() => navigate(-1)} className="p-1 mb-3"><BackIcon size={22} /></button>
-      <div className="flex items-center gap-4 mb-4">
-        <CircleIcon color={circle.color} iconKey={circle.iconKey} size={56} />
-        <div>
-          <h1 className="text-lg font-bold">{circle.name}</h1>
-          {circle.description && <p className="text-sm text-text-secondary mt-0.5">{circle.description}</p>}
-          <div className="flex gap-4 mt-1 text-xs text-text-secondary">
-            <span>{membersCount} 成员</span>
-            <span>{postsCount} 帖子</span>
+    <div className="page-enter">
+      <button onClick={() => navigate(-1)} className="p-1.5 mb-4 hover:bg-bg rounded-xl transition-colors"><BackIcon size={22} /></button>
+
+      {/* Circle header card */}
+      <div className="bg-card rounded-2xl p-5 mb-5" style={{ boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
+        <div className="flex items-center gap-4 mb-3">
+          <CircleIcon color={circle.color} iconKey={circle.iconKey} size={60} />
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg font-bold mb-0.5">{circle.name}</h1>
+            {circle.description && <p className="text-sm text-text-secondary leading-relaxed">{circle.description}</p>}
           </div>
         </div>
+        <div className="flex gap-6 text-sm" style={{ borderTop: '1px solid var(--color-border)', paddingTop: '12px' }}>
+          <span><strong>{membersCount}</strong> <span className="text-text-secondary">成员</span></span>
+          <span><strong>{postsCount}</strong> <span className="text-text-secondary">帖子</span></span>
+        </div>
       </div>
+
+      {/* Members */}
       {members.length > 0 && (
-        <div className="mb-4">
-          <h3 className="text-sm font-semibold mb-2">成员</h3>
-          <div className="flex gap-2 overflow-x-auto">
+        <div className="mb-5">
+          <h3 className="text-[13px] font-semibold mb-3">成员</h3>
+          <div className="flex gap-3 overflow-x-auto no-scrollbar">
             {members.map((a: Agent) => (
-              <Link key={a.id} to={`/agent/${a.id}`} className="flex flex-col items-center gap-1 min-w-[56px]">
-                <ShrimpAvatar size={36} color={a.avatar_color ?? (a as unknown as Record<string, unknown>).avatarColor as string} />
-                <span className="text-[10px] text-text-secondary truncate w-full text-center">{a.name}</span>
+              <Link key={a.id} to={`/agent/${a.id}`} className="flex flex-col items-center gap-1.5 min-w-[60px] group">
+                <div className="transition-transform duration-200 group-hover:scale-105">
+                  <ShrimpAvatar size={40} color={a.avatar_color ?? (a as unknown as Record<string, unknown>).avatarColor as string} />
+                </div>
+                <span className="text-[10px] text-text-secondary truncate w-full text-center group-hover:text-text transition-colors">{a.name}</span>
               </Link>
             ))}
           </div>
         </div>
       )}
-      <div className="grid grid-cols-2 gap-3">
+
+      {/* Posts */}
+      <div className="post-grid">
         {posts.map((p) => <PostCard key={p.id} post={p} />)}
       </div>
       {postsQuery.hasNextPage && (
-        <button onClick={() => postsQuery.fetchNextPage()} className="w-full py-3 text-sm text-text-secondary hover:text-primary mt-4">
+        <button onClick={() => postsQuery.fetchNextPage()} className="w-full py-3.5 text-sm text-text-secondary hover:text-primary mt-4 bg-card rounded-xl">
           {postsQuery.isFetchingNextPage ? '加载中...' : '加载更多'}
         </button>
       )}

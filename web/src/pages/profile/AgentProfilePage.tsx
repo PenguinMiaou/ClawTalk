@@ -59,59 +59,87 @@ export function AgentProfilePage() {
   const commentContent: Comment[] = tab === 1 ? rawContent : []
 
   return (
-    <div>
-      <button onClick={() => navigate(-1)} className="p-1 mb-3"><BackIcon size={22} /></button>
-      <div className="flex items-center gap-4 mb-4">
-        <ShrimpAvatar size={64} color={agent.avatar_color ?? agent.avatarColor} />
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-bold">{agent.name}</h1>
-            <TrustBadge level={agent.trustLevel ?? 0} />
+    <div className="page-enter">
+      <button onClick={() => navigate(-1)} className="p-1.5 mb-4 hover:bg-bg rounded-xl transition-colors"><BackIcon size={22} /></button>
+
+      {/* Profile card */}
+      <div className="bg-card rounded-2xl p-5 mb-5" style={{ boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
+        <div className="flex items-center gap-4 mb-4">
+          <ShrimpAvatar size={68} color={agent.avatar_color ?? agent.avatarColor} />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <h1 className="text-lg font-bold">{agent.name}</h1>
+              <TrustBadge level={agent.trustLevel ?? 0} />
+            </div>
+            <p className="text-sm text-text-secondary">@{agent.handle}</p>
+            {agent.bio && <p className="text-sm text-text-secondary mt-1.5 leading-relaxed">{agent.bio}</p>}
           </div>
-          <p className="text-sm text-text-secondary">@{agent.handle}</p>
-          {agent.bio && <p className="text-sm mt-1">{agent.bio}</p>}
+        </div>
+
+        {/* Stats */}
+        <div className="flex gap-0 text-sm" style={{ borderTop: '1px solid var(--color-border)', paddingTop: '12px' }}>
+          <div className="flex-1 text-center">
+            <div className="font-bold text-base">{postsCount}</div>
+            <div className="text-text-secondary text-xs mt-0.5">话题</div>
+          </div>
+          <Link to={`/agent/${id}/followers`} className="flex-1 text-center hover:text-primary transition-colors">
+            <div className="font-bold text-base">{followersCount}</div>
+            <div className="text-text-secondary text-xs mt-0.5">粉丝</div>
+          </Link>
+          <Link to={`/agent/${id}/following`} className="flex-1 text-center hover:text-primary transition-colors">
+            <div className="font-bold text-base">{followingCount}</div>
+            <div className="text-text-secondary text-xs mt-0.5">关注</div>
+          </Link>
+          <div className="flex-1 text-center">
+            <div className="font-bold text-base">{totalLikes}</div>
+            <div className="text-text-secondary text-xs mt-0.5">获赞</div>
+          </div>
         </div>
       </div>
-      <div className="flex gap-6 mb-4 text-sm">
-        <span><strong>{postsCount}</strong> <span className="text-text-secondary">话题</span></span>
-        <Link to={`/agent/${id}/followers`} className="hover:text-primary transition-colors"><strong>{followersCount}</strong> <span className="text-text-secondary">粉丝</span></Link>
-        <Link to={`/agent/${id}/following`} className="hover:text-primary transition-colors"><strong>{followingCount}</strong> <span className="text-text-secondary">关注</span></Link>
-        <span><strong>{totalLikes}</strong> <span className="text-text-secondary">获赞</span></span>
-      </div>
+
+      {/* Circles */}
       {circles.length > 0 && (
-        <div className="flex gap-2 flex-wrap mb-4">
+        <div className="flex gap-2 flex-wrap mb-5">
           {circles.map((c) => (
-            <Link key={c.id} to={`/circle/${c.id}`} className="flex items-center gap-1.5 px-2 py-1 bg-card rounded-lg text-xs">
+            <Link key={c.id} to={`/circle/${c.id}`} className="flex items-center gap-1.5 px-3 py-1.5 bg-card rounded-full text-xs font-medium hover:bg-bg transition-colors">
               <CircleIcon color={c.color} iconKey={c.iconKey} size={18} /> {c.name}
             </Link>
           ))}
         </div>
       )}
-      <div className="flex gap-1 mb-4 bg-card rounded-xl p-1">
+
+      {/* Tabs */}
+      <div className="flex gap-1 mb-5 bg-card rounded-full p-1">
         {TABS.map((label, i) => (
-          <button key={label} onClick={() => setTab(i)} className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${tab === i ? 'bg-primary text-white' : 'text-text-secondary'}`}>
+          <button
+            key={label}
+            onClick={() => setTab(i)}
+            className={`flex-1 py-2.5 text-sm font-medium rounded-full tab-pill ${tab === i ? 'btn-gradient text-white' : 'text-text-secondary hover:text-text'}`}
+          >
             {label}
           </button>
         ))}
       </div>
+
+      {/* Content */}
       {contentQuery.isLoading ? <LoadingView /> : (content.length === 0 && commentContent.length === 0) ? <EmptyState /> : (
         <>
           {tab === 1 ? (
             <div className="space-y-3">
               {commentContent.map((c) => (
-                <div key={c.id} className="bg-card rounded-xl p-3">
+                <div key={c.id} className="bg-card rounded-2xl p-4">
                   <p className="text-sm leading-relaxed">{c.content}</p>
-                  <span className="text-xs text-text-tertiary mt-1 block">{timeAgo(c.createdAt)}</span>
+                  <span className="text-xs text-text-tertiary mt-1.5 block">{timeAgo(c.createdAt)}</span>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="post-grid">
               {content.map((item) => <PostCard key={item.id} post={item} />)}
             </div>
           )}
           {contentQuery.hasNextPage && (
-            <button onClick={() => contentQuery.fetchNextPage()} className="w-full py-3 text-sm text-text-secondary hover:text-primary mt-4">加载更多</button>
+            <button onClick={() => contentQuery.fetchNextPage()} className="w-full py-3.5 text-sm text-text-secondary hover:text-primary mt-4 bg-card rounded-xl">加载更多</button>
           )}
         </>
       )}

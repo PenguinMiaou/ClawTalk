@@ -9,7 +9,7 @@ import { ErrorView } from '@/components/ui/ErrorView'
 import { CommentItem } from '@/components/CommentItem'
 import { TagChip } from '@/components/TagChip'
 import { BackIcon, HeartIcon, CommentIcon, ShareIcon } from '@/components/icons'
-import { timeAgo, num } from '@/lib/format'
+import { imageUrl as getImageUrl, timeAgo, num } from '@/lib/format'
 import { showToast } from '@/components/ui/Toast'
 import type { Comment } from '@/types'
 
@@ -30,9 +30,6 @@ export function PostDetailPage() {
     enabled: !!id,
   })
 
-  // Like/unlike is agent-only (agentAuth), owner token would get 401 and trigger logout
-  // Display like count as read-only for owner web app
-
   if (isLoading) return <LoadingView />
   if (isError || !post) return <ErrorView onRetry={refetch} />
 
@@ -50,58 +47,80 @@ export function PostDetailPage() {
   }
 
   return (
-    <div>
-      <div className="flex items-center gap-3 mb-4">
-        <button onClick={() => navigate(-1)} className="p-1 hover:bg-bg rounded-lg transition-colors"><BackIcon size={22} /></button>
+    <div className="page-enter">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-5">
+        <button onClick={() => navigate(-1)} className="p-1.5 hover:bg-bg rounded-xl transition-colors"><BackIcon size={22} /></button>
         <span className="text-lg font-semibold">帖子详情</span>
       </div>
+
+      {/* Images */}
       {post.images?.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto mb-4 rounded-xl">
+        <div className="flex gap-2.5 overflow-x-auto mb-5 rounded-2xl no-scrollbar">
           {post.images.map((img: unknown, i: number) => {
-            const url = typeof img === 'string' ? img : ((img as Record<string, string>)?.image_url ?? (img as Record<string, string>)?.imageUrl ?? '')
-            return <img key={i} src={url.startsWith('http') ? url : `https://clawtalk.net${url}`} alt="" className="h-64 rounded-xl object-cover" />
+            const url = getImageUrl(img)
+            if (!url) return null
+            return (
+              <img
+                key={i}
+                src={url}
+                alt=""
+                className="h-72 rounded-2xl object-cover shrink-0"
+                style={{ maxWidth: '90%' }}
+              />
+            )
           })}
         </div>
       )}
-      <div className="flex items-center gap-2.5 mb-3">
+
+      {/* Agent info */}
+      <div className="flex items-center gap-3 mb-4">
         <Link to={`/agent/${agent?.id}`}>
-          <ShrimpAvatar size={40} color={agent?.avatar_color ?? (agent as unknown as Record<string, unknown>)?.avatarColor as string} />
+          <ShrimpAvatar size={44} color={agent?.avatar_color ?? (agent as unknown as Record<string, unknown>)?.avatarColor as string} />
         </Link>
         <div>
           <div className="flex items-center gap-1.5">
-            <Link to={`/agent/${agent?.id}`} className="text-sm font-semibold hover:text-primary transition-colors">{agent?.name}</Link>
+            <Link to={`/agent/${agent?.id}`} className="text-[15px] font-semibold hover:text-primary transition-colors">{agent?.name}</Link>
             {agent && <TrustBadge level={agent.trustLevel ?? 0} />}
           </div>
           <span className="text-xs text-text-secondary">{timeAgo(post.createdAt)}</span>
         </div>
       </div>
-      <h1 className="text-lg font-bold mb-2">{post.title}</h1>
-      <p className="text-sm text-text leading-relaxed whitespace-pre-wrap mb-4">{post.content}</p>
+
+      {/* Content */}
+      <h1 className="text-xl font-bold mb-3 leading-snug">{post.title}</h1>
+      <p className="text-[15px] text-text leading-[1.8] whitespace-pre-wrap mb-5">{post.content}</p>
+
+      {/* Tags */}
       {post.tags?.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="flex flex-wrap gap-2 mb-5">
           {post.tags.map((tag: string) => <TagChip key={tag} tag={tag} />)}
         </div>
       )}
-      <div className="flex items-center gap-6 py-3 border-y border-border mb-4">
-        <span className="flex items-center gap-1.5 text-sm text-text-secondary">
+
+      {/* Stats bar */}
+      <div className="flex items-center gap-8 py-3.5 mb-5" style={{ borderTop: '1px solid var(--color-border)', borderBottom: '1px solid var(--color-border)' }}>
+        <span className="flex items-center gap-2 text-sm text-text-secondary">
           <HeartIcon size={18} /> <span>{likes}</span>
         </span>
-        <span className="flex items-center gap-1.5 text-sm text-text-secondary">
+        <span className="flex items-center gap-2 text-sm text-text-secondary">
           <CommentIcon size={18} /> <span>{commentsCount}</span>
         </span>
-        <button onClick={handleShare} className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-primary transition-colors ml-auto">
+        <button onClick={handleShare} className="flex items-center gap-2 text-sm text-text-secondary hover:text-primary transition-colors ml-auto">
           <ShareIcon size={18} /> <span>分享</span>
         </button>
       </div>
+
+      {/* Comments */}
       <div>
         {allComments.map((c) => <CommentItem key={c.id} comment={c} postAgentId={agent?.id} />)}
         {commentsQuery.hasNextPage && (
-          <button onClick={() => commentsQuery.fetchNextPage()} className="w-full py-3 text-sm text-text-secondary hover:text-primary">
+          <button onClick={() => commentsQuery.fetchNextPage()} className="w-full py-3.5 text-sm text-text-secondary hover:text-primary bg-card rounded-xl mt-2">
             {commentsQuery.isFetchingNextPage ? '加载中...' : '加载更多评论'}
           </button>
         )}
         {allComments.length === 0 && !commentsQuery.isLoading && (
-          <p className="text-center text-text-secondary text-sm py-6">暂无评论</p>
+          <p className="text-center text-text-tertiary text-sm py-8">暂无评论</p>
         )}
       </div>
     </div>

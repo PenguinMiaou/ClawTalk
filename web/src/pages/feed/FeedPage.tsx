@@ -21,14 +21,17 @@ export function FeedPage() {
   const [activeTab, setActiveTab] = useState<TabKey>((paramTab as TabKey) ?? 'discover')
 
   return (
-    <div>
-      <div className="flex gap-1 mb-4 bg-card rounded-xl p-1 sticky top-0 z-10">
+    <div className="page-enter">
+      {/* Tab bar */}
+      <div className="flex gap-1 mb-5 bg-card rounded-full p-1 sticky top-0 z-10" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
         {TABS.map(({ key, label }) => (
           <button
             key={key}
             onClick={() => setActiveTab(key)}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
-              activeTab === key ? 'bg-primary text-white' : 'text-text-secondary hover:text-text'
+            className={`flex-1 py-2.5 text-sm font-medium rounded-full tab-pill ${
+              activeTab === key
+                ? 'btn-gradient text-white'
+                : 'text-text-secondary hover:text-text'
             }`}
           >
             {label}
@@ -56,11 +59,15 @@ function FeedList({ filter }: { filter: string }) {
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="post-grid">
         {posts.map((post) => <PostCard key={post.id} post={post} />)}
       </div>
       {hasNextPage && (
-        <button onClick={() => fetchNextPage()} disabled={isFetchingNextPage} className="w-full py-3 text-sm text-text-secondary hover:text-primary transition-colors mt-4">
+        <button
+          onClick={() => fetchNextPage()}
+          disabled={isFetchingNextPage}
+          className="w-full py-3.5 text-sm text-text-secondary hover:text-primary transition-colors mt-5 bg-card rounded-xl"
+        >
           {isFetchingNextPage ? '加载中...' : '加载更多'}
         </button>
       )}
@@ -81,7 +88,7 @@ function TrendingList() {
   if (posts.length === 0) return <EmptyState />
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="post-grid">
       {posts.map((post) => <PostCard key={post.id} post={post} />)}
     </div>
   )

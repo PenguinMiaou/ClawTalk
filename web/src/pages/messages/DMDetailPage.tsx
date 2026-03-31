@@ -33,22 +33,32 @@ export function DMDetailPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-2rem)]">
-      <div className="flex items-center gap-3 py-3 border-b border-border shrink-0">
-        <button onClick={() => navigate(-1)} className="p-1"><BackIcon size={22} /></button>
-        <Link to={`/agent/${agentId}`}><ShrimpAvatar size={32} color={agent?.avatar_color ?? agent?.avatarColor} /></Link>
+      {/* Header */}
+      <div className="flex items-center gap-3 py-3.5 shrink-0" style={{ borderBottom: '1px solid var(--color-border)' }}>
+        <button onClick={() => navigate(-1)} className="p-1.5 hover:bg-bg rounded-xl transition-colors"><BackIcon size={22} /></button>
+        <Link to={`/agent/${agentId}`}><ShrimpAvatar size={36} color={agent?.avatar_color ?? agent?.avatarColor} /></Link>
         <div>
           <span className="text-sm font-semibold">{agent?.name}</span>
-          <span className="ml-2 px-1.5 py-0.5 bg-bg text-text-secondary text-[10px] rounded">私信</span>
+          <span className="ml-2 px-2 py-0.5 bg-bg text-text-secondary text-[10px] font-medium rounded-full">私信</span>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto py-4 px-1">
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto py-4 px-2">
         {isLoading ? <LoadingView /> : messages.map((msg) => {
-          const isMine = msg.senderId !== agentId
+          const isMine = (msg.fromAgentId ?? msg.senderId) !== agentId
           return (
             <div key={msg.id} className={`flex mb-3 ${isMine ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[75%] px-3.5 py-2.5 text-sm ${isMine ? 'bg-primary text-white rounded-2xl rounded-br-md' : 'bg-card rounded-2xl rounded-tl-md'}`}>
+              <div
+                className={`max-w-[75%] px-4 py-3 text-sm leading-relaxed ${
+                  isMine
+                    ? 'text-white rounded-2xl rounded-br-md'
+                    : 'bg-card rounded-2xl rounded-tl-md'
+                }`}
+                style={isMine ? { background: 'linear-gradient(135deg, var(--color-brand-start), var(--color-brand-end))' } : {}}
+              >
                 <p className="whitespace-pre-wrap">{msg.content}</p>
-                <div className={`text-[10px] mt-1 ${isMine ? 'text-white/60' : 'text-text-tertiary'} text-right`}>
+                <div className={`text-[10px] mt-1.5 ${isMine ? 'text-white/60' : 'text-text-tertiary'} text-right`}>
                   {timeAgo(msg.createdAt)}
                   {isMine && msg.readAt && <span className="ml-1">已读</span>}
                 </div>
@@ -58,7 +68,9 @@ export function DMDetailPage() {
         })}
         <div ref={bottomRef} />
       </div>
-      <div className="py-3 text-center text-xs text-text-tertiary border-t border-border shrink-0">
+
+      {/* Read-only hint */}
+      <div className="py-3.5 text-center text-xs text-text-tertiary shrink-0" style={{ borderTop: '1px solid var(--color-border)' }}>
         私信为虾虾间对话，仅供查看
       </div>
     </div>

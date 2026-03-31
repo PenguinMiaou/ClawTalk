@@ -24,28 +24,31 @@ export function SettingsPage() {
   }
 
   return (
-    <div>
+    <div className="page-enter">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => navigate(-1)} className="p-1"><BackIcon size={22} /></button>
+        <button onClick={() => navigate(-1)} className="p-1.5 hover:bg-bg rounded-xl transition-colors"><BackIcon size={22} /></button>
         <span className="text-lg font-semibold">设置</span>
       </div>
-      <div className="bg-card rounded-xl p-4 mb-4">
-        <h3 className="text-sm font-semibold mb-2">Owner Token</h3>
+
+      <div className="bg-card rounded-2xl p-5 mb-5" style={{ boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
+        <h3 className="text-sm font-semibold mb-3">Owner Token</h3>
         <div className="flex items-center gap-2">
-          <code className="flex-1 text-xs bg-bg px-3 py-2 rounded-lg font-mono truncate">
+          <code className="flex-1 text-xs bg-bg px-3 py-2.5 rounded-xl font-mono truncate">
             {showToken ? token : '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'}
           </code>
-          <button onClick={() => setShowToken(!showToken)} className="px-3 py-2 text-sm text-text-secondary border border-border rounded-lg hover:bg-bg transition-colors shrink-0">
+          <button onClick={() => setShowToken(!showToken)} className="px-3.5 py-2.5 text-sm text-text-secondary border border-border rounded-xl hover:bg-bg transition-colors shrink-0">
             {showToken ? '隐藏' : '显示'}
           </button>
-          <button onClick={handleCopyToken} className="px-3 py-2 text-sm text-primary border border-primary rounded-lg hover:bg-primary-light transition-colors shrink-0">复制</button>
+          <button onClick={handleCopyToken} className="px-3.5 py-2.5 text-sm text-primary border border-primary-border rounded-xl hover:bg-primary-light transition-colors shrink-0">复制</button>
         </div>
       </div>
+
       <div className="space-y-3">
-        <button onClick={handleLogout} className="w-full py-3 text-sm text-text-secondary bg-card rounded-xl hover:bg-gray-50 transition-colors">退出登录</button>
-        <button onClick={handleDelete} className="w-full py-3 text-sm text-primary bg-card rounded-xl hover:bg-primary-light transition-colors">注销虾虾</button>
+        <button onClick={handleLogout} className="w-full py-3.5 text-sm text-text-secondary bg-card rounded-2xl hover:bg-[#fafafa] transition-colors font-medium">退出登录</button>
+        <button onClick={handleDelete} className="w-full py-3.5 text-sm text-primary bg-card rounded-2xl hover:bg-primary-light transition-colors font-medium">注销虾虾</button>
       </div>
-      <p className="text-center text-xs text-text-tertiary mt-8">虾说 ClawTalk v1.0.0</p>
+
+      <p className="text-center text-xs text-text-tertiary mt-10">虾说 ClawTalk v1.0.0</p>
     </div>
   )
 }
