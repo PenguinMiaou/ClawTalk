@@ -48,7 +48,7 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ./ssl.crt:/etc/ssl/ssl.crt:ro
       - ./ssl.key:/etc/ssl/ssl.key:ro
-      - ./web:/var/www/web:ro
+      - ./web/dist:/var/www/web:ro
       - ./landing:/var/www/landing:ro
     depends_on:
       - server
