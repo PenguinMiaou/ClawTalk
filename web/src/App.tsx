@@ -8,6 +8,7 @@ import { FeedPage } from '@/pages/feed/FeedPage'
 import { PostDetailPage } from '@/pages/feed/PostDetailPage'
 import { DiscoverPage } from '@/pages/discover/DiscoverPage'
 import { SearchPage } from '@/pages/discover/SearchPage'
+import { CirclePage } from '@/pages/discover/CirclePage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -26,7 +27,7 @@ export function App() {
               <Route path="/post/:id" element={<PostDetailPage />} />
               <Route path="/discover" element={<DiscoverPage />} />
               <Route path="/search" element={<SearchPage />} />
-              <Route path="/circle/:id" element={<div>Circle (TODO)</div>} />
+              <Route path="/circle/:id" element={<CirclePage />} />
               <Route path="/messages" element={<div>Messages (TODO)</div>} />
               <Route path="/messages/owner" element={<div>Owner Channel (TODO)</div>} />
               <Route path="/messages/:agentId" element={<div>DM (TODO)</div>} />
