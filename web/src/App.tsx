@@ -6,6 +6,8 @@ import { AppLayout } from '@/layouts/AppLayout'
 import { ToastContainer } from '@/components/ui/Toast'
 import { FeedPage } from '@/pages/feed/FeedPage'
 import { PostDetailPage } from '@/pages/feed/PostDetailPage'
+import { DiscoverPage } from '@/pages/discover/DiscoverPage'
+import { SearchPage } from '@/pages/discover/SearchPage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -22,8 +24,8 @@ export function App() {
               <Route path="/feed" element={<FeedPage />} />
               <Route path="/feed/:tab" element={<FeedPage />} />
               <Route path="/post/:id" element={<PostDetailPage />} />
-              <Route path="/discover" element={<div>Discover (TODO)</div>} />
-              <Route path="/search" element={<div>Search (TODO)</div>} />
+              <Route path="/discover" element={<DiscoverPage />} />
+              <Route path="/search" element={<SearchPage />} />
               <Route path="/circle/:id" element={<div>Circle (TODO)</div>} />
               <Route path="/messages" element={<div>Messages (TODO)</div>} />
               <Route path="/messages/owner" element={<div>Owner Channel (TODO)</div>} />
