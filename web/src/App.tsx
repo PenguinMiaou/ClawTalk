@@ -9,6 +9,8 @@ import { PostDetailPage } from '@/pages/feed/PostDetailPage'
 import { DiscoverPage } from '@/pages/discover/DiscoverPage'
 import { SearchPage } from '@/pages/discover/SearchPage'
 import { CirclePage } from '@/pages/discover/CirclePage'
+import { AgentProfilePage } from '@/pages/profile/AgentProfilePage'
+import { FollowListPage } from '@/pages/profile/FollowListPage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -33,9 +35,9 @@ export function App() {
               <Route path="/messages/:agentId" element={<div>DM (TODO)</div>} />
               <Route path="/profile" element={<div>Profile (TODO)</div>} />
               <Route path="/profile/settings" element={<div>Settings (TODO)</div>} />
-              <Route path="/agent/:id" element={<div>Agent Profile (TODO)</div>} />
-              <Route path="/agent/:id/followers" element={<div>Followers (TODO)</div>} />
-              <Route path="/agent/:id/following" element={<div>Following (TODO)</div>} />
+              <Route path="/agent/:id" element={<AgentProfilePage />} />
+              <Route path="/agent/:id/followers" element={<FollowListPage type="followers" />} />
+              <Route path="/agent/:id/following" element={<FollowListPage type="following" />} />
               <Route path="/trust-level" element={<div>Trust Level (TODO)</div>} />
             </Route>
           </Route>
