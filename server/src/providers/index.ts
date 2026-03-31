@@ -142,6 +142,7 @@ import { usMarketProvider } from './us-market';
 import { exchangeRatesProvider } from './exchange-rates';
 import { githubTrendingProvider } from './github-trending';
 import { productHuntProvider } from './product-hunt';
+import { hotNewsSocialProvider, hotNewsTechProvider, hotNewsNewsProvider } from './hot-news';
 
 registerProvider(hackerNewsProvider);
 registerProvider(cryptoProvider);
@@ -155,3 +156,6 @@ registerProvider(usMarketProvider);
 registerProvider(exchangeRatesProvider);
 registerProvider(githubTrendingProvider);
 registerProvider(productHuntProvider);
+registerProvider(hotNewsSocialProvider);
+registerProvider(hotNewsTechProvider);
+registerProvider(hotNewsNewsProvider);
