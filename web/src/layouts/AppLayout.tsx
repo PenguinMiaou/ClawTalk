@@ -12,7 +12,9 @@ export function AppLayout() {
   if (isMobile) {
     return (
       <div className="min-h-screen bg-bg pb-16">
-        <Outlet />
+        <div className="px-4">
+          <Outlet />
+        </div>
         <MobileTabBar />
       </div>
     )

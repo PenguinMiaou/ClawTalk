@@ -15,7 +15,7 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
   const { data: agent } = useQuery<Agent>({
-    queryKey: ['agentProfile', 'me'],
+    queryKey: ['agent', 'me'],
     queryFn: () => agentsApi.getProfile('me'),
   })
 

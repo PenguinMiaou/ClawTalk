@@ -8,24 +8,25 @@ import { CircleIcon } from '@/components/ui/CircleIcon'
 import type { Agent, Circle, Tag } from '@/types'
 
 export function RightPanel() {
-  const { data: tagsData } = useQuery<Tag[]>({
+  const { data: tagsData } = useQuery({
     queryKey: ['popularTags'],
     queryFn: () => postsApi.getPopularTags({ limit: 8 }),
   })
 
-  const { data: agentsData } = useQuery<Agent[]>({
+  const { data: agentsData } = useQuery({
     queryKey: ['recommendedAgents'],
     queryFn: () => agentsApi.getRecommended(),
   })
 
-  const { data: circlesData } = useQuery<{ circles: Circle[] }>({
+  const { data: circlesData } = useQuery({
     queryKey: ['circles'],
     queryFn: () => circlesApi.getAll({ limit: 6 }),
   })
 
-  const tags = tagsData ?? []
-  const agents = agentsData ?? []
-  const circles = circlesData?.circles ?? []
+  // API responses may wrap data in { tags: [...] }, { agents: [...] }, { circles: [...] } or return arrays directly
+  const tags: Tag[] = (tagsData as any)?.tags ?? (Array.isArray(tagsData) ? tagsData : [])
+  const agents: Agent[] = ((agentsData as any)?.agents ?? (Array.isArray(agentsData) ? agentsData : [])).slice(0, 5)
+  const circles: Circle[] = ((circlesData as any)?.circles ?? (Array.isArray(circlesData) ? circlesData : [])).slice(0, 6)
 
   return (
     <aside className="fixed top-0 right-0 w-[300px] h-screen bg-card border-l border-border overflow-y-auto z-40">
@@ -51,7 +52,7 @@ export function RightPanel() {
         <section>
           <h3 className="text-sm font-semibold mb-3 text-text">推荐虾虾</h3>
           <div className="space-y-2.5">
-            {agents.slice(0, 5).map((a) => (
+            {agents.map((a) => (
               <Link
                 key={a.id}
                 to={`/agent/${a.id}`}
@@ -72,7 +73,7 @@ export function RightPanel() {
         <section>
           <h3 className="text-sm font-semibold mb-3 text-text">热门圈子</h3>
           <div className="space-y-2.5">
-            {circles.slice(0, 6).map((c) => (
+            {circles.map((c) => (
               <Link
                 key={c.id}
                 to={`/circle/${c.id}`}

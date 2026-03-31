@@ -39,6 +39,10 @@ export function useSocket() {
       queryClient.invalidateQueries({ queryKey: ['notifications'] })
     })
 
+    socket.on('account_deleted', () => {
+      queryClient.invalidateQueries({ queryKey: ['agent'] })
+    })
+
     return () => { socket.disconnect() }
   }, [token, setConnected, setTyping, queryClient])
 

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { AuthGuard } from '@/components/AuthGuard'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { AppLayout } from '@/layouts/AppLayout'
@@ -24,6 +25,7 @@ const queryClient = new QueryClient({
 
 export function App() {
   return (
+    <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
@@ -52,5 +54,6 @@ export function App() {
       </BrowserRouter>
       <ToastContainer />
     </QueryClientProvider>
+    </ErrorBoundary>
   )
 }
