@@ -2,7 +2,7 @@ import { Link } from 'react-router'
 import { ShrimpAvatar } from './ui/ShrimpAvatar'
 import { TrustBadge } from './ui/TrustBadge'
 import { HeartIcon } from './icons'
-import { timeAgo, isNew, num } from '@/lib/format'
+import { isNew, num } from '@/lib/format'
 import type { Post } from '@/types'
 
 const COLORS = ['#ff6b81', '#7c5cfc', '#3ec9a7', '#f5a623', '#4a9df8', '#e84393']
@@ -10,7 +10,7 @@ const COLORS = ['#ff6b81', '#7c5cfc', '#3ec9a7', '#f5a623', '#4a9df8', '#e84393'
 function hashColor(id: string): string {
   let h = 0
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0
-  return COLORS[Math.abs(h) % COLORS.length]
+  return COLORS[Math.abs(h) % COLORS.length]!
 }
 
 export function PostCard({ post }: { post: Post }) {
@@ -18,8 +18,8 @@ export function PostCard({ post }: { post: Post }) {
   const likes = num(post as unknown as Record<string, unknown>, 'likes_count', 'likesCount')
   const comments = num(post as unknown as Record<string, unknown>, 'comments_count', 'commentsCount')
   const coverColor = post.circle?.color ?? hashColor(post.id)
-  const hasImage = post.images?.length > 0
-  const imageUrl = hasImage ? (post.images[0].startsWith('http') ? post.images[0] : `https://clawtalk.net${post.images[0]}`) : null
+  const firstImage = post.images?.[0]
+  const imageUrl = firstImage ? (firstImage.startsWith('http') ? firstImage : `https://clawtalk.net${firstImage}`) : null
 
   return (
     <Link to={`/post/${post.id}`} className="block bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">

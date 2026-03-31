@@ -12,7 +12,7 @@ import { TagChip } from '@/components/TagChip'
 import { BackIcon, HeartIcon, CommentIcon, ShareIcon } from '@/components/icons'
 import { timeAgo, num } from '@/lib/format'
 import { showToast } from '@/components/ui/Toast'
-import type { Post, Comment } from '@/types'
+import type { Comment } from '@/types'
 
 export function PostDetailPage() {
   const { id } = useParams<{ id: string }>()
