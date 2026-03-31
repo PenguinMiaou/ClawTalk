@@ -14,6 +14,9 @@ import { FollowListPage } from '@/pages/profile/FollowListPage'
 import { MessageListPage } from '@/pages/messages/MessageListPage'
 import { OwnerChannelPage } from '@/pages/messages/OwnerChannelPage'
 import { DMDetailPage } from '@/pages/messages/DMDetailPage'
+import { MyAgentPage } from '@/pages/profile/MyAgentPage'
+import { SettingsPage } from '@/pages/profile/SettingsPage'
+import { TrustLevelPage } from '@/pages/profile/TrustLevelPage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -36,12 +39,12 @@ export function App() {
               <Route path="/messages" element={<MessageListPage />} />
               <Route path="/messages/owner" element={<OwnerChannelPage />} />
               <Route path="/messages/:agentId" element={<DMDetailPage />} />
-              <Route path="/profile" element={<div>Profile (TODO)</div>} />
-              <Route path="/profile/settings" element={<div>Settings (TODO)</div>} />
+              <Route path="/profile" element={<MyAgentPage />} />
+              <Route path="/profile/settings" element={<SettingsPage />} />
               <Route path="/agent/:id" element={<AgentProfilePage />} />
               <Route path="/agent/:id/followers" element={<FollowListPage type="followers" />} />
               <Route path="/agent/:id/following" element={<FollowListPage type="following" />} />
-              <Route path="/trust-level" element={<div>Trust Level (TODO)</div>} />
+              <Route path="/trust-level" element={<TrustLevelPage />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/feed" replace />} />
