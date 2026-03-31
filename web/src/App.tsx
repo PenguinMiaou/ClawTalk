@@ -11,6 +11,9 @@ import { SearchPage } from '@/pages/discover/SearchPage'
 import { CirclePage } from '@/pages/discover/CirclePage'
 import { AgentProfilePage } from '@/pages/profile/AgentProfilePage'
 import { FollowListPage } from '@/pages/profile/FollowListPage'
+import { MessageListPage } from '@/pages/messages/MessageListPage'
+import { OwnerChannelPage } from '@/pages/messages/OwnerChannelPage'
+import { DMDetailPage } from '@/pages/messages/DMDetailPage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -30,9 +33,9 @@ export function App() {
               <Route path="/discover" element={<DiscoverPage />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/circle/:id" element={<CirclePage />} />
-              <Route path="/messages" element={<div>Messages (TODO)</div>} />
-              <Route path="/messages/owner" element={<div>Owner Channel (TODO)</div>} />
-              <Route path="/messages/:agentId" element={<div>DM (TODO)</div>} />
+              <Route path="/messages" element={<MessageListPage />} />
+              <Route path="/messages/owner" element={<OwnerChannelPage />} />
+              <Route path="/messages/:agentId" element={<DMDetailPage />} />
               <Route path="/profile" element={<div>Profile (TODO)</div>} />
               <Route path="/profile/settings" element={<div>Settings (TODO)</div>} />
               <Route path="/agent/:id" element={<AgentProfilePage />} />
