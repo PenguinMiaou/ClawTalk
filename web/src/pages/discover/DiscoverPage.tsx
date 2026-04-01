@@ -5,79 +5,56 @@ import { circlesApi } from '@/api/circles'
 import { PostCard } from '@/components/PostCard'
 import { CircleIcon } from '@/components/ui/CircleIcon'
 import { LoadingView } from '@/components/ui/LoadingView'
-import type { Post, Circle, Tag } from '@/types'
+import { num } from '@/lib/format'
+import type { Post, Circle } from '@/types'
 
 export function DiscoverPage() {
   const navigate = useNavigate()
-  const { data: tagsData } = useQuery({ queryKey: ['popularTags'], queryFn: () => postsApi.getPopularTags({ limit: 12 }) })
   const { data: circlesData } = useQuery({ queryKey: ['circles'], queryFn: () => circlesApi.getAll({ limit: 10 }) })
   const { data: trendingData, isLoading } = useQuery({ queryKey: ['trending'], queryFn: () => postsApi.getTrending(20) })
 
-  const tags: Tag[] = tagsData?.tags ?? tagsData ?? []
   const circles: Circle[] = circlesData?.circles ?? circlesData ?? []
   const posts: Post[] = trendingData?.posts ?? trendingData ?? []
 
   return (
-    <div className="page-enter">
+    <div>
       {/* Search bar */}
       <div
         onClick={() => navigate('/search')}
-        className="mb-5 px-4 py-2.5 rounded-xl text-sm text-text-tertiary cursor-pointer flex items-center gap-2.5"
-        style={{ background: '#f5f5f5' }}
+        style={{ margin: '0 16px 20px', padding: '10px 14px', borderRadius: 12, backgroundColor: '#f5f5f5', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <span>搜索虾虾、话题、圈子...</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
+        <span style={{ fontSize: 14, color: '#999' }}>搜索话题、虾虾、圈子</span>
       </div>
 
-      {/* Tags - horizontal scroll */}
-      {tags.length > 0 && (
-        <Section title="热门话题">
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-            {tags.map((t) => (
-              <Link
-                key={t.tag}
-                to={`/search?q=${encodeURIComponent(t.tag)}&type=posts`}
-                className="shrink-0 px-3 py-1.5 rounded-full text-xs font-medium text-text-secondary"
-                style={{ background: '#f5f5f5' }}
-              >
-                #{t.tag} <span className="text-text-tertiary ml-0.5">{t.count}</span>
-              </Link>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {/* Circles - horizontal scroll with icons */}
+      {/* 热门圈子 — matching iOS exactly */}
       {circles.length > 0 && (
-        <Section title="热门圈子">
-          <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
-            {circles.map((c) => (
-              <Link key={c.id} to={`/circle/${c.id}`} className="flex flex-col items-center gap-1.5 shrink-0" style={{ width: '80px' }}>
-                <CircleIcon color={c.color} iconKey={c.iconKey} size={56} />
-                <span className="text-xs text-text-secondary text-center truncate w-full">{c.name}</span>
-              </Link>
-            ))}
+        <div style={{ marginBottom: 24 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a', margin: '0 16px 12px' }}>热门圈子</h2>
+          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', padding: '0 16px', scrollbarWidth: 'none' }}>
+            {circles.map((c) => {
+              const members = num(c as unknown as Record<string, unknown>, 'members_count', 'membersCount')
+              return (
+                <Link key={c.id} to={`/circle/${c.id}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0, width: 90, textDecoration: 'none' }}>
+                  <CircleIcon color={c.color} iconKey={c.iconKey} size={64} />
+                  <span style={{ fontSize: 13, fontWeight: 500, color: '#1a1a1a', textAlign: 'center' }}>{c.name}</span>
+                  <span style={{ fontSize: 11, color: '#999', marginTop: -2 }}>{members} 人</span>
+                </Link>
+              )
+            })}
           </div>
-        </Section>
+        </div>
       )}
 
-      {/* Trending posts */}
-      <Section title="热门帖子">
+      {/* 热门内容 — matching iOS section title */}
+      <div style={{ marginBottom: 24 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a', margin: '0 16px 12px' }}>热门内容</h2>
         {isLoading ? <LoadingView /> : (
-          <div className="post-grid">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '0 8px' }}>
             {posts.map((p) => <PostCard key={p.id} post={p} />)}
           </div>
         )}
-      </Section>
-    </div>
-  )
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="mb-6">
-      <h2 className="text-[15px] font-semibold mb-3 text-text">{title}</h2>
-      {children}
+      </div>
     </div>
   )
 }

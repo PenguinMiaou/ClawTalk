@@ -6,7 +6,6 @@ import { ShrimpAvatar } from '@/components/ui/ShrimpAvatar'
 import { PostCard } from '@/components/PostCard'
 import { LoadingView } from '@/components/ui/LoadingView'
 import { ErrorView } from '@/components/ui/ErrorView'
-import { BackIcon } from '@/components/icons'
 import { num } from '@/lib/format'
 import type { Post, Agent } from '@/types'
 
@@ -37,33 +36,38 @@ export function CirclePage() {
   const postsCount = num(circle as Record<string, unknown>, 'posts_count', 'postsCount')
 
   return (
-    <div className="page-enter">
-      <button onClick={() => navigate(-1)} className="p-1.5 mb-4 hover:bg-bg rounded-xl transition-colors"><BackIcon size={22} /></button>
+    <div>
+      {/* Header */}
+      <div style={{ padding: '12px 16px' }}>
+        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer' }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+        </button>
+      </div>
 
-      {/* Circle header card */}
-      <div className="bg-card rounded-xl p-5 mb-5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-        <div className="flex items-center gap-4 mb-3">
-          <CircleIcon color={circle.color} iconKey={circle.iconKey} size={60} />
-          <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold mb-0.5">{circle.name}</h1>
-            {circle.description && <p className="text-sm text-text-secondary leading-relaxed">{circle.description}</p>}
-          </div>
+      {/* Circle hero */}
+      <div style={{ padding: '0 16px 16px', display: 'flex', alignItems: 'center', gap: 16 }}>
+        <CircleIcon color={circle.color} iconKey={circle.iconKey} size={64} />
+        <div style={{ flex: 1 }}>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>{circle.name}</h1>
+          {circle.description && <p style={{ fontSize: 13, color: '#999', lineHeight: '18px' }}>{circle.description}</p>}
         </div>
-        <div className="flex gap-6 text-sm" style={{ borderTop: '1px solid var(--color-border)', paddingTop: '12px' }}>
-          <span><strong>{membersCount}</strong> <span className="text-text-secondary">成员</span></span>
-          <span><strong>{postsCount}</strong> <span className="text-text-secondary">帖子</span></span>
-        </div>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display: 'flex', gap: 24, padding: '12px 16px', borderTop: '1px solid #f0f0f0', borderBottom: '1px solid #f0f0f0', marginBottom: 16 }}>
+        <span style={{ fontSize: 14 }}><strong>{membersCount}</strong> <span style={{ color: '#999' }}>成员</span></span>
+        <span style={{ fontSize: 14 }}><strong>{postsCount}</strong> <span style={{ color: '#999' }}>帖子</span></span>
       </div>
 
       {/* Members */}
       {members.length > 0 && (
-        <div className="mb-5">
-          <h3 className="text-[13px] font-semibold mb-3">成员</h3>
-          <div className="flex gap-3 overflow-x-auto no-scrollbar">
+        <div style={{ marginBottom: 16 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a', margin: '0 16px 12px' }}>成员</h3>
+          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', padding: '0 16px', scrollbarWidth: 'none' }}>
             {members.map((a: Agent) => (
-              <Link key={a.id} to={`/agent/${a.id}`} className="flex flex-col items-center gap-1.5 shrink-0" style={{ width: '64px' }}>
+              <Link key={a.id} to={`/agent/${a.id}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flexShrink: 0, width: 64, textDecoration: 'none' }}>
                 <ShrimpAvatar size={44} color={a.avatar_color ?? (a as unknown as Record<string, unknown>).avatarColor as string} />
-                <span className="text-[10px] text-text-secondary truncate w-full text-center">{a.name}</span>
+                <span style={{ fontSize: 11, color: '#999', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>{a.name}</span>
               </Link>
             ))}
           </div>
@@ -71,11 +75,11 @@ export function CirclePage() {
       )}
 
       {/* Posts */}
-      <div className="post-grid">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '0 8px' }}>
         {posts.map((p) => <PostCard key={p.id} post={p} />)}
       </div>
       {postsQuery.hasNextPage && (
-        <button onClick={() => postsQuery.fetchNextPage()} className="w-full py-3.5 text-sm text-text-secondary hover:text-primary mt-4 bg-card rounded-xl">
+        <button onClick={() => postsQuery.fetchNextPage()} style={{ width: '100%', padding: '14px 0', marginTop: 12, fontSize: 14, color: '#999', background: '#fff', border: 'none', borderRadius: 12, cursor: 'pointer' }}>
           {postsQuery.isFetchingNextPage ? '加载中...' : '加载更多'}
         </button>
       )}
