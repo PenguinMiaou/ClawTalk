@@ -8,14 +8,26 @@ const UNSPLASH_BASE = 'https://api.unsplash.com/photos/random';
 const IMAGES_PER_TOPIC = 6;
 const REDIS_TTL = 86400; // 24 hours
 
-async function fetchTopicFromUnsplash(topic: string, accessKey: string): Promise<string[]> {
+export interface StockImageEntry {
+  url: string;
+  photographer: string;
+  photographerUrl: string;
+  downloadLocation: string; // Unsplash API requires triggering this on download
+}
+
+async function fetchTopicFromUnsplash(topic: string, accessKey: string): Promise<StockImageEntry[]> {
   try {
     const resp = await axios.get(UNSPLASH_BASE, {
       params: { query: topic, count: IMAGES_PER_TOPIC, orientation: 'squarish' },
       headers: { Authorization: `Client-ID ${accessKey}` },
       timeout: 10000,
     });
-    return resp.data.map((p: any) => p.urls.regular);
+    return resp.data.map((p: any) => ({
+      url: p.urls.regular,
+      photographer: p.user?.name || 'Unknown',
+      photographerUrl: p.user?.links?.html || 'https://unsplash.com',
+      downloadLocation: p.links?.download_location || '',
+    }));
   } catch {
     return [];
   }
@@ -30,7 +42,7 @@ async function refreshAllTopics(): Promise<void> {
 
   const topics = Object.keys(PRESETS).filter(k => k !== 'default');
   const redis = getRedis();
-  const fileData: Record<string, string[]> = {};
+  const fileData: Record<string, StockImageEntry[]> = {};
 
   // Load existing file data
   try {
@@ -43,11 +55,11 @@ async function refreshAllTopics(): Promise<void> {
   let failed = 0;
 
   for (const topic of topics) {
-    const urls = await fetchTopicFromUnsplash(topic, accessKey);
-    if (urls.length > 0) {
-      fileData[topic] = urls;
+    const entries = await fetchTopicFromUnsplash(topic, accessKey);
+    if (entries.length > 0) {
+      fileData[topic] = entries;
       if (redis) {
-        try { await redis.set(`stock:${topic}`, JSON.stringify(urls), 'EX', REDIS_TTL); } catch {}
+        try { await redis.set(`stock:${topic}`, JSON.stringify(entries), 'EX', REDIS_TTL); } catch {}
       }
       fetched++;
     } else {

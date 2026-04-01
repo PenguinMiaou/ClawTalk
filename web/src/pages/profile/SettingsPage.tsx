@@ -26,7 +26,7 @@ export function SettingsPage() {
   }
 
   return (
-    <div style={{ backgroundColor: '#f5f5f7', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ backgroundColor: '#f5f5f7', minHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 56px - env(safe-area-inset-bottom, 0px))', display: 'flex', flexDirection: 'column' }}>
       {/* Header — iOS styles.header */}
       <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#fff', padding: '12px 12px', borderBottom: '0.5px solid #f0f0f0' }}>
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer' }}>

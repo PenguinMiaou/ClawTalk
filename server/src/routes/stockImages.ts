@@ -1,8 +1,10 @@
 import { Router } from 'express';
+import axios from 'axios';
 import { dualAuth } from '../middleware/dualAuth';
 import { getRedis } from '../config/redis';
 import * as fs from 'fs';
 import * as path from 'path';
+import type { StockImageEntry } from '../services/stockImageCron';
 
 const router = Router();
 
@@ -355,6 +357,14 @@ function shuffle<T>(arr: T[]): T[] {
   return arr;
 }
 
+// Normalize entry: handles both new format (object) and legacy format (plain URL string)
+function normalizeEntry(entry: StockImageEntry | string): StockImageEntry {
+  if (typeof entry === 'string') {
+    return { url: entry, photographer: 'Unsplash', photographerUrl: 'https://unsplash.com', downloadLocation: '' };
+  }
+  return entry;
+}
+
 // Read cached images from Redis → file → presets
 async function getImages(topic: string, count: number): Promise<{ images: any[]; source: string }> {
   const resolved = ALIASES[topic] || topic;
@@ -365,8 +375,11 @@ async function getImages(topic: string, count: number): Promise<{ images: any[];
     try {
       const cached = await redis.get(`stock:${resolved}`);
       if (cached) {
-        const urls: string[] = JSON.parse(cached);
-        const images = shuffle([...urls]).slice(0, count).map(url => ({ url, thumb: url, credit: 'Unsplash' }));
+        const entries: (StockImageEntry | string)[] = JSON.parse(cached);
+        const images = shuffle([...entries]).slice(0, count).map(e => {
+          const n = normalizeEntry(e);
+          return { url: n.url, thumb: n.url, photographer: n.photographer, photographer_url: n.photographerUrl + '?utm_source=clawtalk&utm_medium=referral', credit: 'Unsplash', download_location: n.downloadLocation };
+        });
         return { images, source: 'cache' };
       }
     } catch { /* fall through */ }
@@ -377,22 +390,45 @@ async function getImages(topic: string, count: number): Promise<{ images: any[];
     if (fs.existsSync(DATA_FILE)) {
       const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8'));
       if (data[resolved] && data[resolved].length > 0) {
-        const images = shuffle([...data[resolved]]).slice(0, count).map((url: string) => ({ url, thumb: url, credit: 'Unsplash' }));
+        const images = shuffle([...data[resolved]]).slice(0, count).map((e: StockImageEntry | string) => {
+          const n = normalizeEntry(e);
+          return { url: n.url, thumb: n.url, photographer: n.photographer, photographer_url: n.photographerUrl + '?utm_source=clawtalk&utm_medium=referral', credit: 'Unsplash', download_location: n.downloadLocation };
+        });
         return { images, source: 'file' };
       }
     }
   } catch { /* fall through */ }
 
-  // 3. Fallback to hardcoded presets
+  // 3. Fallback to hardcoded presets (no photographer info available)
   const pool = PRESETS[resolved] || PRESETS.default;
-  const images = shuffle([...pool]).slice(0, count).map(url => ({ url, thumb: url, credit: 'Unsplash' }));
+  const images = shuffle([...pool]).slice(0, count).map(url => ({
+    url, thumb: url, photographer: 'Unsplash', photographer_url: 'https://unsplash.com?utm_source=clawtalk&utm_medium=referral', credit: 'Unsplash', download_location: '',
+  }));
   return { images, source: 'preset' };
+}
+
+// Trigger Unsplash download event (Section 6 compliance)
+async function triggerDownload(downloadLocation: string): Promise<void> {
+  const accessKey = process.env.UNSPLASH_ACCESS_KEY;
+  if (!accessKey || !downloadLocation) return;
+  try {
+    await axios.get(downloadLocation, {
+      headers: { Authorization: `Client-ID ${accessKey}` },
+      timeout: 5000,
+    });
+  } catch { /* non-critical, best effort */ }
 }
 
 router.get('/', dualAuth, async (req, res) => {
   const topic = (req.query.topic as string || 'default').toLowerCase();
   const count = Math.min(parseInt(req.query.count as string) || 3, 9);
   const result = await getImages(topic, count);
+
+  // Fire-and-forget download tracking for each image (Unsplash TOS Section 6)
+  for (const img of result.images) {
+    if (img.download_location) triggerDownload(img.download_location);
+  }
+
   res.json(result);
 });
 
