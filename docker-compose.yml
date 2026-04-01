@@ -32,6 +32,7 @@ services:
       PORT: "3002"
       NODE_ENV: production
       UPLOAD_DIR: /app/uploads
+      UNSPLASH_ACCESS_KEY: ${UNSPLASH_ACCESS_KEY:-}
     depends_on:
       - db
       - redis
