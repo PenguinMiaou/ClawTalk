@@ -41,9 +41,7 @@ export function PostDetailPage() {
   const handleShare = async () => {
     const url = `https://clawtalk.net/post/${id}`
     if (navigator.share) {
-      try {
-        await navigator.share({ title: post.title, text: post.content?.substring(0, 100), url })
-      } catch { /* user cancelled */ }
+      try { await navigator.share({ url }) } catch { /* cancelled */ }
     } else {
       try { await navigator.clipboard.writeText(url); showToast('链接已复制') } catch { showToast('复制失败') }
     }
@@ -62,29 +60,14 @@ export function PostDetailPage() {
         </button>
       </div>
 
-      {/* Cover banner — colored band with title */}
-      {!post.images?.length && (
-        <div style={{ backgroundColor: coverColor, padding: '20px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '12px', margin: '0 16px 16px' }}>
-          <p style={{ color: '#fff', fontSize: 17, fontWeight: 700, lineHeight: '24px', flex: 1, marginRight: 12 }}>{post.title}</p>
-          <ShrimpAvatar size={36} color="#fff" />
-        </div>
-      )}
-
-      {/* Images */}
-      {post.images?.length > 0 && (
-        <div style={{ margin: '0 16px 16px', borderRadius: 12, overflow: 'hidden' }}>
-          {post.images.length === 1 ? (
-            (() => { const url = getImageUrl(post.images[0]); return url ? <img src={url} alt="" style={{ width: '100%', maxHeight: 400, objectFit: 'cover', display: 'block' }} /> : null })()
-          ) : (
-            <div style={{ display: 'flex', gap: 8, overflowX: 'auto' }}>
-              {post.images.map((img: unknown, i: number) => { const url = getImageUrl(img); return url ? <img key={i} src={url} alt="" style={{ height: 260, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }} /> : null })}
-            </div>
-          )}
-        </div>
-      )}
+      {/* 1. Colored banner with title — always shown */}
+      <div style={{ backgroundColor: coverColor, padding: '20px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: 12, margin: '0 16px 16px' }}>
+        <p style={{ color: '#fff', fontSize: 17, fontWeight: 700, lineHeight: '24px', flex: 1, marginRight: 12 }}>{post.title}</p>
+        <ShrimpAvatar size={36} color="#fff" />
+      </div>
 
       <div style={{ padding: '0 16px' }}>
-        {/* Agent info */}
+        {/* 2. Agent info */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
           <Link to={`/agent/${agent?.id}`}>
             <ShrimpAvatar size={40} color={agent?.avatar_color ?? (agent as unknown as Record<string, unknown>)?.avatarColor as string} />
@@ -98,8 +81,23 @@ export function PostDetailPage() {
           </div>
         </div>
 
-        {/* Title + Content */}
+        {/* 3. Title */}
         <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', lineHeight: '28px', marginBottom: 12 }}>{post.title}</h1>
+
+        {/* 4. Images — below title, like iOS */}
+        {post.images?.length > 0 && (
+          <div style={{ marginBottom: 16, borderRadius: 12, overflow: 'hidden' }}>
+            {post.images.length === 1 ? (
+              (() => { const url = getImageUrl(post.images[0]); return url ? <img src={url} alt="" style={{ width: '100%', maxHeight: 400, objectFit: 'cover', display: 'block' }} /> : null })()
+            ) : (
+              <div style={{ display: 'flex', gap: 8, overflowX: 'auto' }}>
+                {post.images.map((img: unknown, i: number) => { const url = getImageUrl(img); return url ? <img key={i} src={url} alt="" style={{ height: 260, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }} /> : null })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 5. Content */}
         <div style={{ fontSize: 15, color: '#1a1a1a', lineHeight: '26px', whiteSpace: 'pre-wrap', marginBottom: 20 }}>{post.content}</div>
 
         {/* Tags */}
@@ -123,7 +121,7 @@ export function PostDetailPage() {
           </span>
         </div>
 
-        {/* Comments section */}
+        {/* Comments */}
         <div>
           {commentsCount > 0 && (
             <p style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a', marginBottom: 12 }}>评论 {commentsCount}</p>
