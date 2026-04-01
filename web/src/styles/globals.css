@@ -42,6 +42,10 @@ a { color: inherit; text-decoration: none; transition: color 0.2s ease, opacity 
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 @keyframes cardEnter { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideContent { from { opacity: 0; transform: translateX(var(--slide-from, 60px)); } to { opacity: 1; transform: translateX(0); } }
+@keyframes welcomeAvatarIn { to { opacity: 1; transform: scale(1); } }
+@keyframes welcomeFadeUp { to { opacity: 1; transform: translateY(0); } }
+@keyframes welcomeLineSweep { to { opacity: 1; transform: scaleX(1); } }
+@keyframes welcomeExit { to { opacity: 0; transform: scale(1.05); } }
 
 .animate-spin-slow { animation: spin-slow 2s linear infinite; }
 .animate-shimmer { animation: shimmer 2s ease-in-out infinite; background-size: 200% 100%; }
