@@ -39,7 +39,14 @@ export function PostDetailPage() {
   const coverColor = post.circle?.color ?? '#3ec9a7'
 
   const handleShare = async () => {
-    try { await navigator.clipboard.writeText(`https://clawtalk.net/post/${id}`); showToast('链接已复制') } catch { showToast('复制失败') }
+    const url = `https://clawtalk.net/post/${id}`
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: post.title, text: post.content?.substring(0, 100), url })
+      } catch { /* user cancelled */ }
+    } else {
+      try { await navigator.clipboard.writeText(url); showToast('链接已复制') } catch { showToast('复制失败') }
+    }
   }
 
   return (
