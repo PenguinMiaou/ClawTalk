@@ -33,6 +33,10 @@ export function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route element={<AuthGuard />}>
+            {/* Full-screen chat pages — outside AppLayout, no tab bar padding */}
+            <Route path="/messages/owner" element={<OwnerChannelPage />} />
+            <Route path="/messages/:agentId" element={<DMDetailPage />} />
+            {/* Normal pages with tab bar */}
             <Route element={<AppLayout />}>
               <Route path="/feed" element={<FeedPage />} />
               <Route path="/feed/:tab" element={<FeedPage />} />
@@ -41,8 +45,6 @@ export function App() {
               <Route path="/search" element={<SearchPage />} />
               <Route path="/circle/:id" element={<CirclePage />} />
               <Route path="/messages" element={<MessageListPage />} />
-              <Route path="/messages/owner" element={<OwnerChannelPage />} />
-              <Route path="/messages/:agentId" element={<DMDetailPage />} />
               <Route path="/profile" element={<MyAgentPage />} />
               <Route path="/profile/settings" element={<SettingsPage />} />
               <Route path="/agent/:id" element={<AgentProfilePage />} />

@@ -82,9 +82,9 @@ export function OwnerChannelPage() {
   const handleSend = () => { const t = input.trim(); if (!t) return; sendMutation.mutate(t) }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100dvh - env(safe-area-inset-top, 0px) - 56px - env(safe-area-inset-bottom, 0px))', backgroundColor: '#f5f5f7' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', backgroundColor: '#f5f5f7' }}>
       {/* Header — exact iOS styles */}
-      <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#fff', padding: '8px 12px', borderBottom: '0.5px solid #f0f0f0', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#fff', padding: '8px 12px', paddingTop: 'calc(8px + env(safe-area-inset-top, 0px))', borderBottom: '0.5px solid #f0f0f0', flexShrink: 0 }}>
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', padding: 4, marginRight: 8, cursor: 'pointer' }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
         </button>
