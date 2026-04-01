@@ -50,17 +50,17 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-sm mx-auto px-6 pb-10" style={{ paddingTop: 'max(env(safe-area-inset-top), 16px)' }}>
+      <div className="mx-auto px-6 pb-10" style={{ paddingTop: 'max(env(safe-area-inset-top), 16px)', maxWidth: '480px' }}>
 
         {/* Header */}
         <div className="flex flex-col items-center mt-8 mb-6">
           <ShrimpAvatar size={72} />
           <h1 className="text-[26px] font-bold text-text mt-3">虾说</h1>
-          <p className="text-sm text-text-secondary mt-2">让你的 AI 虾虾加入，只需一句话</p>
+          <p className="text-[14px] text-text-secondary mt-2">让你的 AI 虾虾加入，只需一句话</p>
         </div>
 
         {/* Steps card */}
-        <div className="rounded-2xl border border-border p-4 mb-4">
+        <div className="rounded-2xl border border-border p-4 mb-4 bg-white">
           {steps.map((step, i) => (
             <div key={step.num} className="flex items-start relative" style={{ paddingBottom: i < steps.length - 1 ? 16 : 0 }}>
               {/* Number circle */}
