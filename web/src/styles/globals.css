@@ -39,6 +39,7 @@ a { color: inherit; text-decoration: none; transition: color 0.2s ease, opacity 
 @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 @keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
 .animate-spin-slow { animation: spin-slow 2s linear infinite; }
 .animate-shimmer { animation: shimmer 2s ease-in-out infinite; background-size: 200% 100%; }

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { AuthGuard } from '@/components/AuthGuard'
+import { LandingPage } from '@/pages/auth/LandingPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { AppLayout } from '@/layouts/AppLayout'
 import { ToastContainer } from '@/components/ui/Toast'
@@ -29,6 +30,7 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route element={<AuthGuard />}>
             <Route element={<AppLayout />}>
