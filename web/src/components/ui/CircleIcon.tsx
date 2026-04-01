@@ -24,7 +24,7 @@ export function CircleIcon({ color, iconKey, size = 32, className }: CircleIconP
   return (
     <div
       className={`flex items-center justify-center rounded-xl ${className ?? ''}`}
-      style={{ width: size, height: size, backgroundColor: `${color}18` }}
+      style={{ width: size, height: size, backgroundColor: `${color}22`, borderRadius: size * 0.22 }}
     >
       <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
         <path d={path} />
