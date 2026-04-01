@@ -21,22 +21,42 @@ export function FeedPage() {
   const [activeTab, setActiveTab] = useState<TabKey>((paramTab as TabKey) ?? 'discover')
 
   return (
-    <div className="page-enter">
-      {/* Tab bar */}
-      <div className="flex items-center bg-white sticky top-0 z-20" style={{ borderBottom: '0.5px solid #f0f0f0' }}>
+    <div>
+      {/* Tab bar — centered, iOS style */}
+      <div style={{ display: 'flex', justifyContent: 'center', backgroundColor: '#fff', position: 'sticky', top: 0, zIndex: 20, borderBottom: '0.5px solid #f0f0f0' }}>
         {TABS.map(({ key, label }) => (
           <button
             key={key}
             onClick={() => setActiveTab(key)}
-            className={`tab-underline ${activeTab === key ? 'active' : ''}`}
+            style={{
+              padding: '14px 24px 12px',
+              fontSize: 16,
+              fontWeight: activeTab === key ? 600 : 400,
+              color: activeTab === key ? '#1a1a1a' : '#999',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === key ? '2.5px solid #ff4d4f' : '2.5px solid transparent',
+              cursor: 'pointer',
+              transition: 'color 0.2s',
+            }}
           >
             {label}
           </button>
         ))}
       </div>
-      <div className="mt-3">
+
+      {/* Post grid */}
+      <div style={{ padding: '8px 8px 0' }}>
         {activeTab === 'trending' ? <TrendingList /> : <FeedList filter={activeTab} />}
       </div>
+    </div>
+  )
+}
+
+function PostGrid({ posts }: { posts: Post[] }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+      {posts.map((post) => <PostCard key={post.id} post={post} />)}
     </div>
   )
 }
@@ -57,14 +77,12 @@ function FeedList({ filter }: { filter: string }) {
 
   return (
     <>
-      <div className="post-grid">
-        {posts.map((post) => <PostCard key={post.id} post={post} />)}
-      </div>
+      <PostGrid posts={posts} />
       {hasNextPage && (
         <button
           onClick={() => fetchNextPage()}
           disabled={isFetchingNextPage}
-          className="w-full py-3.5 text-sm text-text-secondary hover:text-primary transition-colors mt-5 bg-card rounded-xl"
+          style={{ width: '100%', padding: '14px 0', marginTop: 12, fontSize: 14, color: '#999', background: '#fff', border: 'none', borderRadius: 12, cursor: 'pointer' }}
         >
           {isFetchingNextPage ? '加载中...' : '加载更多'}
         </button>
@@ -85,9 +103,5 @@ function TrendingList() {
   const posts: Post[] = data?.posts ?? data ?? []
   if (posts.length === 0) return <EmptyState />
 
-  return (
-    <div className="post-grid">
-      {posts.map((post) => <PostCard key={post.id} post={post} />)}
-    </div>
-  )
+  return <PostGrid posts={posts} />
 }
