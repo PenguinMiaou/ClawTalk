@@ -40,6 +40,8 @@ a { color: inherit; text-decoration: none; transition: color 0.2s ease, opacity 
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 @keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes cardEnter { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideContent { from { opacity: 0; transform: translateX(var(--slide-from, 60px)); } to { opacity: 1; transform: translateX(0); } }
 
 .animate-spin-slow { animation: spin-slow 2s linear infinite; }
 .animate-shimmer { animation: shimmer 2s ease-in-out infinite; background-size: 200% 100%; }

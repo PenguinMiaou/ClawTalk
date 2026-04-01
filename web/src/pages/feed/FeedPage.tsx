@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useParams } from 'react-router'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { postsApi } from '@/api/posts'
@@ -16,38 +16,114 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]['key']
 
-export function FeedPage() {
-  const { tab: paramTab } = useParams()
-  const [activeTab, setActiveTab] = useState<TabKey>((paramTab as TabKey) ?? 'discover')
+/* ── Animated Tab Indicator ── */
+function TabBar({ activeTab, onTabChange }: { activeTab: TabKey; onTabChange: (k: TabKey) => void }) {
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const [indicator, setIndicator] = useState({ left: 0, width: 0 })
+  const activeIndex = TABS.findIndex((t) => t.key === activeTab)
+
+  useEffect(() => {
+    const el = tabRefs.current[activeIndex]
+    if (el) {
+      const parent = el.parentElement!
+      const parentRect = parent.getBoundingClientRect()
+      const rect = el.getBoundingClientRect()
+      const centerX = rect.left - parentRect.left + (rect.width - 20) / 2
+      setIndicator({ left: centerX, width: 20 })
+    }
+  }, [activeIndex])
 
   return (
-    <div>
-      {/* Tab bar — centered, iOS style */}
-      <div style={{ display: 'flex', justifyContent: 'center', backgroundColor: '#fff', position: 'sticky', top: 0, zIndex: 20, borderBottom: '0.5px solid #f0f0f0' }}>
-        {TABS.map(({ key, label }) => (
+    <div style={{ position: 'sticky', top: 0, zIndex: 20, backgroundColor: '#fff', borderBottom: '0.5px solid #f0f0f0' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
+        {TABS.map(({ key, label }, i) => (
           <button
             key={key}
-            onClick={() => setActiveTab(key)}
+            ref={(el) => { tabRefs.current[i] = el }}
+            onClick={() => onTabChange(key)}
             style={{
-              padding: '14px 24px 12px',
+              padding: '14px 20px 12px',
               fontSize: 16,
               fontWeight: activeTab === key ? 600 : 400,
               color: activeTab === key ? '#1a1a1a' : '#999',
               background: 'none',
               border: 'none',
-              borderBottom: activeTab === key ? '2.5px solid #ff4d4f' : '2.5px solid transparent',
               cursor: 'pointer',
-              transition: 'color 0.2s',
+              transition: 'color 0.2s, font-weight 0.2s',
             }}
           >
             {label}
           </button>
         ))}
+        {/* Animated indicator */}
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          height: 2.5,
+          borderRadius: 2,
+          backgroundColor: '#ff4d4f',
+          width: indicator.width,
+          left: indicator.left,
+          transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.15s',
+        }} />
       </div>
+    </div>
+  )
+}
 
-      {/* Post grid */}
+/* ── Staggered Card Entry ── */
+function AnimatedPostCard({ post, index }: { post: Post; index: number }) {
+  const delay = Math.min(index * 50, 300)
+  return (
+    <div style={{
+      opacity: 0,
+      transform: 'translateY(20px)',
+      animation: `cardEnter 0.3s cubic-bezier(0.33, 1, 0.68, 1) ${delay}ms forwards`,
+    }}>
+      <PostCard post={post} />
+    </div>
+  )
+}
+
+/* ── Tab Content Slide ── */
+function SlideContent({ direction, children }: { direction: 'left' | 'right'; children: React.ReactNode }) {
+  const enterFrom = direction === 'right' ? '60px' : '-60px'
+  return (
+    <div
+      key={direction + Date.now()}
+      style={{
+        animation: `slideContent 0.25s cubic-bezier(0.33, 1, 0.68, 1) forwards`,
+        // @ts-expect-error CSS custom property
+        '--slide-from': enterFrom,
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+export function FeedPage() {
+  const { tab: paramTab } = useParams()
+  const [activeTab, setActiveTab] = useState<TabKey>((paramTab as TabKey) ?? 'discover')
+  const prevTab = useRef(activeTab)
+  const [slideDir, setSlideDir] = useState<'left' | 'right'>('right')
+
+  const handleTabChange = (key: TabKey) => {
+    const keys: TabKey[] = ['following', 'discover', 'trending']
+    const prevIdx = keys.indexOf(prevTab.current)
+    const newIdx = keys.indexOf(key)
+    setSlideDir(newIdx > prevIdx ? 'right' : 'left')
+    prevTab.current = key
+    setActiveTab(key)
+  }
+
+  return (
+    <div>
+      <TabBar activeTab={activeTab} onTabChange={handleTabChange} />
       <div style={{ padding: '8px 8px 0' }}>
-        {activeTab === 'trending' ? <TrendingList /> : <FeedList filter={activeTab} />}
+        <SlideContent direction={slideDir}>
+          {activeTab === 'trending' ? <TrendingList /> : <FeedList filter={activeTab} />}
+        </SlideContent>
       </div>
     </div>
   )
@@ -56,7 +132,7 @@ export function FeedPage() {
 function PostGrid({ posts }: { posts: Post[] }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-      {posts.map((post) => <PostCard key={post.id} post={post} />)}
+      {posts.map((post, i) => <AnimatedPostCard key={post.id} post={post} index={i} />)}
     </div>
   )
 }
