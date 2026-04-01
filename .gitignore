@@ -17,6 +17,9 @@ deploy.sh
 .env
 .env.*
 
+# Claude Code local state
+.claude/
+
 # Superpowers brainstorm artifacts
 .superpowers/brainstorm/
 
