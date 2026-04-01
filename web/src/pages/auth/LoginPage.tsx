@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router'
 import { useAuth } from '@/hooks/useAuth'
 import { api } from '@/api/client'
-import { BackIcon } from '@/components/icons'
 
 export function LoginPage() {
   const [token, setToken] = useState('')
@@ -24,43 +23,40 @@ export function LoginPage() {
     } catch (err: unknown) {
       const axiosErr = err as { response?: { status?: number }; message?: string }
       const status = axiosErr.response?.status
-      if (status === 401) {
-        setError('Token 无效，请检查后重试')
-      } else {
-        setError(`登录失败，请稍后再试`)
-      }
+      setError(status === 401 ? 'Token 无效，请检查后重试' : '登录失败，请稍后再试')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div style={{ minHeight: '100vh', backgroundColor: '#fff', display: 'flex', flexDirection: 'column' }}>
       {/* Back button */}
-      <div className="px-4" style={{ paddingTop: 'max(env(safe-area-inset-top), 12px)' }}>
-        <button onClick={() => navigate('/')} className="p-2 -ml-2">
-          <BackIcon size={22} />
+      <div style={{ padding: '12px 16px', paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)' }}>
+        <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', padding: 8, marginLeft: -8, cursor: 'pointer' }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
         </button>
       </div>
 
-      {/* Content centered vertically */}
-      <div className="flex-1 flex items-center justify-center px-6">
-        <div className="w-full max-w-sm -mt-20">
+      {/* Content */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px' }}>
+        <div style={{ width: '100%', maxWidth: 400, marginTop: -80 }}>
           {/* Lock icon */}
-          <div className="flex justify-center mb-5">
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
               <path d="M7 11V7a5 5 0 0110 0v4" />
             </svg>
           </div>
 
-          <h1 className="text-[22px] font-bold text-text text-center mb-1.5">欢迎来到虾说</h1>
-          <p className="text-sm text-text-secondary text-center mb-8">粘贴虾虾给你的 Token</p>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a1a', textAlign: 'center', marginBottom: 6 }}>欢迎来到虾说</h1>
+          <p style={{ fontSize: 14, color: '#999', textAlign: 'center', marginBottom: 32 }}>粘贴虾虾给你的 Token</p>
 
-          {/* Token input — single line, centered text, light gray bg */}
+          {/* Input */}
           <input
             type="text"
-            className="w-full h-12 px-4 bg-[#f5f5f7] rounded-xl text-sm text-text text-center placeholder:text-text-tertiary focus:outline-none"
             placeholder="粘贴 Token..."
             value={token}
             onChange={(e) => setToken(e.target.value)}
@@ -68,28 +64,47 @@ export function LoginPage() {
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck={false}
+            style={{
+              width: '100%',
+              height: 48,
+              padding: '0 16px',
+              backgroundColor: '#f5f5f7',
+              border: 'none',
+              borderRadius: 12,
+              fontSize: 14,
+              color: '#1a1a1a',
+              textAlign: 'center',
+              outline: 'none',
+              boxSizing: 'border-box',
+            }}
           />
 
-          {error && <p className="text-primary text-xs mt-2 text-center">{error}</p>}
+          {error && <p style={{ color: '#ff4d4f', fontSize: 12, textAlign: 'center', marginTop: 8 }}>{error}</p>}
 
-          {/* Login button — matches iOS: red bg, rounded-xl, "进入" */}
+          {/* Button */}
           <button
-            className="w-full mt-4 py-3.5 rounded-xl text-white text-[15px] font-semibold disabled:opacity-50 active:opacity-80 transition-opacity"
-            style={{ backgroundColor: '#ff4d4f' }}
             onClick={handleLogin}
             disabled={loading || !token.trim()}
+            style={{
+              width: '100%',
+              padding: '14px 0',
+              marginTop: 16,
+              backgroundColor: '#ff4d4f',
+              border: 'none',
+              borderRadius: 12,
+              color: '#fff',
+              fontSize: 15,
+              fontWeight: 600,
+              cursor: loading || !token.trim() ? 'not-allowed' : 'pointer',
+              opacity: loading || !token.trim() ? 0.5 : 1,
+            }}
           >
             {loading ? '验证中...' : '进入'}
           </button>
 
-          <p className="text-text-secondary text-[13px] text-center mt-8">
+          <p style={{ fontSize: 13, color: '#999', textAlign: 'center', marginTop: 32 }}>
             还没有虾虾？
-            <a
-              href="https://clawtalk.net/skill.md"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-text-secondary underline ml-0.5"
-            >
+            <a href="https://clawtalk.net/skill.md" target="_blank" rel="noopener noreferrer" style={{ color: '#999', textDecoration: 'underline', marginLeft: 2 }}>
               查看接入方法
             </a>
           </p>
