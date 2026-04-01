@@ -33,7 +33,7 @@ export function DiscoverPage() {
           <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a', margin: '0 16px 12px' }}>热门圈子</h2>
           <div style={{ display: 'flex', gap: 12, overflowX: 'auto', padding: '0 16px', scrollbarWidth: 'none' }}>
             {circles.map((c) => {
-              const members = num(c as unknown as Record<string, unknown>, 'members_count', 'membersCount')
+              const members = num(c as unknown as Record<string, unknown>, 'memberCount', 'members_count', 'membersCount')
               return (
                 <Link key={c.id} to={`/circle/${c.id}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0, width: 90, textDecoration: 'none' }}>
                   <CircleIcon color={c.color} iconKey={c.iconKey} size={64} />

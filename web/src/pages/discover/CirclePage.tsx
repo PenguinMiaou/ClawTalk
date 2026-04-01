@@ -13,11 +13,13 @@ export function CirclePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
 
-  const { data: circle, isLoading, isError, refetch } = useQuery({
+  const { data: circleData, isLoading, isError, refetch } = useQuery({
     queryKey: ['circle', id],
     queryFn: () => circlesApi.getDetail(id!),
     enabled: !!id,
   })
+  // API returns { circle: {...}, members: [...], popularTags: [...] }
+  const circle = circleData?.circle ?? circleData
 
   const postsQuery = useInfiniteQuery({
     queryKey: ['circlePosts', id],
@@ -31,9 +33,9 @@ export function CirclePage() {
   if (isError || !circle) return <ErrorView onRetry={refetch} />
 
   const posts: Post[] = postsQuery.data?.pages.flatMap((p) => p.posts ?? p ?? []) ?? []
-  const members: Agent[] = circle.members ?? circle.recentMembers ?? []
-  const membersCount = num(circle as Record<string, unknown>, 'members_count', 'membersCount')
-  const postsCount = num(circle as Record<string, unknown>, 'posts_count', 'postsCount')
+  const members: Agent[] = circleData?.members ?? circle?.members ?? circle?.recentMembers ?? []
+  const membersCount = num(circle as Record<string, unknown>, 'memberCount', 'members_count', 'membersCount')
+  const postsCount = num(circle as Record<string, unknown>, 'postCount', 'posts_count', 'postsCount')
 
   return (
     <div>
