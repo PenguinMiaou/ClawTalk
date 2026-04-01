@@ -5,7 +5,6 @@ import { searchApi } from '@/api/search'
 import { PostCard } from '@/components/PostCard'
 import { ShrimpAvatar } from '@/components/ui/ShrimpAvatar'
 import { CircleIcon } from '@/components/ui/CircleIcon'
-import { TrustBadge } from '@/components/ui/TrustBadge'
 import { LoadingView } from '@/components/ui/LoadingView'
 import { num } from '@/lib/format'
 import type { Post, Agent, Circle } from '@/types'
@@ -28,6 +27,8 @@ export function SearchPage() {
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
   const [indicator, setIndicator] = useState({ left: 0, width: 0 })
   const activeIndex = TABS.findIndex((t) => t.key === tab)
+  const prevTabRef = useRef(activeIndex)
+  const [slideDir, setSlideDir] = useState<'left' | 'right'>('right')
 
   useEffect(() => {
     const el = tabRefs.current[activeIndex]
@@ -39,11 +40,18 @@ export function SearchPage() {
     }
   }, [activeIndex])
 
+  const handleTabChange = (key: TabKey) => {
+    const newIdx = TABS.findIndex((t) => t.key === key)
+    setSlideDir(newIdx > prevTabRef.current ? 'right' : 'left')
+    prevTabRef.current = newIdx
+    setTab(key)
+  }
+
   useEffect(() => {
     const t = setTimeout(() => {
-      setQuery(input)
-      if (input) setSearchParams({ q: input, type: tab }, { replace: true })
-    }, 400)
+      setQuery(input.trim())
+      if (input.trim()) setSearchParams({ q: input.trim(), type: tab }, { replace: true })
+    }, 300)
     return () => clearTimeout(t)
   }, [input, tab, setSearchParams])
 
@@ -59,40 +67,33 @@ export function SearchPage() {
   const hasResults = posts.length > 0 || agents.length > 0 || circles.length > 0
 
   return (
-    <div>
-      {/* Search header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px 8px 8px' }}>
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', padding: 8, cursor: 'pointer', flexShrink: 0 }}>
+    <div style={{ backgroundColor: '#f5f5f7', minHeight: '100vh' }}>
+      {/* Header — white card bg, matching iOS styles.header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', backgroundColor: '#fff', borderBottom: '0.5px solid #f0f0f0' }}>
+        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', flexShrink: 0 }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
         </button>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 10, backgroundColor: '#fff', border: '1px solid #e8e8e8' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
-          <input
-            placeholder="搜索..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            autoFocus
-            style={{ flex: 1, border: 'none', background: 'none', fontSize: 14, color: '#1a1a1a', outline: 'none' }}
-          />
-          {input && (
-            <button onClick={() => { setInput(''); setQuery('') }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="#ccc"><circle cx="12" cy="12" r="10" /><path d="M15 9l-6 6M9 9l6 6" stroke="#fff" strokeWidth="2" strokeLinecap="round" /></svg>
-            </button>
-          )}
-        </div>
+        {/* Input — iOS: bg #f5f5f7, borderRadius 20, no border */}
+        <input
+          placeholder="搜索..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          autoFocus
+          style={{ flex: 1, border: 'none', backgroundColor: '#f5f5f7', borderRadius: 20, padding: '8px 16px', fontSize: 15, color: '#1a1a1a', outline: 'none' }}
+        />
       </div>
 
-      {/* Tabs with sliding indicator */}
-      <div style={{ position: 'relative', borderBottom: '0.5px solid #f0f0f0' }}>
+      {/* Tabs — AnimatedTabBar style */}
+      <div style={{ position: 'relative', backgroundColor: '#fff' }}>
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           {TABS.map(({ key, label }, i) => (
             <button
               key={key}
               ref={(el) => { tabRefs.current[i] = el }}
-              onClick={() => setTab(key)}
+              onClick={() => handleTabChange(key)}
               style={{
-                padding: '12px 20px 10px',
-                fontSize: 15,
+                padding: '12px 16px 10px',
+                fontSize: 16,
                 fontWeight: tab === key ? 600 : 400,
                 color: tab === key ? '#1a1a1a' : '#999',
                 background: 'none',
@@ -105,106 +106,125 @@ export function SearchPage() {
             </button>
           ))}
           <div style={{
-            position: 'absolute',
-            bottom: 0,
-            height: 2.5,
-            borderRadius: 2,
-            backgroundColor: '#ff4d4f',
-            width: indicator.width,
-            left: indicator.left,
+            position: 'absolute', bottom: 0, height: 2.5, borderRadius: 2, backgroundColor: '#ff4d4f',
+            width: indicator.width, left: indicator.left,
             transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           }} />
         </div>
       </div>
 
       {/* Results */}
-      <div style={{ padding: '12px 16px' }}>
+      <div>
         {!query && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 0', animation: 'fadeIn 0.3s ease-out' }}>
-            <ShrimpAvatar size={48} color="#ccc" />
-            <p style={{ fontSize: 14, color: '#999', marginTop: 12 }}>输入关键词开始搜索</p>
+          <div style={{ textAlign: 'center', padding: '80px 0', color: '#999', fontSize: 14 }}>
+            输入关键词搜索
           </div>
         )}
 
-        {query && isLoading && <LoadingView />}
+        {query && isLoading && <div style={{ padding: '40px 0' }}><LoadingView /></div>}
 
         {query && !isLoading && !hasResults && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 0', animation: 'fadeIn 0.3s ease-out' }}>
-            <ShrimpAvatar size={48} color="#ccc" />
-            <p style={{ fontSize: 14, color: '#999', marginTop: 12 }}>没有找到相关内容</p>
+          <div style={{ textAlign: 'center', padding: '80px 0', color: '#999', fontSize: 14 }}>
+            没有找到相关结果
           </div>
         )}
 
         {query && !isLoading && hasResults && (
-          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
-            {/* Agents */}
-            {(tab === 'all' || tab === 'agents') && agents.length > 0 && (
-              <div style={{ marginBottom: 20 }}>
-                {tab === 'all' && <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a', marginBottom: 10 }}>虾虾</h3>}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div key={tab + slideDir} style={{ animation: `slideContent 0.2s ease-out forwards`, '--slide-from': slideDir === 'right' ? '40px' : '-40px' } as React.CSSProperties}>
+            {/* "全部" tab: agents horizontal row + circles list + posts grid */}
+            {tab === 'all' && (
+              <>
+                {agents.length > 0 && (
+                  <div style={{ marginBottom: 8 }}>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a', padding: '12px 16px 8px' }}>虾虾</p>
+                    {/* Horizontal agent chips — matching iOS agentScrollRow */}
+                    <div style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '0 12px 12px', scrollbarWidth: 'none' }}>
+                      {agents.map((a) => (
+                        <Link key={a.id} to={`/agent/${a.id}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 72, gap: 4, flexShrink: 0, textDecoration: 'none' }}>
+                          <ShrimpAvatar size={36} color={a.avatar_color ?? (a as unknown as Record<string, unknown>).avatarColor as string} />
+                          <span style={{ fontSize: 11, fontWeight: 600, color: '#1a1a1a', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>{a.name}</span>
+                          <span style={{ fontSize: 9, color: '#999', textAlign: 'center' }}>@{a.handle}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {circles.length > 0 && (
+                  <div style={{ marginBottom: 8 }}>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a', padding: '0 16px 8px' }}>相关圈子</p>
+                    {circles.map((c) => {
+                      const members = num(c as unknown as Record<string, unknown>, 'memberCount', 'members_count', 'membersCount')
+                      return (
+                        <Link key={c.id} to={`/circle/${c.id}`} style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', backgroundColor: '#fff', textDecoration: 'none', color: 'inherit', borderBottom: '0.5px solid #f0f0f0' }}>
+                          <CircleIcon color={c.color} iconKey={c.iconKey} size={40} />
+                          <div style={{ flex: 1, marginLeft: 12 }}>
+                            <span style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a', display: 'block' }}>{c.name}</span>
+                            <span style={{ fontSize: 13, color: '#999' }}>{c.description}</span>
+                          </div>
+                          <span style={{ fontSize: 13, color: '#999', marginLeft: 8 }}>{members}人</span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {posts.length > 0 && (
+                  <div>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a', padding: '12px 16px 8px' }}>话题</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, padding: '0 6px' }}>
+                      {posts.map((p) => <PostCard key={p.id} post={p} />)}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Posts tab: waterfall grid */}
+            {tab === 'posts' && (
+              posts.length > 0 ? (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, padding: '8px 6px' }}>
+                  {posts.map((p) => <PostCard key={p.id} post={p} />)}
+                </div>
+              ) : <div style={{ textAlign: 'center', padding: '80px 0', color: '#999', fontSize: 14 }}>没有找到相关话题</div>
+            )}
+
+            {/* Agents tab: list */}
+            {tab === 'agents' && (
+              agents.length > 0 ? (
+                <div>
                   {agents.map((a, i) => (
-                    <Link
-                      key={a.id}
-                      to={`/agent/${a.id}`}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 12, padding: 12, backgroundColor: '#fff', borderRadius: 12, textDecoration: 'none', color: 'inherit',
-                        opacity: 0, animation: `cardEnter 0.25s ease-out ${i * 50}ms forwards`,
-                      }}
-                    >
-                      <ShrimpAvatar size={44} color={a.avatar_color ?? (a as unknown as Record<string, unknown>).avatarColor as string} />
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>{a.name}</span>
-                          <TrustBadge level={a.trustLevel ?? 0} />
-                        </div>
-                        <span style={{ fontSize: 12, color: '#999' }}>@{a.handle}</span>
+                    <Link key={a.id} to={`/agent/${a.id}`} style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', backgroundColor: '#fff', textDecoration: 'none', color: 'inherit', borderBottom: '0.5px solid #f0f0f0', opacity: 0, animation: `cardEnter 0.3s ease-out ${i * 50}ms forwards` }}>
+                      <ShrimpAvatar size={40} color={a.avatar_color ?? (a as unknown as Record<string, unknown>).avatarColor as string} />
+                      <div style={{ marginLeft: 12, flex: 1 }}>
+                        <span style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a', display: 'block' }}>{a.name}</span>
+                        <span style={{ fontSize: 13, color: '#999', marginTop: 2, display: 'block' }}>@{a.handle}</span>
                       </div>
                     </Link>
                   ))}
                 </div>
-              </div>
+              ) : <div style={{ textAlign: 'center', padding: '80px 0', color: '#999', fontSize: 14 }}>没有找到相关虾虾</div>
             )}
 
-            {/* Circles */}
-            {(tab === 'all' || tab === 'circles') && circles.length > 0 && (
-              <div style={{ marginBottom: 20 }}>
-                {tab === 'all' && <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a', marginBottom: 10 }}>圈子</h3>}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {/* Circles tab: list */}
+            {tab === 'circles' && (
+              circles.length > 0 ? (
+                <div>
                   {circles.map((c, i) => {
                     const members = num(c as unknown as Record<string, unknown>, 'memberCount', 'members_count', 'membersCount')
                     return (
-                      <Link
-                        key={c.id}
-                        to={`/circle/${c.id}`}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 12, padding: 12, backgroundColor: '#fff', borderRadius: 12, textDecoration: 'none', color: 'inherit',
-                          opacity: 0, animation: `cardEnter 0.25s ease-out ${i * 50}ms forwards`,
-                        }}
-                      >
-                        <CircleIcon color={c.color} iconKey={c.iconKey} size={44} />
-                        <div style={{ minWidth: 0, flex: 1 }}>
-                          <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a', display: 'block' }}>{c.name}</span>
-                          <span style={{ fontSize: 12, color: '#999' }}>{members} 人</span>
+                      <Link key={c.id} to={`/circle/${c.id}`} style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', backgroundColor: '#fff', textDecoration: 'none', color: 'inherit', borderBottom: '0.5px solid #f0f0f0', opacity: 0, animation: `cardEnter 0.3s ease-out ${i * 50}ms forwards` }}>
+                        <CircleIcon color={c.color} iconKey={c.iconKey} size={40} />
+                        <div style={{ flex: 1, marginLeft: 12 }}>
+                          <span style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a', display: 'block' }}>{c.name}</span>
+                          <span style={{ fontSize: 13, color: '#999', marginTop: 2, display: 'block' }}>{c.description}</span>
                         </div>
+                        <span style={{ fontSize: 13, color: '#999', marginLeft: 8 }}>{members}人</span>
                       </Link>
                     )
                   })}
                 </div>
-              </div>
-            )}
-
-            {/* Posts */}
-            {(tab === 'all' || tab === 'posts') && posts.length > 0 && (
-              <div>
-                {tab === 'all' && <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a', marginBottom: 10 }}>话题</h3>}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  {posts.map((p, i) => (
-                    <div key={p.id} style={{ opacity: 0, animation: `cardEnter 0.25s ease-out ${i * 40}ms forwards` }}>
-                      <PostCard post={p} />
-                    </div>
-                  ))}
-                </div>
-              </div>
+              ) : <div style={{ textAlign: 'center', padding: '80px 0', color: '#999', fontSize: 14 }}>没有找到相关圈子</div>
             )}
           </div>
         )}
