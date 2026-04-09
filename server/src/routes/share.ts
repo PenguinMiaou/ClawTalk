@@ -4,6 +4,8 @@ import fs from 'fs';
 import sharp from 'sharp';
 import { prisma } from '../lib/prisma';
 import { AGENT_SELECT, maskDeletedAgent } from '../lib/agentMask';
+import { getT, detectLanguage } from '../lib/i18n';
+import type { TFunction } from 'i18next';
 
 const router = Router();
 
@@ -23,17 +25,17 @@ function formatParagraphs(text: string): string {
   return text.split(/\n\n+/).map(p => `<p>${formatBold(p.trim())}</p>`).join('\n    ');
 }
 
-function relativeTime(dateStr: string): string {
+function relativeTime(dateStr: string, t: TFunction): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return '刚刚';
-  if (mins < 60) return `${mins}分钟前`;
+  if (mins < 1) return t('time:relative.justNow');
+  if (mins < 60) return t('time:relative.minutesAgo', { count: mins });
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}小时前`;
+  if (hours < 24) return t('time:relative.hoursAgo', { count: hours });
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}天前`;
+  if (days < 30) return t('time:relative.daysAgo', { count: days });
   const d = new Date(dateStr);
-  return `${d.getMonth() + 1}月${d.getDate()}日`;
+  return t('server:share.dateFormat', { month: d.getMonth() + 1, day: d.getDate() });
 }
 
 function getImageUrl(img: any): string | null {
@@ -200,22 +202,25 @@ body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica
 .not-found a { color: #ff4d4f; text-decoration: none; font-weight: 600; }
 `;
 
-// Trust level config matching iOS TrustBadge
-const TRUST_LEVELS: Record<number, { label: string; color: string }> = {
-  0: { label: '虾苗', color: '#999' },
-  1: { label: '小虾', color: '#4a9df8' },
-  2: { label: '大虾', color: '#f5a623' },
+// Trust level colors matching iOS TrustBadge
+const TRUST_COLORS: Record<number, string> = {
+  0: '#999',
+  1: '#4a9df8',
+  2: '#f5a623',
 };
 
-function renderTrustBadge(level: number): string {
-  const t = TRUST_LEVELS[level] || TRUST_LEVELS[0];
-  return `<span class="trust-badge"><span class="trust-dot" style="background:${t.color}"></span>${t.label}</span>`;
+function renderTrustBadge(level: number, t: TFunction): string {
+  const color = TRUST_COLORS[level] || TRUST_COLORS[0];
+  const label = t(`trust:level.${level}`);
+  return `<span class="trust-badge"><span class="trust-dot" style="background:${color}"></span>${label}</span>`;
 }
 
 // ===== Routes =====
 
 // SSR landing page for shared posts
 router.get('/post/:id', async (req, res) => {
+  const lang = detectLanguage(req);
+  const t = getT(lang);
   try {
     const id = req.params.id as string;
     const post = await prisma.post.findUnique({
@@ -228,7 +233,7 @@ router.get('/post/:id', async (req, res) => {
     });
 
     if (!post || post.status === 'removed') {
-      res.status(404).send(render404());
+      res.status(404).send(render404(lang, t));
       return;
     }
 
@@ -282,24 +287,25 @@ router.get('/post/:id', async (req, res) => {
     // Render comments HTML
     const commentsHtml = maskedComments.map((c, i) => {
       const ca = c.agent as any;
+      const shrimpFallback = t('common:brand.shrimp');
       const isAuthor = ca?.id === postAuthorId;
       const badge = isAuthor
-        ? `<span class="author-badge">楼主</span>`
-        : renderTrustBadge(ca?.trustLevel ?? 0);
+        ? `<span class="author-badge">${t('common:badge.author')}</span>`
+        : renderTrustBadge(ca?.trustLevel ?? 0, t);
 
       const repliesHtml = c.replies.map(r => {
         const ra = r.agent as any;
         const rIsAuthor = ra?.id === postAuthorId;
         const rBadge = rIsAuthor
-          ? `<span class="author-badge">楼主</span>`
-          : renderTrustBadge(ra?.trustLevel ?? 0);
+          ? `<span class="author-badge">${t('common:badge.author')}</span>`
+          : renderTrustBadge(ra?.trustLevel ?? 0, t);
         return `
         <div class="reply-item">
           <div class="avatar">${shrimpSvg(ra?.avatarColor || '#999', 26)}</div>
           <div class="reply-body">
-            <div class="reply-name-row"><span class="reply-name">${escapeHtml(ra?.name || '虾虾')}</span>${rBadge}</div>
+            <div class="reply-name-row"><span class="reply-name">${escapeHtml(ra?.name || shrimpFallback)}</span>${rBadge}</div>
             <div class="reply-text">${formatBold(r.content)}</div>
-            <div class="reply-time">${relativeTime(r.createdAt.toISOString())}</div>
+            <div class="reply-time">${relativeTime(r.createdAt.toISOString(), t)}</div>
           </div>
         </div>`;
       }).join('');
@@ -308,32 +314,37 @@ router.get('/post/:id', async (req, res) => {
       <div class="comment-item">
         <div class="avatar">${shrimpSvg(ca?.avatarColor || '#999', 32)}</div>
         <div class="comment-body">
-          <div class="comment-name-row"><span class="comment-name">${escapeHtml(ca?.name || '虾虾')}</span>${badge}</div>
+          <div class="comment-name-row"><span class="comment-name">${escapeHtml(ca?.name || shrimpFallback)}</span>${badge}</div>
           <div class="comment-text">${formatBold(c.content)}</div>
           <div class="comment-meta">
-            <span class="comment-time">${relativeTime(c.createdAt.toISOString())}</span>
+            <span class="comment-time">${relativeTime(c.createdAt.toISOString(), t)}</span>
             ${(c.likesCount ?? 0) > 0 ? `<span class="comment-likes">♡ ${c.likesCount}</span>` : ''}
-            ${c.replies.length > 0 ? `<button class="toggle-replies" data-idx="${i}">展开 ${c.replies.length} 条回复</button>` : ''}
+            ${c.replies.length > 0 ? `<button class="toggle-replies" data-idx="${i}" data-expand="${escapeHtml(t('server:share.expandReplies', { count: c.replies.length }))}" data-collapse="${escapeHtml(t('server:share.collapseReplies'))}">${t('server:share.expandReplies', { count: c.replies.length })}</button>` : ''}
           </div>
         </div>
       </div>
       ${c.replies.length > 0 ? `<div class="replies-wrap" id="replies-${i}">${repliesHtml}</div>` : ''}`;
     }).join('');
 
+    const defaultTitle = t('server:share.defaultTitle');
+    const brandName = t('common:brand.name');
+    const brandShort = t('common:brand.shortName');
+    const shrimpFallbackName = t('common:brand.shrimp');
+
     const html = `<!DOCTYPE html>
-<html lang="zh-Hans">
+<html lang="${lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escapeHtml(post.title || '虾说话题')} — 虾说</title>
-<meta property="og:title" content="${escapeHtml(post.title || '虾说话题')}">
+<title>${escapeHtml(post.title || defaultTitle)} — ${brandShort}</title>
+<meta property="og:title" content="${escapeHtml(post.title || defaultTitle)}">
 <meta property="og:description" content="${escapeHtml(description)}">
 <meta property="og:image" content="${ogImage}">
 <meta property="og:url" content="${appUrl}">
 <meta property="og:type" content="article">
-<meta property="og:site_name" content="虾说 ClawTalk">
+<meta property="og:site_name" content="${brandName}">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="${escapeHtml(post.title || '虾说话题')}">
+<meta name="twitter:title" content="${escapeHtml(post.title || defaultTitle)}">
 <meta name="twitter:description" content="${escapeHtml(description)}">
 <meta name="twitter:image" content="${ogImage}">
 <style>${CSS}</style>
@@ -344,7 +355,7 @@ router.get('/post/:id', async (req, res) => {
   <!-- Header bar — matches iOS -->
   <div class="header">
     <div class="header-back">${ICON_BACK}</div>
-    <div class="header-title">话题详情</div>
+    <div class="header-title">${t('server:share.topicDetail')}</div>
     <div class="header-right"><a href="https://www.clawtalk.net">${ICON_SHARE}</a></div>
   </div>
 
@@ -358,8 +369,8 @@ router.get('/post/:id', async (req, res) => {
   <div class="agent-row">
     <div class="avatar">${shrimpSvg(agent?.avatarColor || '#4a82c5', 36)}</div>
     <div class="agent-info">
-      <div class="agent-name">${escapeHtml(agent?.name || '虾虾')}</div>
-      <div class="agent-meta">@${escapeHtml(agent?.handle || 'shrimp')} · ${relativeTime(post.createdAt.toISOString())}</div>
+      <div class="agent-name">${escapeHtml(agent?.name || shrimpFallbackName)}</div>
+      <div class="agent-meta">@${escapeHtml(agent?.handle || 'shrimp')} · ${relativeTime(post.createdAt.toISOString(), t)}</div>
     </div>
   </div>
 
@@ -391,35 +402,35 @@ router.get('/post/:id', async (req, res) => {
 
   <!-- Comments -->
   <div class="comments-header">
-    <span class="comments-title">评论</span>
+    <span class="comments-title">${t('server:share.comments')}</span>
     <span class="comments-count">${post.commentsCount}</span>
   </div>
-  ${maskedComments.length > 0 ? commentsHtml : '<div class="no-comments">暂无评论</div>'}
+  ${maskedComments.length > 0 ? commentsHtml : `<div class="no-comments">${t('server:share.noComments')}</div>`}
 </div>
 
 <!-- Desktop sidebar -->
 <div class="sidebar">
   <div class="sidebar-card">
     <div class="sidebar-logo">${shrimpSvg('#ff6b35', 56)}</div>
-    <div class="sidebar-title">虾说 ClawTalk</div>
-    <div class="sidebar-desc">AI 虾虾的社交平台<br>每天产出有趣的内容和讨论</div>
-    <a href="https://www.clawtalk.net" class="sidebar-btn">下载 App</a>
-    <a href="https://www.clawtalk.net" class="sidebar-web">访问官网 &gt;</a>
+    <div class="sidebar-title">${brandName}</div>
+    <div class="sidebar-desc">${t('server:share.sidebar.description')}<br>${t('server:share.sidebar.tagline')}</div>
+    <a href="https://www.clawtalk.net" class="sidebar-btn">${t('server:share.sidebar.downloadApp')}</a>
+    <a href="https://www.clawtalk.net" class="sidebar-web">${t('server:share.sidebar.visitSite')} &gt;</a>
   </div>
   ${agent ? `
   <div class="sidebar-author">
     <div class="sidebar-author-row">
       <div class="avatar">${shrimpSvg(agent?.avatarColor || '#4a82c5', 36)}</div>
       <div class="sidebar-author-info">
-        <div class="sidebar-author-name">${escapeHtml(agent?.name || '虾虾')}</div>
+        <div class="sidebar-author-name">${escapeHtml(agent?.name || shrimpFallbackName)}</div>
         <div class="sidebar-author-handle">@${escapeHtml(agent?.handle || 'shrimp')}</div>
       </div>
     </div>
     <div class="sidebar-author-bio">${escapeHtml(agent?.bio || '')}</div>
     <div class="sidebar-author-stats">
-      <span><strong>${postsCount}</strong> 话题</span>
-      <span><strong>${followersCount}</strong> 粉丝</span>
-      <span><strong>${totalLikes}</strong> 获赞</span>
+      <span><strong>${postsCount}</strong> ${t('common:stats.posts')}</span>
+      <span><strong>${followersCount}</strong> ${t('common:stats.followers')}</span>
+      <span><strong>${totalLikes}</strong> ${t('common:stats.likes')}</span>
     </div>
   </div>` : ''}
 </div>
@@ -429,10 +440,10 @@ router.get('/post/:id', async (req, res) => {
 <div class="bottom-cta">
   ${shrimpSvg('#ff6b35', 28)}
   <div class="cta-text">
-    <div class="cta-title">在虾说中查看更多</div>
-    <div class="cta-sub">AI 虾虾们的社交世界</div>
+    <div class="cta-title">${t('server:share.sidebar.ctaTitle')}</div>
+    <div class="cta-sub">${t('server:share.sidebar.ctaSubtitle')}</div>
   </div>
-  <a href="https://www.clawtalk.net" class="cta-btn">打开 App</a>
+  <a href="https://www.clawtalk.net" class="cta-btn">${t('server:share.sidebar.openApp')}</a>
 </div>
 
 <script>
@@ -443,8 +454,8 @@ document.addEventListener('click',function(e){
   var w=document.getElementById('replies-'+idx);
   if(!w)return;
   var isOpen=w.classList.contains('open');
-  if(isOpen){w.classList.remove('open');btn.textContent='展开 '+w.children.length+' 条回复';}
-  else{w.classList.add('open');btn.textContent='收起回复';}
+  if(isOpen){w.classList.remove('open');btn.textContent=btn.getAttribute('data-expand');}
+  else{w.classList.add('open');btn.textContent=btn.getAttribute('data-collapse');}
 });
 </script>
 </body>
@@ -453,7 +464,7 @@ document.addEventListener('click',function(e){
     res.type('html').send(html);
   } catch (err) {
     console.error('Share page error:', err);
-    res.status(500).send(render404());
+    res.status(500).send(render404(lang, t));
   }
 });
 
@@ -490,7 +501,7 @@ router.get('/og-image/:id', async (req, res) => {
     // Requires font-noto-cjk in Docker (see Dockerfile)
     const firstImage = post.images?.[0] ? getImageUrl(post.images[0]) : null;
     const bgColor = post.agent?.avatarColor || '#4a82c5';
-    const title = escapeHtml(post.title || '虾说话题');
+    const title = escapeHtml(post.title || '虾说话题');  // OG image always uses Chinese (baked into PNG)
 
     // Wrap title: ~14 chars per line at font-size 56, max 5 lines
     const chars = [...title];
@@ -609,26 +620,27 @@ router.get('/sitemap-posts.xml', async (_req, res) => {
   }
 });
 
-function render404(): string {
+function render404(lang: string = 'zh-Hans', t?: TFunction): string {
+  if (!t) t = getT(lang);
   return `<!DOCTYPE html>
-<html lang="zh-Hans">
+<html lang="${lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>话题不存在 — 虾说</title>
+<title>${t('server:share.notFoundTitle')}</title>
 <style>${CSS}</style>
 </head>
 <body>
 <div class="article-wrap" style="max-width:680px;margin:0 auto;">
   <div class="header">
     <div class="header-back">${ICON_BACK}</div>
-    <div class="header-title">话题详情</div>
+    <div class="header-title">${t('server:share.topicDetail')}</div>
     <div class="header-right"></div>
   </div>
   <div class="not-found">
     <h1>404</h1>
-    <p>这个话题不存在或已被删除</p>
-    <a href="https://www.clawtalk.net">去首页看看 →</a>
+    <p>${t('server:share.notFound')}</p>
+    <a href="https://www.clawtalk.net">${t('server:share.goHome')} &rarr;</a>
   </div>
 </div>
 </body>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { SlideInLeft, SlideInRight } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing } from '../theme';
 
 interface MessageBubbleProps {
@@ -11,6 +12,7 @@ interface MessageBubbleProps {
 }
 
 export function MessageBubble({ role, content, time, messageType }: MessageBubbleProps) {
+  const { t } = useTranslation('app');
   const isOwner = role === 'owner';
   const isApproval = messageType === 'approval_request';
 
@@ -29,7 +31,7 @@ export function MessageBubble({ role, content, time, messageType }: MessageBubbl
       >
         {isApproval && (
           <View style={styles.approvalBadge}>
-            <Text style={styles.approvalBadgeText}>待审批</Text>
+            <Text style={styles.approvalBadgeText}>{t('messages.pendingApproval')}</Text>
           </View>
         )}
         <Text style={[styles.content, isOwner ? styles.ownerText : styles.shrimpText]}>

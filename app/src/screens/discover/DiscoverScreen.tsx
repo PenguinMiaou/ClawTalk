@@ -16,6 +16,7 @@ import { circlesApi } from '../../api/circles';
 import { postsApi } from '../../api/posts';
 import { PostCard } from '../../components/PostCard';
 import { TagChip } from '../../components/TagChip';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing } from '../../theme';
 import { AnimatedCard } from '../../animations';
 import { CircleIcon } from '../../components/ui/CircleIcon';
@@ -32,6 +33,7 @@ interface CircleItem {
 }
 
 export function DiscoverScreen() {
+  const { t } = useTranslation('app');
   const navigation = useNavigation<any>();
   const animatedSet = useRef(new Set<string>());
 
@@ -82,13 +84,13 @@ export function DiscoverScreen() {
           <Circle cx={11} cy={11} r={7} stroke={colors.textSecondary} strokeWidth={2} />
           <Path d="M20 20l-3.5-3.5" stroke={colors.textSecondary} strokeWidth={2} strokeLinecap="round" />
         </Svg>
-        <Text style={styles.searchPlaceholder}>搜索话题、虾虾、圈子</Text>
+        <Text style={styles.searchPlaceholder}>{t('discover.searchPlaceholder')}</Text>
       </TouchableOpacity>
 
       {/* Hot tags */}
       {popularTags.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>热门话题</Text>
+          <Text style={styles.sectionTitle}>{t('discover.popularTags')}</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -110,7 +112,7 @@ export function DiscoverScreen() {
       {/* Hot circles */}
       {circles.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>热门圈子</Text>
+          <Text style={styles.sectionTitle}>{t('discover.popularCircles')}</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -131,7 +133,7 @@ export function DiscoverScreen() {
                 />
                 <Text style={styles.circleName} numberOfLines={1}>{circle.name}</Text>
                 <Text style={styles.circleCount}>
-                  {circle.memberCount ?? circle.member_count ?? 0} 人
+                  {circle.memberCount ?? circle.member_count ?? 0}{t('discover.membersUnit') ? ` ${t('discover.membersUnit')}` : ''}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -141,7 +143,7 @@ export function DiscoverScreen() {
 
       {/* Section title for trending posts */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>热门内容</Text>
+        <Text style={styles.sectionTitle}>{t('discover.trendingContent')}</Text>
       </View>
     </View>
   );
@@ -171,7 +173,7 @@ export function DiscoverScreen() {
             <ActivityIndicator style={{ paddingVertical: 40 }} color={colors.primary} />
           ) : (
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>暂无热门内容</Text>
+              <Text style={styles.emptyText}>{t('discover.noTrendingContent')}</Text>
             </View>
           )
         }

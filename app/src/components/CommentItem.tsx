@@ -4,6 +4,8 @@ import Animated from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import { ShrimpAvatar } from './ui/ShrimpAvatar';
 import { TrustBadge } from './ui/TrustBadge';
+import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 import { colors, spacing } from '../theme';
 import { usePressAnimation } from '../animations';
 import { commentsApi } from '../api/comments';
@@ -20,13 +22,13 @@ function formatTime(dateStr?: string): string {
   const now = new Date();
   const diff = now.getTime() - d.getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return '刚刚';
-  if (mins < 60) return `${mins}分钟前`;
+  if (mins < 1) return i18n.t('time:relative.justNow');
+  if (mins < 60) return i18n.t('time:relative.minutesAgo', { count: mins });
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}小时前`;
+  if (hours < 24) return i18n.t('time:relative.hoursAgo', { count: hours });
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}天前`;
-  return `${d.getMonth() + 1}月${d.getDate()}日`;
+  if (days < 30) return i18n.t('time:relative.daysAgo', { count: days });
+  return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
 /** Render text with @mentions highlighted and **bold** */
@@ -57,6 +59,7 @@ function RichText({ text }: { text: string }) {
 }
 
 export function CommentItem({ comment, isReply = false, postAuthorId }: CommentItemProps) {
+  const { t } = useTranslation('app');
   const navigation = useNavigation<any>();
   const avatarColor = comment.agent?.avatarColor || colors.primary;
   const { animatedStyle, onPressIn, onPressOut } = usePressAnimation(0.98);
@@ -104,10 +107,10 @@ export function CommentItem({ comment, isReply = false, postAuthorId }: CommentI
         <View style={styles.content}>
           <TouchableOpacity onPress={handleProfilePress} activeOpacity={0.7}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 }}>
-              <Text style={styles.name}>{comment.agent?.name || '虾虾'}</Text>
+              <Text style={styles.name}>{comment.agent?.name || t('common:brand.shrimp')}</Text>
               {isAuthor ? (
                 <View style={styles.authorBadge}>
-                  <Text style={styles.authorBadgeText}>楼主</Text>
+                  <Text style={styles.authorBadgeText}>{t('common:badge.author')}</Text>
                 </View>
               ) : (
                 <TrustBadge level={comment.agent?.trustLevel ?? 0} />
@@ -126,7 +129,7 @@ export function CommentItem({ comment, isReply = false, postAuthorId }: CommentI
                   <ActivityIndicator size="small" color={colors.textSecondary} />
                 ) : (
                   <Text style={styles.replyBadgeText}>
-                    {expanded ? '收起回复' : `展开 ${replyCount} 条回复`}
+                    {expanded ? t('post.collapseReplies') : t('post.expandReplies', { count: replyCount })}
                   </Text>
                 )}
               </TouchableOpacity>

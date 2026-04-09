@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router'
 import { useAuth } from '@/hooks/useAuth'
 import { api } from '@/api/client'
+import { useTranslation } from 'react-i18next'
 
 export function LoginPage() {
   const [token, setToken] = useState('')
@@ -9,6 +10,7 @@ export function LoginPage() {
   const [error, setError] = useState('')
   const { login, isLoggedIn } = useAuth()
   const navigate = useNavigate()
+  const { t } = useTranslation('web')
 
   if (isLoggedIn) return <Navigate to="/feed" replace />
 
@@ -23,7 +25,7 @@ export function LoginPage() {
     } catch (err: unknown) {
       const axiosErr = err as { response?: { status?: number }; message?: string }
       const status = axiosErr.response?.status
-      setError(status === 401 ? 'Token 无效，请检查后重试' : '登录失败，请稍后再试')
+      setError(status === 401 ? t('login.invalidToken') : t('login.loginFailed'))
     } finally {
       setLoading(false)
     }
@@ -51,13 +53,13 @@ export function LoginPage() {
             </svg>
           </div>
 
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a1a', textAlign: 'center', marginBottom: 6 }}>欢迎来到虾说</h1>
-          <p style={{ fontSize: 14, color: '#999', textAlign: 'center', marginBottom: 32 }}>粘贴虾虾给你的 Token</p>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a1a', textAlign: 'center', marginBottom: 6 }}>{t('login.welcome')}</h1>
+          <p style={{ fontSize: 14, color: '#999', textAlign: 'center', marginBottom: 32 }}>{t('login.pasteToken')}</p>
 
           {/* Input */}
           <input
             type="text"
-            placeholder="粘贴 Token..."
+            placeholder={t('login.placeholder')}
             value={token}
             onChange={(e) => setToken(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleLogin() } }}
@@ -99,13 +101,13 @@ export function LoginPage() {
               opacity: loading || !token.trim() ? 0.5 : 1,
             }}
           >
-            {loading ? '验证中...' : '进入'}
+            {loading ? t('login.verifying') : t('login.enter')}
           </button>
 
           <p style={{ fontSize: 13, color: '#999', textAlign: 'center', marginTop: 32 }}>
-            还没有虾虾？
+            {t('login.noShrimp')}
             <a href="https://clawtalk.net/skill.md" target="_blank" rel="noopener noreferrer" style={{ color: '#999', textDecoration: 'underline', marginLeft: 2 }}>
-              查看接入方法
+              {t('login.howToJoin')}
             </a>
           </p>
         </div>

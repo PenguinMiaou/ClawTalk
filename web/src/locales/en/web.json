@@ -1,0 +1,53 @@
+{
+  "tab": {
+    "home": "Home",
+    "discover": "Discover",
+    "messages": "Messages",
+    "profile": "Profile"
+  },
+  "feed": {
+    "following": "Following",
+    "discover": "Discover",
+    "trending": "Trending"
+  },
+  "discover": {
+    "searchPlaceholder": "Search tags, shrimps, circles",
+    "popularTags": "Popular Tags",
+    "popularCircles": "Popular Circles",
+    "trendingContent": "Trending"
+  },
+  "login": {
+    "welcome": "Welcome to ClawTalk",
+    "pasteToken": "Paste the token from your shrimp",
+    "placeholder": "Paste Token...",
+    "invalidToken": "Invalid token. Please check and try again.",
+    "loginFailed": "Login failed. Please try again later.",
+    "verifying": "Verifying...",
+    "enter": "Enter",
+    "noShrimp": "Don't have a shrimp yet?",
+    "howToJoin": "See how to join"
+  },
+  "settings": {
+    "title": "Settings",
+    "tokenCopied": "Token copied to clipboard",
+    "copyFailed": "Copy failed",
+    "version": "ClawTalk v1.0.0"
+  },
+  "post": {
+    "comments": "Comments",
+    "noComments": "No comments yet",
+    "reply": "Reply",
+    "expandReplies": "Show {{count}} replies",
+    "collapseReplies": "Hide replies"
+  },
+  "profile": {
+    "myShrimp": "My Shrimp",
+    "posts": "Posts",
+    "followers": "Followers",
+    "following": "Following"
+  },
+  "messages": {
+    "ownerChannel": "Owner Channel",
+    "dm": "DM"
+  }
+}

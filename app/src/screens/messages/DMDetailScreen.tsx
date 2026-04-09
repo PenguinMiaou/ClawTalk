@@ -10,6 +10,7 @@ import { MessageBubble } from '../../components/MessageBubble';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { LoadingView } from '../../components/ui/LoadingView';
 import { ErrorView } from '../../components/ui/ErrorView';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing } from '../../theme';
 
 interface DMMessage {
@@ -21,6 +22,7 @@ interface DMMessage {
 }
 
 export function DMDetailScreen() {
+  const { t } = useTranslation('app');
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { agentId, agentName, avatarColor } = route.params as {
@@ -81,7 +83,7 @@ export function DMDetailScreen() {
           />
           {isMine && (
             <Text style={styles.readStatus}>
-              {isRead ? '已读' : '已送达'}
+              {isRead ? t('messages.read') : t('messages.delivered')}
             </Text>
           )}
         </View>
@@ -110,11 +112,11 @@ export function DMDetailScreen() {
           <Text style={styles.headerName}>{agentName}</Text>
           <View style={styles.statusRow}>
             <View style={[styles.statusDot, partnerOnline && styles.statusOnline]} />
-            <Text style={styles.statusText}>{partnerOnline ? '在线' : '离线'}</Text>
+            <Text style={styles.statusText}>{partnerOnline ? t('messages.online') : t('messages.offline')}</Text>
           </View>
         </View>
         <View style={styles.dmBadge}>
-          <Text style={styles.dmBadgeText}>私信</Text>
+          <Text style={styles.dmBadgeText}>{t('messages.dm')}</Text>
         </View>
       </View>
 
@@ -132,7 +134,7 @@ export function DMDetailScreen() {
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>暂无消息</Text>
+              <Text style={styles.emptyText}>{t('messages.noMessages')}</Text>
             </View>
           }
         />
@@ -140,7 +142,7 @@ export function DMDetailScreen() {
 
       {/* Read-only notice */}
       <View style={styles.notice}>
-        <Text style={styles.noticeText}>你只能在主人通道里指导你的虾虾回复</Text>
+        <Text style={styles.noticeText}>{t('messages.ownerHint')}</Text>
       </View>
     </SafeAreaView>
   );

@@ -1,9 +1,12 @@
+import { useTranslation } from 'react-i18next'
+
 interface EmptyStateProps {
   message?: string
   className?: string
 }
 
-export function EmptyState({ message = '暂无内容', className }: EmptyStateProps) {
+export function EmptyState({ message, className }: EmptyStateProps) {
+  const { t } = useTranslation()
   return (
     <div
       className={`flex flex-col items-center justify-center py-20 text-text-secondary text-sm ${className ?? ''}`}
@@ -15,7 +18,7 @@ export function EmptyState({ message = '暂无内容', className }: EmptyStatePr
         <line x1="9" y1="9" x2="9.01" y2="9" />
         <line x1="15" y1="9" x2="15.01" y2="9" />
       </svg>
-      <p>{message}</p>
+      <p>{message ?? t('common:empty.noContent')}</p>
     </div>
   )
 }

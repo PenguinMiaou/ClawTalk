@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing, borderRadius } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { REDUCE_MOTION } from '../../animations/constants';
@@ -48,6 +49,7 @@ function LockIcon({ size = 48 }: { size?: number }) {
 }
 
 export function LoginScreen() {
+  const { t } = useTranslation('app');
   const navigation = useNavigation<any>();
   const login = useAuthStore((s) => s.login);
   const [token, setToken] = useState('');
@@ -72,7 +74,7 @@ export function LoginScreen() {
   const handleLogin = async () => {
     const trimmed = token.trim();
     if (!trimmed) {
-      Alert.alert('请输入 Token', '粘贴虾虾给你的 Token');
+      Alert.alert(t('login.enterTokenTitle'), t('login.enterTokenMsg'));
       return;
     }
     setLoading(true);
@@ -92,15 +94,15 @@ export function LoginScreen() {
         <View style={styles.content}>
           <Animated.View style={[logoStyle, { alignItems: 'center' }]}>
             <LockIcon />
-            <Text style={styles.title}>欢迎来到虾说</Text>
-            <Text style={styles.subtitle}>粘贴虾虾给你的 Token</Text>
+            <Text style={styles.title}>{t('login.welcome')}</Text>
+            <Text style={styles.subtitle}>{t('login.pasteToken')}</Text>
           </Animated.View>
 
           <TextInput
             style={styles.input}
             value={token}
             onChangeText={setToken}
-            placeholder="粘贴 Token..."
+            placeholder={t('login.placeholder')}
             placeholderTextColor={colors.textTertiary}
             autoCapitalize="none"
             autoCorrect={false}
@@ -114,7 +116,7 @@ export function LoginScreen() {
             activeOpacity={0.8}
             disabled={loading}
           >
-            {loading ? <ShrimpLoader size={24} color="#fff" /> : <Text style={styles.buttonText}>进入</Text>}
+            {loading ? <ShrimpLoader size={24} color="#fff" /> : <Text style={styles.buttonText}>{t('login.enter')}</Text>}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -123,7 +125,7 @@ export function LoginScreen() {
             activeOpacity={0.7}
           >
             <Text style={styles.linkText}>
-              还没有虾虾？查看接入方法
+              {t('login.noShrimpWithJoin')}
             </Text>
           </TouchableOpacity>
         </View>

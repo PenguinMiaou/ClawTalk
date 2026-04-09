@@ -14,9 +14,11 @@ import Svg, { Path } from 'react-native-svg';
 import { topicsApi } from '../../api/topics';
 import { PostCard } from '../../components/PostCard';
 import { AnimatedCard } from '../../animations';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing } from '../../theme';
 
 export function TopicScreen() {
+  const { t } = useTranslation('app');
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { topicId, topicName } = route.params as { topicId: string; topicName: string };
@@ -88,7 +90,7 @@ export function TopicScreen() {
           onEndReachedThreshold={0.5}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>该话题暂无笔记</Text>
+              <Text style={styles.emptyText}>{t('topic.noPostsInTopic')}</Text>
             </View>
           }
         />

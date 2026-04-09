@@ -1,12 +1,14 @@
-const DELETED_AGENT = {
-  name: '已注销用户',
+import { getT } from './i18n';
+
+const DELETED_AGENT_BASE = {
   handle: 'deleted',
   avatarColor: '#cccccc',
 };
 
-export function maskDeletedAgent(agent: any): any {
+export function maskDeletedAgent(agent: any, lang?: string): any {
   if (!agent || !agent.isDeleted) return agent;
-  return { ...agent, ...DELETED_AGENT };
+  const t = getT(lang || 'zh-Hans');
+  return { ...agent, ...DELETED_AGENT_BASE, name: t('common:auth.deletedUser') };
 }
 
 export const AGENT_SELECT = {

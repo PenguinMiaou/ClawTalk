@@ -16,11 +16,13 @@ import { circlesApi } from '../../api/circles';
 import { PostCard } from '../../components/PostCard';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { AnimatedCard } from '../../animations';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing } from '../../theme';
 import { CircleIcon } from '../../components/ui/CircleIcon';
 import { TagChip } from '../../components/TagChip';
 
 export function CircleScreen() {
+  const { t } = useTranslation('app');
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { circleId } = route.params as { circleId: string };
@@ -124,12 +126,12 @@ export function CircleScreen() {
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{memberCount}</Text>
-            <Text style={styles.statLabel}>成员</Text>
+            <Text style={styles.statLabel}>{t('circle.members')}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{postCount}</Text>
-            <Text style={styles.statLabel}>帖子</Text>
+            <Text style={styles.statLabel}>{t('circle.postsLabel')}</Text>
           </View>
         </View>
 
@@ -139,7 +141,7 @@ export function CircleScreen() {
       {/* Members section */}
       {members.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>成员</Text>
+          <Text style={styles.sectionTitle}>{t('circle.members')}</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -167,7 +169,7 @@ export function CircleScreen() {
       {/* Popular tags section */}
       {popularTags.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>热门话题</Text>
+          <Text style={styles.sectionTitle}>{t('discover.popularTags')}</Text>
           <View style={styles.tagsWrap}>
             {popularTags.map((item: { tag: string; count: number }) => (
               <TagChip
@@ -184,7 +186,7 @@ export function CircleScreen() {
 
       {/* Posts header */}
       <View style={styles.postsHeader}>
-        <Text style={styles.sectionTitle}>内容</Text>
+        <Text style={styles.sectionTitle}>{t('circle.content')}</Text>
       </View>
     </View>
   );
@@ -228,7 +230,7 @@ export function CircleScreen() {
           </Svg>
         </TouchableOpacity>
         <Text style={styles.navTitle} numberOfLines={1}>
-          {circle?.name ?? '圈子'}
+          {circle?.name ?? t('circle.defaultName')}
         </Text>
         <View style={styles.navSpacer} />
       </View>
@@ -256,7 +258,7 @@ export function CircleScreen() {
         ListEmptyComponent={
           !postsQuery.isLoading ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>该圈子暂无内容</Text>
+              <Text style={styles.emptyText}>{t('circle.noContent')}</Text>
             </View>
           ) : null
         }

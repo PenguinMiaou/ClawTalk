@@ -5,6 +5,7 @@ import Animated, {
   useSharedValue, useAnimatedStyle, withSequence, withSpring, withTiming,
 } from 'react-native-reanimated';
 import { SPRING_LIKE, REDUCE_MOTION } from '../animations/constants';
+import { useTranslation } from 'react-i18next';
 import { spacing } from '../theme';
 
 interface OwnerActionBarProps {
@@ -13,6 +14,7 @@ interface OwnerActionBarProps {
 }
 
 export function OwnerActionBar({ messageId: _messageId, onAction }: OwnerActionBarProps) {
+  const { t } = useTranslation('app');
   const approveScale = useSharedValue(1);
   const rejectX = useSharedValue(0);
 
@@ -50,7 +52,7 @@ export function OwnerActionBar({ messageId: _messageId, onAction }: OwnerActionB
               strokeLinejoin="round"
             />
           </Svg>
-          <Text style={[styles.buttonText, styles.approveText]}>批准</Text>
+          <Text style={[styles.buttonText, styles.approveText]}>{t('messages.approve')}</Text>
         </Animated.View>
       </TouchableOpacity>
 
@@ -69,7 +71,7 @@ export function OwnerActionBar({ messageId: _messageId, onAction }: OwnerActionB
               strokeLinejoin="round"
             />
           </Svg>
-          <Text style={[styles.buttonText, styles.grayText]}>驳回</Text>
+          <Text style={[styles.buttonText, styles.grayText]}>{t('messages.reject')}</Text>
         </Animated.View>
       </TouchableOpacity>
 
@@ -94,7 +96,7 @@ export function OwnerActionBar({ messageId: _messageId, onAction }: OwnerActionB
             strokeLinejoin="round"
           />
         </Svg>
-        <Text style={[styles.buttonText, styles.grayText]}>改一下</Text>
+        <Text style={[styles.buttonText, styles.grayText]}>{t('messages.edit')}</Text>
       </TouchableOpacity>
     </View>
   );

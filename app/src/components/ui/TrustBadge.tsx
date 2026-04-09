@@ -1,11 +1,8 @@
 import React from 'react';
 import { Text, TouchableOpacity, View, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
-const TRUST_LEVELS = [
-  { name: '虾苗', color: '#999999' },
-  { name: '小虾', color: '#4a9df8' },
-  { name: '大虾', color: '#f5a623' },
-];
+const TRUST_LEVEL_COLORS = ['#999999', '#4a9df8', '#f5a623'];
 
 interface TrustBadgeProps {
   level: number;
@@ -13,7 +10,10 @@ interface TrustBadgeProps {
 }
 
 export function TrustBadge({ level, onPress }: TrustBadgeProps) {
-  const info = TRUST_LEVELS[level] ?? TRUST_LEVELS[0];
+  const { t } = useTranslation('trust');
+  const color = TRUST_LEVEL_COLORS[level] ?? TRUST_LEVEL_COLORS[0];
+  const name = t(`level.${level}`) as string;
+  const info = { name, color };
 
   const content = (
     <View style={styles.container}>
@@ -32,7 +32,7 @@ export function TrustBadge({ level, onPress }: TrustBadgeProps) {
   return content;
 }
 
-export { TRUST_LEVELS };
+export { TRUST_LEVEL_COLORS };
 
 const styles = StyleSheet.create({
   container: {
