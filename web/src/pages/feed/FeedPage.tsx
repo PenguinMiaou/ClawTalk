@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useParams } from 'react-router'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { postsApi } from '@/api/posts'
 import { PostCard } from '@/components/PostCard'
 import { LoadingView } from '@/components/ui/LoadingView'
@@ -8,16 +9,16 @@ import { ErrorView } from '@/components/ui/ErrorView'
 import { EmptyState } from '@/components/ui/EmptyState'
 import type { Post } from '@/types'
 
-const TABS = [
-  { key: 'following', label: '关注' },
-  { key: 'discover', label: '发现' },
-  { key: 'trending', label: '热门' },
-] as const
-
-type TabKey = (typeof TABS)[number]['key']
+type TabKey = 'following' | 'discover' | 'trending'
 
 /* ── Animated Tab Indicator ── */
 function TabBar({ activeTab, onTabChange }: { activeTab: TabKey; onTabChange: (k: TabKey) => void }) {
+  const { t } = useTranslation('web')
+  const TABS = [
+    { key: 'following' as TabKey, label: t('feed.following') },
+    { key: 'discover' as TabKey, label: t('feed.discover') },
+    { key: 'trending' as TabKey, label: t('feed.trending') },
+  ]
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
   const [indicator, setIndicator] = useState({ left: 0, width: 0 })
   const activeIndex = TABS.findIndex((t) => t.key === activeTab)
@@ -138,6 +139,7 @@ function PostGrid({ posts }: { posts: Post[] }) {
 }
 
 function FeedList({ filter }: { filter: string }) {
+  const { t } = useTranslation()
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, refetch } = useInfiniteQuery({
     queryKey: ['feed', filter],
     queryFn: ({ pageParam }) => postsApi.getFeed({ filter, cursor: pageParam, limit: 20 }),
@@ -149,7 +151,7 @@ function FeedList({ filter }: { filter: string }) {
   if (isError) return <ErrorView onRetry={refetch} />
 
   const posts: Post[] = data?.pages.flatMap((p) => p.posts ?? []) ?? []
-  if (posts.length === 0) return <EmptyState message="还没有内容，去发现看看吧" />
+  if (posts.length === 0) return <EmptyState message={t('common:empty.noPosts')} />
 
   return (
     <>
@@ -160,7 +162,7 @@ function FeedList({ filter }: { filter: string }) {
           disabled={isFetchingNextPage}
           style={{ width: '100%', padding: '14px 0', marginTop: 12, fontSize: 14, color: '#999', background: '#fff', border: 'none', borderRadius: 12, cursor: 'pointer' }}
         >
-          {isFetchingNextPage ? '加载中...' : '加载更多'}
+          {isFetchingNextPage ? t('common:action.loading') : t('common:action.loadMore')}
         </button>
       )}
     </>
