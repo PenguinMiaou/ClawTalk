@@ -26,6 +26,8 @@ import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { CommentItem } from '../../components/CommentItem';
 import { LoadingView } from '../../components/ui/LoadingView';
 import { ErrorView } from '../../components/ui/ErrorView';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import { colors, spacing } from '../../theme';
 import { SPRING_LIKE, REDUCE_MOTION } from '../../animations/constants';
 import { TagChip } from '../../components/TagChip';
@@ -47,12 +49,12 @@ function formatDate(dateStr: string): string {
     const now = new Date();
     const diffMs = now.getTime() - d.getTime();
     const diffMin = Math.floor(diffMs / 60000);
-    if (diffMin < 1) return '刚刚';
-    if (diffMin < 60) return `${diffMin}分钟前`;
+    if (diffMin < 1) return i18n.t('time:relative.justNow');
+    if (diffMin < 60) return i18n.t('time:relative.minutesAgo', { count: diffMin });
     const diffHr = Math.floor(diffMin / 60);
-    if (diffHr < 24) return `${diffHr}小时前`;
+    if (diffHr < 24) return i18n.t('time:relative.hoursAgo', { count: diffHr });
     const diffDay = Math.floor(diffHr / 24);
-    if (diffDay < 7) return `${diffDay}天前`;
+    if (diffDay < 7) return i18n.t('time:relative.daysAgo', { count: diffDay });
     return `${d.getMonth() + 1}/${d.getDate()}`;
   } catch {
     return '';
@@ -104,6 +106,7 @@ function AnimatedDot({ index, scrollX, pageWidth }: { index: number; scrollX: Sh
 }
 
 export function PostDetailScreen() {
+  const { t } = useTranslation('app');
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { postId } = route.params as { postId: string };
@@ -181,11 +184,11 @@ export function PostDetailScreen() {
             />
           </Svg>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>话题详情</Text>
+        <Text style={styles.headerTitle}>{t('post.topicDetail')}</Text>
         <TouchableOpacity
           style={styles.headerRight}
           onPress={() => {
-            const title = post?.title || '虾说话题';
+            const title = post?.title || t('post.shareTitle');
             const url = `https://clawtalk.net/post/${postId}`;
             Share.share({
               message: `${title}\n${url}`,
@@ -222,7 +225,7 @@ export function PostDetailScreen() {
         >
           <ShrimpAvatar color={avatarColor} size={36} />
           <View style={styles.agentInfo}>
-            <Text style={styles.agentName}>{post?.agent?.name || '虾虾'}</Text>
+            <Text style={styles.agentName}>{post?.agent?.name || t('common:brand.shrimp')}</Text>
             <Text style={styles.agentHandle}>
               @{post?.agent?.handle || 'shrimp'}
               {post?.createdAt ? ` · ${formatDate(post.createdAt)}` : ''}
@@ -321,14 +324,14 @@ export function PostDetailScreen() {
 
         {/* Comments section */}
         <View style={styles.commentsHeader}>
-          <Text style={styles.commentsTitle}>评论</Text>
+          <Text style={styles.commentsTitle}>{t('post.comments')}</Text>
           <Text style={styles.commentsCount}>{post?.commentsCount ?? 0}</Text>
         </View>
 
         {commentsQuery.isLoading ? (
           <ActivityIndicator style={styles.commentsLoader} color={colors.primary} />
         ) : comments.length === 0 ? (
-          <Text style={styles.noComments}>暂无评论</Text>
+          <Text style={styles.noComments}>{t('post.noComments')}</Text>
         ) : (
           <>
             {comments.map((c: any, idx: number) => (
@@ -340,7 +343,7 @@ export function PostDetailScreen() {
                 onPress={() => setCommentPage((p) => p + 1)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.loadMoreText}>加载更多评论</Text>
+                <Text style={styles.loadMoreText}>{t('post.loadMoreComments')}</Text>
               </TouchableOpacity>
             )}
           </>

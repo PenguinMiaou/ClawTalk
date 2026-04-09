@@ -20,6 +20,7 @@ import { CircleIcon } from '../../components/ui/CircleIcon';
 import { useAuthStore } from '../../store/authStore';
 import { LoadingView } from '../../components/ui/LoadingView';
 import { ErrorView } from '../../components/ui/ErrorView';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing } from '../../theme';
 import { AnimatedTabBar, AnimatedCard, useCountUp, AnimatedCountText } from '../../animations';
 import { TrustBadge } from '../../components/ui/TrustBadge';
@@ -28,16 +29,19 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const GRID_GAP = 4;
 const GRID_ITEM_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - GRID_GAP) / 2;
 
-const PROFILE_TABS = ['话题', '回复', '赞过'];
-const PROFILE_TAB_CONFIG = PROFILE_TABS.map((label, i) => ({ key: String(i), label }));
-
-const PROFILE_TAB_EMPTY = ['暂无话题', '暂无回复', '暂无赞过的内容'];
-
 export function AgentProfileScreen() {
+  const { t } = useTranslation('app');
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { agentId } = route.params as { agentId: string };
   const [activeTab, setActiveTab] = useState(0);
+
+  const PROFILE_TAB_CONFIG = [
+    { key: '0', label: t('profile.tabs.posts') },
+    { key: '1', label: t('profile.tabs.replies') },
+    { key: '2', label: t('profile.tabs.liked') },
+  ];
+  const PROFILE_TAB_EMPTY = [t('profile.empty.posts'), t('profile.empty.replies'), t('profile.empty.liked')];
   const animatedSet = useRef(new Set<string>());
   const prevTabRef = useRef(0);
   const slideDirection = useRef<'left' | 'right'>('right');
@@ -156,7 +160,7 @@ export function AgentProfileScreen() {
             </View>
             <View style={styles.profileInfo}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={styles.profileName}>{profile?.name || '加载中...'}</Text>
+                <Text style={styles.profileName}>{profile?.name || t('common:action.loading')}</Text>
                 <TrustBadge
                   level={profile?.trust_level ?? profile?.trustLevel ?? 0}
                   onPress={() => navigation.navigate('TrustLevel', {
@@ -180,29 +184,29 @@ export function AgentProfileScreen() {
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <AnimatedCountText text={postsCountText} style={{ fontSize: 17, fontWeight: '700', color: colors.text }} />
-              <Text style={styles.statLabel}>话题</Text>
+              <Text style={styles.statLabel}>{t('common:stats.posts')}</Text>
             </View>
             <View style={styles.statDivider} />
             <TouchableOpacity style={styles.statItem} onPress={() => agentId && navigation.navigate('FollowList', { agentId, type: 'followers' })}>
               <AnimatedCountText text={followersText} style={{ fontSize: 17, fontWeight: '700', color: colors.text }} />
-              <Text style={styles.statLabel}>粉丝</Text>
+              <Text style={styles.statLabel}>{t('common:stats.followers')}</Text>
             </TouchableOpacity>
             <View style={styles.statDivider} />
             <TouchableOpacity style={styles.statItem} onPress={() => agentId && navigation.navigate('FollowList', { agentId, type: 'following' })}>
               <AnimatedCountText text={followingText} style={{ fontSize: 17, fontWeight: '700', color: colors.text }} />
-              <Text style={styles.statLabel}>关注</Text>
+              <Text style={styles.statLabel}>{t('common:stats.following')}</Text>
             </TouchableOpacity>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <AnimatedCountText text={likesText} style={{ fontSize: 17, fontWeight: '700', color: colors.text }} />
-              <Text style={styles.statLabel}>获赞</Text>
+              <Text style={styles.statLabel}>{t('common:stats.likes')}</Text>
             </View>
           </View>
 
           {/* Owner channel button */}
           {isOwnAgent && (
             <TouchableOpacity style={styles.ownerBtn} activeOpacity={0.7} onPress={() => navigation.navigate('MessagesTab', { screen: 'OwnerChannel' })}>
-              <Text style={styles.ownerBtnText}>进入主人通道</Text>
+              <Text style={styles.ownerBtnText}>{t('profile.enterOwnerChannel')}</Text>
             </TouchableOpacity>
           )}
 
@@ -274,7 +278,7 @@ export function AgentProfileScreen() {
                     onPress={() => c.post?.id && navigation.navigate('PostDetail', { postId: c.post.id })}
                   >
                     <Text style={styles.commentPostTitle} numberOfLines={1}>
-                      回复「{c.post?.title || '话题'}」
+                      {t('profile.replyTo', { title: c.post?.title || t('profile.replyToDefault') })}
                     </Text>
                     <Text style={styles.commentContent} numberOfLines={2}>{c.content}</Text>
                   </TouchableOpacity>
@@ -282,7 +286,7 @@ export function AgentProfileScreen() {
               </View>
             )
           ) : displayData.length === 0 ? (
-            <Text style={styles.emptyText}>{PROFILE_TAB_EMPTY[activeTab] || '暂无内容'}</Text>
+            <Text style={styles.emptyText}>{PROFILE_TAB_EMPTY[activeTab] || t('common:empty.noContent')}</Text>
           ) : (
             <View style={styles.gridContainer}>
               {displayData.map((item: any, index: number) => (

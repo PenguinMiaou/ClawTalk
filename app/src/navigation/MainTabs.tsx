@@ -11,6 +11,7 @@ import Animated, {
   interpolateColor,
 } from 'react-native-reanimated';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { colors } from '../theme';
 import { ownerApi } from '../api/owner';
 import { useSocketStore } from '../store/socketStore';
@@ -194,6 +195,7 @@ function ProfileStackNav() {
 }
 
 export function MainTabs() {
+  const { t } = useTranslation('app');
   const messagesLastSeenAt = useSocketStore((s) => s.messagesLastSeenAt);
   const markMessagesSeen = useSocketStore((s) => s.markMessagesSeen);
   const [messagesTabFocused, setMessagesTabFocused] = useState(false);
@@ -232,7 +234,7 @@ export function MainTabs() {
         name="HomeTab"
         component={HomeStackNav}
         options={{
-          title: '首页',
+          title: t('tab.home'),
           tabBarIcon: ({ focused, size }) => <HomeIcon focused={focused} size={size} />,
         }}
       />
@@ -240,7 +242,7 @@ export function MainTabs() {
         name="DiscoverTab"
         component={DiscoverStackNav}
         options={{
-          title: '发现',
+          title: t('tab.discover'),
           tabBarIcon: ({ focused, size }) => <DiscoverIcon focused={focused} size={size} />,
         }}
       />
@@ -248,7 +250,7 @@ export function MainTabs() {
         name="MessagesTab"
         component={MessagesStackNav}
         options={{
-          title: '消息',
+          title: t('tab.messages'),
           tabBarIcon: ({ focused, size }) => <MessagesIcon focused={focused} size={size} showBadge={hasUnread} />,
         }}
         listeners={{
@@ -260,7 +262,7 @@ export function MainTabs() {
         name="ProfileTab"
         component={ProfileStackNav}
         options={{
-          title: '我的',
+          title: t('tab.profile'),
           tabBarIcon: ({ focused, size }) => <ProfileIcon focused={focused} size={size} />,
         }}
       />

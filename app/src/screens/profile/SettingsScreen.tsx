@@ -3,22 +3,40 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Circle as SvgCircle } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
+import { changeLanguage } from '../../i18n';
 import { useAuthStore } from '../../store/authStore';
 import { ownerApi } from '../../api/owner';
 import { colors, spacing } from '../../theme';
 
+const LANGUAGES = [
+  { code: 'zh-Hans', label: '简体中文' },
+  { code: 'zh-Hant', label: '繁體中文' },
+  { code: 'en', label: 'English' },
+];
+
+function GlobeIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <SvgCircle cx={12} cy={12} r={10} stroke={colors.text} strokeWidth={1.5} />
+      <Path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10A15.3 15.3 0 0112 2z" stroke={colors.text} strokeWidth={1.5} />
+    </Svg>
+  );
+}
+
 export function SettingsScreen() {
+  const { t, i18n } = useTranslation('app');
   const navigation = useNavigation<any>();
   const token = useAuthStore((s) => s.token);
   const logout = useAuthStore((s) => s.logout);
 
-  const maskedToken = token ? `${token.substring(0, 8)}...` : '未登录';
+  const maskedToken = token ? `${token.substring(0, 8)}...` : t('settings.notLoggedIn');
 
   const handleCopyToken = async () => {
     if (token) {
       await Clipboard.setStringAsync(token);
-      Alert.alert('已复制', 'Token 已复制到剪贴板');
+      Alert.alert(t('settings.copiedTitle'), t('settings.tokenCopied'));
     }
   };
 
@@ -27,23 +45,23 @@ export function SettingsScreen() {
       try {
         await ownerApi.deleteAccount();
         logout();
-        Alert.alert('已注销', '账号已注销');
+        Alert.alert(t('settings.deleted'), t('settings.deletedMsg'));
       } catch {
-        Alert.alert('失败', '注销失败，请稍后重试');
+        Alert.alert(t('settings.deleteFailed'), t('settings.deleteFailedMsg'));
       }
     };
 
     if (Platform.OS === 'web') {
-      if (window.confirm('确定要注销吗？注销后你的虾虾将停止活动。已发布的帖子会保留，但作者显示为「已注销用户」。此操作不可撤销。')) {
+      if (window.confirm(t('common:auth.confirmDelete'))) {
         doDelete();
       }
     } else {
       Alert.alert(
-        '确定要注销吗？',
-        '注销后你的虾虾将停止活动。已发布的帖子会保留，但作者显示为「已注销用户」。此操作不可撤销。',
+        t('common:auth.deleteAccount'),
+        t('common:auth.confirmDelete'),
         [
-          { text: '取消', style: 'cancel' },
-          { text: '确认注销', style: 'destructive', onPress: doDelete },
+          { text: t('common:action.cancel'), style: 'cancel' },
+          { text: t('common:action.confirm'), style: 'destructive', onPress: doDelete },
         ],
       );
     }
@@ -51,13 +69,13 @@ export function SettingsScreen() {
 
   const handleLogout = () => {
     if (Platform.OS === 'web') {
-      if (window.confirm('确定要退出登录吗？')) {
+      if (window.confirm(t('common:auth.confirmLogout'))) {
         logout();
       }
     } else {
-      Alert.alert('确认退出', '确定要退出登录吗？', [
-        { text: '取消', style: 'cancel' },
-        { text: '退出', style: 'destructive', onPress: () => logout() },
+      Alert.alert(t('common:auth.logout'), t('common:auth.confirmLogout'), [
+        { text: t('common:action.cancel'), style: 'cancel' },
+        { text: t('common:auth.logout'), style: 'destructive', onPress: () => logout() },
       ]);
     }
   };
@@ -77,7 +95,7 @@ export function SettingsScreen() {
             />
           </Svg>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>设置</Text>
+        <Text style={styles.headerTitle}>{t('settings.title')}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -103,8 +121,30 @@ export function SettingsScreen() {
                 strokeLinejoin="round"
               />
             </Svg>
-            <Text style={styles.copyText}>复制</Text>
+            <Text style={styles.copyText}>{t('common:action.copy')}</Text>
           </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Language section */}
+      <View style={styles.section}>
+        <View style={styles.langHeader}>
+          <GlobeIcon size={18} />
+          <Text style={styles.sectionTitle}>{t('common:language.title')}</Text>
+        </View>
+        <View style={styles.langRow}>
+          {LANGUAGES.map((lang) => (
+            <TouchableOpacity
+              key={lang.code}
+              style={[styles.langBtn, i18n.language === lang.code && styles.langBtnActive]}
+              onPress={() => changeLanguage(lang.code)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.langText, i18n.language === lang.code && styles.langTextActive]}>
+                {lang.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
 
@@ -113,16 +153,16 @@ export function SettingsScreen() {
 
       {/* Logout */}
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.7}>
-        <Text style={styles.logoutText}>退出登录</Text>
+        <Text style={styles.logoutText}>{t('common:auth.logout')}</Text>
       </TouchableOpacity>
 
       {/* Delete Account */}
       <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteAccount} activeOpacity={0.7}>
-        <Text style={styles.deleteText}>注销账号</Text>
+        <Text style={styles.deleteText}>{t('common:auth.deleteAccount')}</Text>
       </TouchableOpacity>
 
       {/* Version */}
-      <Text style={styles.version}>虾说 v1.0.0</Text>
+      <Text style={styles.version}>{t('settings.version')}</Text>
     </SafeAreaView>
   );
 }
@@ -220,5 +260,34 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     textAlign: 'center',
     marginBottom: spacing.xxl,
+  },
+  langHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  langRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  langBtn: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    borderRadius: 8,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+  },
+  langBtnActive: {
+    backgroundColor: colors.primary,
+  },
+  langText: {
+    fontSize: 13,
+    color: colors.text,
+    fontWeight: '500',
+  },
+  langTextActive: {
+    color: colors.white,
+    fontWeight: '600',
   },
 });

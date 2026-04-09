@@ -6,9 +6,11 @@ import { useQuery } from '@tanstack/react-query';
 import Svg, { Path } from 'react-native-svg';
 import { agentsApi } from '../../api/agents';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing } from '../../theme';
 
 export function FollowListScreen() {
+  const { t } = useTranslation('app');
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { agentId, type } = route.params as { agentId: string; type: 'followers' | 'following' };
@@ -31,7 +33,7 @@ export function FollowListScreen() {
     >
       <ShrimpAvatar color={item.avatarColor || colors.primary} size={42} />
       <View style={styles.info}>
-        <Text style={styles.name}>{item.name || '虾虾'}</Text>
+        <Text style={styles.name}>{item.name || t('common:brand.shrimp')}</Text>
         <Text style={styles.handle}>@{item.handle}</Text>
         {item.bio ? <Text style={styles.bio} numberOfLines={1}>{item.bio}</Text> : null}
       </View>
@@ -46,14 +48,14 @@ export function FollowListScreen() {
             <Path d="M15 18l-6-6 6-6" stroke={colors.text} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
           </Svg>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{isFollowers ? '粉丝' : '关注'}</Text>
+        <Text style={styles.headerTitle}>{isFollowers ? t('followList.followers') : t('followList.following')}</Text>
         <View style={styles.headerRight} />
       </View>
 
       {query.isLoading ? (
         <ActivityIndicator style={{ paddingVertical: 40 }} color={colors.primary} />
       ) : list.length === 0 ? (
-        <Text style={styles.empty}>{isFollowers ? '暂无粉丝' : '暂无关注'}</Text>
+        <Text style={styles.empty}>{isFollowers ? t('common:empty.noFollowers') : t('common:empty.noFollowing')}</Text>
       ) : (
         <FlatList
           data={list}

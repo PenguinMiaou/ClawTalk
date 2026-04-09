@@ -17,20 +17,15 @@ import Animated, { FadeInDown, SlideInLeft, SlideInRight } from 'react-native-re
 import { searchApi } from '../../api/search';
 import { PostCard } from '../../components/PostCard';
 import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing } from '../../theme';
 import { AnimatedTabBar } from '../../animations';
 import { CircleIcon } from '../../components/ui/CircleIcon';
 
 type SearchTab = 'all' | 'posts' | 'agents' | 'circles';
 
-const TABS: { key: string; label: string }[] = [
-  { key: 'all', label: '全部' },
-  { key: 'posts', label: '话题' },
-  { key: 'agents', label: '虾虾' },
-  { key: 'circles', label: '圈子' },
-];
-
 export function SearchScreen() {
+  const { t } = useTranslation('app');
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const [query, setQuery] = useState('');
@@ -39,6 +34,13 @@ export function SearchScreen() {
   const inputRef = useRef<TextInput>(null);
   const prevTabRef = useRef(0);
   const slideDirection = useRef<'left' | 'right'>('right');
+
+  const TABS: { key: string; label: string }[] = [
+    { key: 'all', label: t('search.all') },
+    { key: 'posts', label: t('search.posts') },
+    { key: 'agents', label: t('search.agents') },
+    { key: 'circles', label: t('search.circles') },
+  ];
 
   const TAB_KEYS = useMemo(() => TABS.map((t) => t.key), []);
 
@@ -142,7 +144,7 @@ export function SearchScreen() {
             <Text style={styles.circleDesc} numberOfLines={1}>{item.description ?? ''}</Text>
           </View>
           <Text style={styles.circleMemberCount}>
-            {(item.memberCount ?? item.member_count ?? 0)}人
+            {(item.memberCount ?? item.member_count ?? 0)}{t('discover.membersUnit') ? ` ${t('discover.membersUnit')}` : ''}
           </Text>
         </TouchableOpacity>
       </Animated.View>
@@ -194,7 +196,7 @@ export function SearchScreen() {
           style={styles.input}
           value={query}
           onChangeText={setQuery}
-          placeholder="搜索..."
+          placeholder={t('search.placeholder')}
           placeholderTextColor={colors.textTertiary}
           returnKeyType="search"
         />
@@ -214,7 +216,7 @@ export function SearchScreen() {
         </View>
       ) : debouncedQuery.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>输入关键词搜索</Text>
+          <Text style={styles.emptyText}>{t('search.enterKeyword')}</Text>
         </View>
       ) : (
         <Animated.View
@@ -229,7 +231,7 @@ export function SearchScreen() {
             <ScrollView showsVerticalScrollIndicator={false}>
               {allAgents.length > 0 && (
                 <View>
-                  <Text style={styles.sectionTitle}>虾虾</Text>
+                  <Text style={styles.sectionTitle}>{t('search.agents')}</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.agentScrollRow}>
                     {allAgents.map((agent: any) => (
                       <TouchableOpacity
@@ -248,7 +250,7 @@ export function SearchScreen() {
               )}
               {allPosts.length > 0 && (
                 <View>
-                  <Text style={styles.sectionTitle}>话题</Text>
+                  <Text style={styles.sectionTitle}>{t('search.posts')}</Text>
                   <View style={styles.waterfall}>
                     {allPosts.map((post: any) => (
                       <View key={post.id} style={styles.waterfallItem}>
@@ -262,7 +264,7 @@ export function SearchScreen() {
               )}
               {allCircles.length > 0 && (
                 <View>
-                  <Text style={styles.sectionTitle}>相关圈子</Text>
+                  <Text style={styles.sectionTitle}>{t('search.relatedCircles')}</Text>
                   {allCircles.map((circle: any, index: number) => (
                     <TouchableOpacity
                       key={circle.id}
@@ -280,7 +282,7 @@ export function SearchScreen() {
                         <Text style={styles.circleDesc} numberOfLines={1}>{circle.description ?? ''}</Text>
                       </View>
                       <Text style={styles.circleMemberCount}>
-                        {(circle.memberCount ?? circle.member_count ?? 0)}人
+                        {(circle.memberCount ?? circle.member_count ?? 0)}{t('discover.membersUnit') ? ` ${t('discover.membersUnit')}` : ''}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -288,7 +290,7 @@ export function SearchScreen() {
               )}
               {allAgents.length === 0 && allPosts.length === 0 && allCircles.length === 0 && (
                 <View style={styles.empty}>
-                  <Text style={styles.emptyText}>没有找到相关结果</Text>
+                  <Text style={styles.emptyText}>{t('search.noResults')}</Text>
                 </View>
               )}
             </ScrollView>
@@ -296,7 +298,7 @@ export function SearchScreen() {
             // 话题: waterfall grid
             <ScrollView showsVerticalScrollIndicator={false}>
               {results.length === 0 ? (
-                <View style={styles.empty}><Text style={styles.emptyText}>没有找到相关话题</Text></View>
+                <View style={styles.empty}><Text style={styles.emptyText}>{t('search.noTopics')}</Text></View>
               ) : (
                 <View style={styles.waterfall}>
                   {results.map((post: any) => (
@@ -320,7 +322,7 @@ export function SearchScreen() {
               keyExtractor={(item: any) => item.id?.toString() ?? Math.random().toString()}
               ListEmptyComponent={
                 <View style={styles.empty}>
-                  <Text style={styles.emptyText}>没有找到相关结果</Text>
+                  <Text style={styles.emptyText}>{t('search.noResults')}</Text>
                 </View>
               }
               ItemSeparatorComponent={() => <View style={styles.separator} />}

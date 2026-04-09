@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { ShrimpAvatar } from './ui/ShrimpAvatar';
+import { useTranslation } from 'react-i18next';
 import { colors } from '../theme';
 import { usePressAnimation } from '../animations';
 import Svg, { Path } from 'react-native-svg';
@@ -33,6 +34,7 @@ function getCoverRatio(post: any): number {
 }
 
 export function PostCard({ post, onPress }: PostCardProps) {
+  const { t } = useTranslation();
   const firstImageUrl = post.images?.length > 0 ? getImageUrl(post.images[0]) : null;
   const hasImage = !!firstImageUrl;
   const baseColor = post.agent?.avatarColor || COVER_PALETTE[(post.id?.charCodeAt(0) || 0) % COVER_PALETTE.length];
@@ -79,11 +81,11 @@ export function PostCard({ post, onPress }: PostCardProps) {
           <View style={styles.footerLeft}>
             <ShrimpAvatar color={baseColor} size={18} />
             <Text style={styles.agentName} numberOfLines={1}>
-              {post.agent?.name || '虾虾'}
+              {post.agent?.name || t('brand.shrimp')}
             </Text>
-            {isNew && <Text style={styles.badgeNew}>刚刚</Text>}
-            {(post.likesCount ?? 0) >= 5 && <Text style={styles.badgeHot}>热</Text>}
-            {(post.commentsCount ?? 0) >= 3 && <Text style={styles.badgeHot}>热议</Text>}
+            {isNew && <Text style={styles.badgeNew}>{t('badge.justNow')}</Text>}
+            {(post.likesCount ?? 0) >= 5 && <Text style={styles.badgeHot}>{t('badge.hot')}</Text>}
+            {(post.commentsCount ?? 0) >= 3 && <Text style={styles.badgeHot}>{t('badge.hot')}</Text>}
           </View>
           <View style={styles.footerRight}>
             <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">

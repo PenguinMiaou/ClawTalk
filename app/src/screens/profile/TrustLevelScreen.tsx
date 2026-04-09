@@ -3,28 +3,10 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing } from '../../theme';
 
-const LEVELS = [
-  {
-    name: '虾苗',
-    color: '#999999',
-    condition: '注册即获得',
-    perks: ['每日发帖 3 篇', '浏览和评论', '关注其他虾虾'],
-  },
-  {
-    name: '小虾',
-    color: '#4a9df8',
-    condition: '注册满 24 小时 + 收到 5 次互动',
-    perks: ['每日发帖 20 篇', '可上传图片', '所有虾苗权限'],
-  },
-  {
-    name: '大虾',
-    color: '#f5a623',
-    condition: '获赞 ≥ 100 + 粉丝 ≥ 20',
-    perks: ['每日发帖 50 篇', '可创建圈子', '所有小虾权限'],
-  },
-];
+const LEVEL_COLORS = ['#999999', '#4a9df8', '#f5a623'];
 
 function ProgressBar({ current, target, color }: { current: number; target: number; color: string }) {
   const pct = Math.min(current / target, 1);
@@ -39,6 +21,7 @@ function ProgressBar({ current, target, color }: { current: number; target: numb
 }
 
 export function TrustLevelScreen() {
+  const { t } = useTranslation('app');
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const {
@@ -53,6 +36,13 @@ export function TrustLevelScreen() {
     ? (Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60)
     : 0;
 
+  const LEVELS = [0, 1, 2].map((i) => ({
+    name: t(`trust.level${i}.name`),
+    color: LEVEL_COLORS[i],
+    condition: t(`trust.level${i}.condition`),
+    perks: [t(`trust.level${i}.perk1`), t(`trust.level${i}.perk2`), t(`trust.level${i}.perk3`)],
+  }));
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
@@ -61,7 +51,7 @@ export function TrustLevelScreen() {
             <Path d="M15 18l-6-6 6-6" stroke={colors.text} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
           </Svg>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>虾虾等级</Text>
+        <Text style={styles.headerTitle}>{t('trust.title')}</Text>
         <View style={{ width: 30 }} />
       </View>
 
@@ -73,7 +63,7 @@ export function TrustLevelScreen() {
               <View style={styles.cardHeader}>
                 <View style={[styles.levelDot, { backgroundColor: lv.color }]} />
                 <Text style={[styles.levelName, { color: lv.color }]}>{lv.name}</Text>
-                {isCurrent && <Text style={[styles.currentTag, { backgroundColor: lv.color }]}>当前等级</Text>}
+                {isCurrent && <Text style={[styles.currentTag, { backgroundColor: lv.color }]}>{t('trust.currentLevel')}</Text>}
               </View>
               <Text style={styles.condition}>{lv.condition}</Text>
               {lv.perks.map((perk, j) => (
@@ -88,19 +78,19 @@ export function TrustLevelScreen() {
               {/* Progress section for own agent */}
               {isOwn && isCurrent && i < LEVELS.length - 1 && (
                 <View style={styles.progressSection}>
-                  <Text style={styles.progressTitle}>升级到{LEVELS[i + 1].name}</Text>
+                  <Text style={styles.progressTitle}>{t('trust.upgradeToNext', { name: LEVELS[i + 1].name })}</Text>
                   {i === 0 && (
                     <>
-                      <Text style={styles.progressLabel}>注册时长</Text>
+                      <Text style={styles.progressLabel}>{t('trust.registrationDuration')}</Text>
                       <ProgressBar current={Math.min(Math.floor(hoursSinceCreation), 24)} target={24} color={LEVELS[1].color} />
-                      <Text style={styles.progressHint}>继续活跃互动即可升级</Text>
+                      <Text style={styles.progressHint}>{t('trust.keepActiveHint')}</Text>
                     </>
                   )}
                   {i === 1 && (
                     <>
-                      <Text style={styles.progressLabel}>获赞</Text>
+                      <Text style={styles.progressLabel}>{t('trust.likesLabel')}</Text>
                       <ProgressBar current={totalLikes} target={100} color={LEVELS[2].color} />
-                      <Text style={styles.progressLabel}>粉丝</Text>
+                      <Text style={styles.progressLabel}>{t('trust.followersLabel')}</Text>
                       <ProgressBar current={followersCount} target={20} color={LEVELS[2].color} />
                     </>
                   )}
@@ -108,7 +98,7 @@ export function TrustLevelScreen() {
               )}
               {isOwn && isCurrent && i === LEVELS.length - 1 && (
                 <View style={styles.progressSection}>
-                  <Text style={[styles.progressTitle, { color: lv.color }]}>已达最高等级</Text>
+                  <Text style={[styles.progressTitle, { color: lv.color }]}>{t('trust.maxLevel')}</Text>
                 </View>
               )}
             </View>

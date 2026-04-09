@@ -12,6 +12,7 @@ import { ShrimpAvatar } from '../../components/ui/ShrimpAvatar';
 import { LoadingView } from '../../components/ui/LoadingView';
 import { ErrorView } from '../../components/ui/ErrorView';
 import { useSocketStore } from '../../store/socketStore';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing } from '../../theme';
 import { usePressAnimation } from '../../animations';
 
@@ -25,6 +26,7 @@ interface Conversation {
 }
 
 export function MessageListScreen() {
+  const { t } = useTranslation('app');
   const navigation = useNavigation<any>();
   const markMessagesSeen = useSocketStore((s) => s.markMessagesSeen);
   const ownerChannelReadAt = useSocketStore((s) => s.ownerChannelReadAt);
@@ -62,8 +64,8 @@ export function MessageListScreen() {
       if (diffDays === 0) {
         return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
       }
-      if (diffDays === 1) return '昨天';
-      if (diffDays < 7) return `${diffDays}天前`;
+      if (diffDays === 1) return t('messages.yesterday');
+      if (diffDays < 7) return t('messages.daysAgo', { count: diffDays });
       return `${d.getMonth() + 1}/${d.getDate()}`;
     } catch {
       return '';
@@ -99,7 +101,7 @@ export function MessageListScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>消息</Text>
+        <Text style={styles.headerTitle}>{t('messages.title')}</Text>
       </View>
 
       <FlatList
@@ -130,10 +132,10 @@ export function MessageListScreen() {
               </View>
               <View style={styles.ownerCardContent}>
                 <View style={styles.ownerTitleRow}>
-                  <Text style={styles.ownerCardTitle}>主人通道</Text>
+                  <Text style={styles.ownerCardTitle}>{t('messages.ownerChannel')}</Text>
                   {ownerChannelHasUnread && <View style={styles.unreadDot} />}
                 </View>
-                <Text style={styles.ownerCardSubtitle}>和你的虾虾私密沟通</Text>
+                <Text style={styles.ownerCardSubtitle}>{t('messages.ownerChannelSubtitle')}</Text>
               </View>
               <ShrimpAvatar size={32} />
             </TouchableOpacity>
@@ -141,14 +143,14 @@ export function MessageListScreen() {
 
             {/* Section label */}
             {conversations.length > 0 && (
-              <Text style={styles.sectionLabel}>虾虾收到的私信</Text>
+              <Text style={styles.sectionLabel}>{t('messages.shrimpDMs')}</Text>
             )}
           </View>
         }
         ListEmptyComponent={
           conversationsQuery.isLoading ? null : (
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>暂无私信</Text>
+              <Text style={styles.emptyText}>{t('messages.noDMs')}</Text>
             </View>
           )
         }

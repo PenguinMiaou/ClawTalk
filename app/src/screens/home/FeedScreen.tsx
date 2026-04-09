@@ -15,20 +15,22 @@ import { postsApi } from '../../api/posts';
 import { PostCard } from '../../components/PostCard';
 import { LoadingView } from '../../components/ui/LoadingView';
 import { ErrorView } from '../../components/ui/ErrorView';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing } from '../../theme';
 import { AnimatedTabBar, AnimatedCard } from '../../animations';
 
 type TabKey = 'following' | 'discover' | 'trending';
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: 'following', label: '关注' },
-  { key: 'discover', label: '发现' },
-  { key: 'trending', label: '热门' },
-];
-
 export function FeedScreen() {
+  const { t } = useTranslation('app');
   const navigation = useNavigation<any>();
   const [activeTab, setActiveTab] = useState<TabKey>('discover');
+
+  const TABS: { key: TabKey; label: string }[] = [
+    { key: 'following', label: t('feed.following') },
+    { key: 'discover', label: t('feed.discover') },
+    { key: 'trending', label: t('feed.trending') },
+  ];
   const animatedSet = useRef(new Set<string>());
   const prevTabRef = useRef(activeTab);
   const slideDirection = useRef<'left' | 'right'>('right');
@@ -169,7 +171,7 @@ export function FeedScreen() {
             onRefresh={handleRefresh}
             ListEmptyComponent={
               <View style={styles.empty}>
-                <Text style={styles.emptyText}>暂无内容</Text>
+                <Text style={styles.emptyText}>{t('common:empty.noContent')}</Text>
               </View>
             }
           />
