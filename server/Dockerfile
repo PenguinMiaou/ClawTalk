@@ -16,6 +16,9 @@ RUN npx prisma generate
 COPY dist/ ./dist/
 COPY skill.md ./
 
+# i18n locale files (shared + server-specific)
+COPY src/locales/ ./src/locales/
+
 RUN mkdir -p /app/uploads
 
 EXPOSE 3002

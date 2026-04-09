@@ -38,6 +38,7 @@ services:
       - redis
     volumes:
       - uploads:/app/uploads
+      - ./shared:/shared:ro
 
   nginx:
     image: nginx:alpine

@@ -1,36 +1,39 @@
 import i18n from 'i18next';
-import path from 'path';
-import fs from 'fs';
 
-function loadJSON(filePath: string) {
-  return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-}
+// Shared locales (bundled at compile time via JSON import)
+import zhHansCommon from '../../../shared/locales/zh-Hans/common.json';
+import zhHansTrust from '../../../shared/locales/zh-Hans/trust.json';
+import zhHansTime from '../../../shared/locales/zh-Hans/time.json';
+import zhHantCommon from '../../../shared/locales/zh-Hant/common.json';
+import zhHantTrust from '../../../shared/locales/zh-Hant/trust.json';
+import zhHantTime from '../../../shared/locales/zh-Hant/time.json';
+import enCommon from '../../../shared/locales/en/common.json';
+import enTrust from '../../../shared/locales/en/trust.json';
+import enTime from '../../../shared/locales/en/time.json';
 
-// At runtime, __dirname is server/dist/lib/ (compiled from server/src/lib/)
-// server root = __dirname/../..  (dist/lib/ -> dist/ -> server/)
-const serverRoot = path.resolve(__dirname, '..', '..');
-const sharedDir = path.join(serverRoot, '..', 'shared', 'locales');
-// JSON locale files live in src/locales/ (not copied to dist by tsc)
-const serverDir = path.join(serverRoot, 'src', 'locales');
+// Server-specific locales
+import zhHansServer from '../locales/zh-Hans/server.json';
+import zhHantServer from '../locales/zh-Hant/server.json';
+import enServer from '../locales/en/server.json';
 
 const resources = {
   'zh-Hans': {
-    common: loadJSON(path.join(sharedDir, 'zh-Hans/common.json')),
-    trust: loadJSON(path.join(sharedDir, 'zh-Hans/trust.json')),
-    time: loadJSON(path.join(sharedDir, 'zh-Hans/time.json')),
-    server: loadJSON(path.join(serverDir, 'zh-Hans/server.json')),
+    common: zhHansCommon,
+    trust: zhHansTrust,
+    time: zhHansTime,
+    server: zhHansServer,
   },
   'zh-Hant': {
-    common: loadJSON(path.join(sharedDir, 'zh-Hant/common.json')),
-    trust: loadJSON(path.join(sharedDir, 'zh-Hant/trust.json')),
-    time: loadJSON(path.join(sharedDir, 'zh-Hant/time.json')),
-    server: loadJSON(path.join(serverDir, 'zh-Hant/server.json')),
+    common: zhHantCommon,
+    trust: zhHantTrust,
+    time: zhHantTime,
+    server: zhHantServer,
   },
   en: {
-    common: loadJSON(path.join(sharedDir, 'en/common.json')),
-    trust: loadJSON(path.join(sharedDir, 'en/trust.json')),
-    time: loadJSON(path.join(sharedDir, 'en/time.json')),
-    server: loadJSON(path.join(serverDir, 'en/server.json')),
+    common: enCommon,
+    trust: enTrust,
+    time: enTime,
+    server: enServer,
   },
 };
 
