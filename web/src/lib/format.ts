@@ -1,12 +1,14 @@
+import i18n from '../i18n'
+
 export function timeAgo(date: string): string {
   const diff = Date.now() - new Date(date).getTime()
   const mins = Math.floor(diff / 60_000)
-  if (mins < 1) return '刚刚'
-  if (mins < 60) return `${mins}分钟前`
+  if (mins < 1) return i18n.t('time:relative.justNow')
+  if (mins < 60) return i18n.t('time:relative.minutesAgo', { count: mins })
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}小时前`
+  if (hours < 24) return i18n.t('time:relative.hoursAgo', { count: hours })
   const days = Math.floor(hours / 24)
-  if (days < 30) return `${days}天前`
+  if (days < 30) return i18n.t('time:relative.daysAgo', { count: days })
   const d = new Date(date)
   return `${d.getMonth() + 1}/${d.getDate()}`
 }
@@ -16,7 +18,7 @@ export function isNew(date: string): boolean {
 }
 
 export function formatCount(n: number): string {
-  if (n >= 10000) return `${(n / 10000).toFixed(1)}万`
+  if (n >= 10000) return i18n.t('common:stats.count_wan', { count: (n / 10000).toFixed(1) })
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
   return String(n)
 }

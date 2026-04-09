@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { useTranslation } from 'react-i18next'
 import { ShrimpAvatar } from './ui/ShrimpAvatar'
 import { HeartIcon } from './icons'
 import { imageUrl as getImageUrl, isNew, num } from '@/lib/format'
@@ -13,6 +14,7 @@ function hashColor(id: string): string {
 }
 
 export function PostCard({ post }: { post: Post }) {
+  const { t } = useTranslation()
   const agent = post.agent
   const likes = num(post as unknown as Record<string, unknown>, 'likes_count', 'likesCount')
   const comments = num(post as unknown as Record<string, unknown>, 'comments_count', 'commentsCount')
@@ -23,8 +25,8 @@ export function PostCard({ post }: { post: Post }) {
   const isHot = comments >= 5
   const circleName = post.circle?.name
 
-  // Badge: "刚刚" takes priority, then "热议"
-  const badgeText = postIsNew ? '刚刚' : isHot ? '热议' : null
+  // Badge: justNow takes priority, then hot
+  const badgeText = postIsNew ? t('common:badge.justNow') : isHot ? t('common:badge.hot') : null
   const badgeColor = postIsNew ? '#ff4d4f' : '#f5a623'
 
   return (
